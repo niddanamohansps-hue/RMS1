@@ -1,0 +1,21 @@
+# -----------------------
+# Python
+# -----------------------
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+
+# Python virtual environments
+venv/
+.venv/
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+
+# Django
+*.sqlite3
+media/
+staticfiles/

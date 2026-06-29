@@ -1,0 +1,22 @@
+services:
+  # 🐍 Django Web Backend
+  - type: web
+    name: rms-backend
+    runtime: python
+    buildCommand: cd rms_backend && chmod +x build.sh && ./build.sh
+    startCommand: cd rms_backend && gunicorn rms_backend.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Requires you to paste your own external Postgres URL in Render's panel
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*" # Automatically matches the Render domain name
+      - key: USE_REDIS_CELERY
+        value: "False" # Defaults to lifetime free tier mode (threads & memory cache)
+      - key: CORS_ORIGINS
+        value: "http://localhost:5173,http://localhost:5174" # Add production frontend URLs here after deployment
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "http://localhost:5173,http://localhost:5174" # Add production frontend URLs here after deployment
