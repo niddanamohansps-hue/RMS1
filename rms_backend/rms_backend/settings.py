@@ -23,6 +23,11 @@ ALLOWED_HOSTS = os.environ.get(
     "localhost,127.0.0.1,sps-rms-swxo.onrender.com"
 ).split(",")
 
+# Automatically trust Render hostname if deployed on Render
+render_host = config("RENDER_EXTERNAL_HOSTNAME", default=None)
+if render_host:
+    ALLOWED_HOSTS.append(render_host)
+
 # ─── Installed Apps ──────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",
