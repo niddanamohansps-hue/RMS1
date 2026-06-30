@@ -1,18 +1,50 @@
-# South Point School Recruitment System (RMS) — API Reference
+# API for Recruitment Management System (RMS)
 
-This document provides detailed API specifications, sample JSON request payloads, and response outputs for all endpoints in the Django backend.
+## Base URL
+
+```
+https://rms1-1-suhq.onrender.com/api/
+```
 
 ---
 
-## 🔐 1. Authentication & Profile Endpoints
+## 🔐 1. Authentication & Profile
 
-All endpoints have a `/api/` prefix.
+---
 
-### POST `/api/auth/register/`
-* **Description**: Register a new user (Candidate role).
-* **Auth Required**: None (Public)
-* **Request Body**:
+### 1.1 Register New User (Candidate)
+
+Creates a new candidate account and returns JWT tokens.
+
+**Endpoint**
+
+```
+POST /auth/register/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/auth/register/
+```
+
+**Auth Required**: None (Public)
+
+**Request Body (JSON)**
+
+| Field      | Type   | Required | Description              | Example                  |
+|------------|--------|----------|--------------------------|--------------------------|
+| email      | String | Yes      | User's email address     | jane.doe@example.com     |
+| password   | String | Yes      | Account password         | securepassword123        |
+| first_name | String | Yes      | First name of the user   | Jane                     |
+| last_name  | String | Yes      | Last name of the user    | Doe                      |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/auth/register/
+Content-Type: application/json
+
 {
   "email": "jane.doe@example.com",
   "password": "securepassword123",
@@ -20,7 +52,9 @@ All endpoints have a `/api/` prefix.
   "last_name": "Doe"
 }
 ```
-* **Response (201 Created)**:
+
+**Response (201 Created)**
+
 ```json
 {
   "message": "Registration successful.",
@@ -28,7 +62,7 @@ All endpoints have a `/api/` prefix.
     "id": 15,
     "email": "jane.doe@example.com",
     "first_name": "Jane",
-    "last_name": "Jane",
+    "last_name": "Doe",
     "role": "candidate",
     "phone": ""
   },
@@ -39,17 +73,47 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
-### POST `/api/auth/login/`
-* **Description**: Authenticate using email and password to receive access and refresh JWT tokens.
-* **Auth Required**: None (Public)
-* **Request Body**:
+________________________________________
+
+### 1.2 Login (Get JWT Tokens)
+
+Authenticate using email and password to receive access and refresh JWT tokens.
+
+**Endpoint**
+
+```
+POST /auth/login/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/auth/login/
+```
+
+**Auth Required**: None (Public)
+
+**Request Body (JSON)**
+
+| Field    | Type   | Required | Description          | Example              |
+|----------|--------|----------|----------------------|----------------------|
+| email    | String | Yes      | Registered email     | hr@southpoint.edu    |
+| password | String | Yes      | Account password     | Admin@123            |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/auth/login/
+Content-Type: application/json
+
 {
-  "email": "admin@school.com",
-  "password": "adminpassword"
+  "email": "hr@southpoint.edu",
+  "password": "Admin@123"
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -57,53 +121,145 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
-### POST `/api/auth/token/refresh/`
-* **Description**: Obtain a new access token using a valid refresh token.
-* **Auth Required**: None (Public)
-* **Request Body**:
+________________________________________
+
+### 1.3 Refresh Access Token
+
+Obtain a new access token using a valid refresh token.
+
+**Endpoint**
+
+```
+POST /auth/token/refresh/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/auth/token/refresh/
+```
+
+**Auth Required**: None (Public)
+
+**Request Body (JSON)**
+
+| Field   | Type   | Required | Description                | Example                                      |
+|---------|--------|----------|----------------------------|----------------------------------------------|
+| refresh | String | Yes      | Valid JWT refresh token     | eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...     |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/auth/token/refresh/
+Content-Type: application/json
+
 {
   "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-### POST `/api/auth/logout/`
-* **Description**: Blacklist a refresh token to logout user.
-* **Auth Required**: JWT Bearer Token
-* **Request Body**:
+________________________________________
+
+### 1.4 Logout (Blacklist Refresh Token)
+
+Blacklist a refresh token to invalidate the user session.
+
+**Endpoint**
+
+```
+POST /auth/logout/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/auth/logout/
+```
+
+**Auth Required**: JWT Bearer Token
+
+**Request Header**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Request Body (JSON)**
+
+| Field   | Type   | Required | Description                | Example                                      |
+|---------|--------|----------|----------------------------|----------------------------------------------|
+| refresh | String | Yes      | Refresh token to blacklist | eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...     |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/auth/logout/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
 {
   "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "message": "Logged out successfully."
 }
 ```
 
-### GET `/api/auth/me/`
-* **Description**: Get current logged-in user profile detail.
-* **Auth Required**: JWT Bearer Token
-* **Response (200 OK - Admin)**:
+________________________________________
+
+### 1.5 Get Current User Profile
+
+Returns the profile details of the currently logged-in user.
+
+**Endpoint**
+
+```
+GET /auth/me/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/auth/me/
+```
+
+**Auth Required**: JWT Bearer Token
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/auth/me/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK — Admin User)**
+
 ```json
 {
   "id": 1,
-  "email": "admin@school.com",
-  "first_name": "Admin",
-  "last_name": "User",
+  "email": "hr@southpoint.edu",
+  "first_name": "HR",
+  "last_name": "Admin",
   "role": "admin",
   "phone": "9876543210"
 }
 ```
-* **Response (200 OK - Candidate)**:
+
+**Response (200 OK — Candidate User)**
+
 ```json
 {
   "id": 15,
@@ -127,13 +283,43 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
-### PUT `/api/auth/me/`
-* **Description**: Update user details and profile.
-* **Auth Required**: JWT Bearer Token
-* **Request Body**:
+________________________________________
+
+### 1.6 Update Current User Profile
+
+Update user details and candidate profile information.
+
+**Endpoint**
+
+```
+PUT /auth/me/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/auth/me/
+```
+
+**Auth Required**: JWT Bearer Token
+
+**Request Body (JSON)**
+
+| Field      | Type   | Required | Description               | Example                        |
+|------------|--------|----------|---------------------------|--------------------------------|
+| first_name | String | No       | Updated first name        | Jane Updated                   |
+| phone      | String | No       | Updated phone number      | 9998887776                     |
+| profile    | Object | No       | Nested candidate profile  | See example below              |
+
+**Example Request**
+
 ```json
+PUT https://rms1-1-suhq.onrender.com/api/auth/me/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
-  "first_name": "Jane Update",
+  "first_name": "Jane Updated",
   "phone": "9998887776",
   "profile": {
     "current_location": "Shillong",
@@ -141,26 +327,101 @@ All endpoints have a `/api/` prefix.
   }
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 15,
   "email": "jane.doe@example.com",
-  "first_name": "Jane Update",
+  "first_name": "Jane Updated",
   "last_name": "Doe",
   "role": "candidate",
   "phone": "9998887776"
 }
 ```
 
+________________________________________
+
+### 1.7 Change Password
+
+Change the password for the currently logged-in user.
+
+**Endpoint**
+
+```
+POST /auth/change-password/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/auth/change-password/
+```
+
+**Auth Required**: JWT Bearer Token
+
+**Request Body (JSON)**
+
+| Field        | Type   | Required | Description          | Example          |
+|--------------|--------|----------|----------------------|------------------|
+| old_password | String | Yes      | Current password     | Admin@123        |
+| new_password | String | Yes      | New password         | NewAdmin@456     |
+
+**Example Request**
+
+```json
+POST https://rms1-1-suhq.onrender.com/api/auth/change-password/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "old_password": "Admin@123",
+  "new_password": "NewAdmin@456"
+}
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "message": "Password changed successfully."
+}
+```
+
 ---
 
-## 💼 2. Jobs & Dashboard Endpoints
+## 💼 2. Dashboard & Job Management
 
-### GET `/api/dashboard/stats/`
-* **Description**: Retrieves aggregated stats for the HR dashboard.
-* **Auth Required**: Admin User
-* **Response (200 OK - Cached)**:
+---
+
+### 2.1 Get Dashboard Statistics
+
+Returns aggregated statistics for the HR admin dashboard. Response is cached for performance.
+
+**Endpoint**
+
+```
+GET /dashboard/stats/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/dashboard/stats/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/dashboard/stats/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK — Cached)**
+
 ```json
 {
   "open_positions": 8,
@@ -181,98 +442,203 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
-### GET `/api/jobs/job-postings/public/`
-* **Description**: Returns all currently published job listings for candidates. Supports filtering by `category` and search query `q`.
-* **Auth Required**: None (Public)
-* **Response (200 OK - Cached)**:
+________________________________________
+
+### 2.2 Get Public Job Postings (Career Page)
+
+Returns all currently published job listings for the public career page. Supports filtering and search.
+
+**Endpoint**
+
+```
+GET /job-postings/public/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-postings/public/
+```
+
+**Auth Required**: None (Public)
+
+**Query Parameters**
+
+| Parameter | Type   | Required | Description                          | Example            |
+|-----------|--------|----------|--------------------------------------|--------------------|
+| category  | String | No       | Filter by job category name          | Academic Positions |
+| q         | String | No       | Search keyword in role/description   | Mathematics        |
+
+**Example Requests**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/job-postings/public/
+
+GET https://rms1-1-suhq.onrender.com/api/job-postings/public/?category=Academic%20Positions
+
+GET https://rms1-1-suhq.onrender.com/api/job-postings/public/?q=Mathematics
+```
+
+**Response (200 OK — Cached)**
+
 ```json
 [
   {
     "id": 1,
-    "posting_id": "JP-001",
-    "role": "High School Math Teacher",
-    "department": "Science",
+    "posting_id": "JP-2026-0001",
+    "role": "Senior Mathematics Teacher",
+    "department": "Academic Department",
     "type": "Full-time",
-    "category": "Teacher",
+    "category": "Academic Positions",
     "location": "Guwahati, Assam",
-    "description": "We are looking for an experienced Mathematics teacher...",
-    "qualifications": ["B.Ed", "M.Sc Mathematics"],
-    "experience": "2-4 years",
-    "salary_range": "35k - 45k",
-    "deadline": "2026-07-15",
-    "expiry_date": "2026-07-15",
+    "description": "We are looking for an experienced Mathematics teacher to join our secondary school team.",
+    "qualifications": ["Master's degree in Mathematics", "B.Ed or equivalent", "Experience in CBSE curriculum"],
+    "experience": "3–5 yrs",
+    "salary_range": "₹40K–₹60K",
+    "deadline": "July 15, 2026",
+    "expiry_date": null,
+    "status": "Published"
+  },
+  {
+    "id": 2,
+    "posting_id": "JP-2026-0002",
+    "role": "Office Coordinator",
+    "department": "Administration",
+    "type": "Full-time",
+    "category": "Administrative Positions",
+    "location": "Guwahati, Assam",
+    "description": "Manage day-to-day office operations and coordinate communications.",
+    "qualifications": ["Graduate", "Proficiency in MS Office", "Strong communication skills"],
+    "experience": "2–4 yrs",
+    "salary_range": "₹25K–₹35K",
+    "deadline": "June 30, 2026",
+    "expiry_date": null,
     "status": "Published"
   }
 ]
 ```
 
-### GET `/api/jobs/job-postings/`
-* **Description**: Returns all postings for admin management.
-* **Auth Required**: Admin User
-* **Response (200 OK)**:
+________________________________________
+
+### 2.3 Get All Job Postings (Admin)
+
+Returns all job postings (published and unpublished) for admin management.
+
+**Endpoint**
+
+```
+GET /job-postings/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-postings/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/job-postings/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
 [
   {
     "id": 1,
-    "posting_id": "JP-001",
-    "role": "High School Math Teacher",
-    "department": "Science",
+    "posting_id": "JP-2026-0001",
+    "role": "Senior Mathematics Teacher",
+    "department": "Academic Department",
     "type": "Full-time",
-    "category": "Teacher",
+    "category": "Academic Positions",
     "location": "Guwahati, Assam",
     "status": "Published",
     "application_count": 8,
-    "expiry_date": "2026-07-15"
-  },
-  {
-    "id": 2,
-    "posting_id": "JP-002",
-    "role": "History Teacher",
-    "department": "Arts",
-    "type": "Part-time",
-    "category": "Teacher",
-    "location": "Guwahati, Assam",
-    "status": "Unpublished",
-    "application_count": 0,
     "expiry_date": null
   }
 ]
 ```
 
-### POST `/api/jobs/job-postings/`
-* **Description**: Create a new job posting.
-* **Auth Required**: Admin User
-* **Request Body**:
+________________________________________
+
+### 2.4 Create New Job Posting
+
+Create a new job posting (defaults to Unpublished status).
+
+**Endpoint**
+
+```
+POST /job-postings/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-postings/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Request Body (JSON)**
+
+| Field          | Type     | Required | Description                        | Example                    |
+|----------------|----------|----------|------------------------------------|----------------------------|
+| role           | String   | Yes      | Job role title                     | Physics Teacher            |
+| department     | String   | Yes      | Department name                    | Science                    |
+| type           | String   | Yes      | Employment type                    | Full-time, Part-time       |
+| category       | String   | Yes      | Job category                       | Academic Positions         |
+| location       | String   | Yes      | Job location                       | Guwahati, Assam            |
+| description    | String   | Yes      | Detailed job description           | Physics Teacher wanted...  |
+| qualifications | Array    | Yes      | List of required qualifications    | ["B.Ed", "M.Sc Physics"]   |
+| experience     | String   | Yes      | Experience requirement             | 2+ years                   |
+| salary_range   | String   | Yes      | Salary range                       | ₹40K–₹50K                 |
+| channel        | String   | No       | Recruitment channel                | External, Internal         |
+| status         | String   | No       | Initial posting status             | Unpublished (default)      |
+| expiry_date    | String   | No       | Date the posting expires (ISO)     | 2026-08-30                 |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/job-postings/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "role": "Physics Teacher",
   "department": "Science",
   "type": "Full-time",
-  "category": "Teacher",
+  "category": "Academic Positions",
   "location": "Guwahati, Assam",
   "description": "Physics Teacher wanted for secondary grades.",
   "qualifications": ["B.Ed", "M.Sc Physics"],
   "experience": "2+ years",
-  "salary_range": "40k - 50k",
+  "salary_range": "₹40K–₹50K",
   "channel": "External",
   "status": "Unpublished",
   "expiry_date": "2026-08-30"
 }
 ```
-* **Response (201 Created)**:
+
+**Response (201 Created)**
+
 ```json
 {
   "id": 3,
-  "posting_id": "JP-003",
+  "posting_id": "JP-2026-0003",
   "role": "Physics Teacher",
   "department": "Science",
   "type": "Full-time",
-  "category": "Teacher",
+  "category": "Academic Positions",
   "location": "Guwahati, Assam",
   "description": "Physics Teacher wanted for secondary grades.",
   "qualifications": ["B.Ed", "M.Sc Physics"],
   "experience": "2+ years",
-  "salary_range": "40k - 50k",
+  "salary_range": "₹40K–₹50K",
   "channel": "External",
   "status": "Unpublished",
   "posted_date": null,
@@ -281,63 +647,261 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
-### POST `/api/jobs/job-postings/{id}/publish/`
-* **Description**: Change status of posting to Published.
-* **Auth Required**: Admin User
-* **Response (200 OK)**:
+________________________________________
+
+### 2.5 Publish a Job Posting
+
+Change the status of a posting to Published (makes it visible on the career page).
+
+**Endpoint**
+
+```
+POST /job-postings/{id}/publish/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-postings/3/publish/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Path Parameters**
+
+| Parameter | Type    | Required | Description          | Example |
+|-----------|---------|----------|----------------------|---------|
+| id        | Integer | Yes      | Job Posting ID       | 3       |
+
+**Example Request**
+
+```
+POST https://rms1-1-suhq.onrender.com/api/job-postings/3/publish/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 3,
-  "posting_id": "JP-003",
+  "posting_id": "JP-2026-0003",
   "role": "Physics Teacher",
   "status": "Published",
-  "posted_date": "2026-06-29"
+  "posted_date": "2026-06-30"
 }
 ```
 
-### PUT `/api/jobs/job-postings/{id}/`
-* **Description**: Update a job posting.
-* **Auth Required**: Admin User
-* **Request Body**:
+________________________________________
+
+### 2.6 Update a Job Posting
+
+Update specific fields of an existing job posting.
+
+**Endpoint**
+
+```
+PUT /job-postings/{id}/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-postings/3/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
 ```json
+PUT https://rms1-1-suhq.onrender.com/api/job-postings/3/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
-  "salary_range": "45k - 55k",
+  "salary_range": "₹45K–₹55K",
   "experience": "3+ years"
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 3,
-  "posting_id": "JP-003",
+  "posting_id": "JP-2026-0003",
   "role": "Physics Teacher",
-  "salary_range": "45k - 55k",
+  "salary_range": "₹45K–₹55K",
   "experience": "3+ years",
   "status": "Published"
 }
 ```
 
-### DELETE `/api/jobs/job-postings/{id}/`
-* **Description**: Delete a job posting.
-* **Auth Required**: Admin User
-* **Response (204 No Content)**: Empty
+________________________________________
+
+### 2.7 Delete a Job Posting
+
+Permanently delete a job posting.
+
+**Endpoint**
+
+```
+DELETE /job-postings/{id}/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-postings/3/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+DELETE https://rms1-1-suhq.onrender.com/api/job-postings/3/
+Authorization: Bearer <access_token>
+```
+
+**Response (204 No Content)**: Empty body
+
+________________________________________
+
+### 2.8 Get Job Categories
+
+Returns all available job categories (e.g., Academic, Administrative, Support Staff).
+
+**Endpoint**
+
+```
+GET /job-categories/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-categories/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/job-categories/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
+```json
+[
+  { "id": 1, "name": "Academic Positions" },
+  { "id": 2, "name": "Administrative Positions" },
+  { "id": 3, "name": "Support Staff" }
+]
+```
+
+________________________________________
+
+### 2.9 Get Existing Roles
+
+Returns all organizational roles seeded in the system.
+
+**Endpoint**
+
+```
+GET /roles/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/roles/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/roles/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Principal",
+    "department": "Management",
+    "headcount": 1,
+    "filled": 1,
+    "status": "Active"
+  },
+  {
+    "id": 2,
+    "title": "Mathematics Teacher",
+    "department": "Academic Department",
+    "headcount": 3,
+    "filled": 2,
+    "status": "Active"
+  }
+]
+```
 
 ---
 
-## 📝 3. Role Requests & Approvals
+## 📋 3. Role Requests & Approvals
 
-### POST `/api/jobs/role-requests/`
-* **Description**: Submit a request for opening a new role headcount.
-* **Auth Required**: Admin User
-* **Request Body**:
+---
+
+### 3.1 Submit a Role Request
+
+Submit a request for opening a new role headcount.
+
+**Endpoint**
+
+```
+POST /role-requests/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/role-requests/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Request Body (JSON)**
+
+| Field         | Type   | Required | Description                      | Example                              |
+|---------------|--------|----------|----------------------------------|--------------------------------------|
+| department    | String | Yes      | Target department                | Arts                                 |
+| role          | String | Yes      | Role title being requested       | Music Teacher                        |
+| justification | String | Yes      | Business justification           | Increased student enrollment...      |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/role-requests/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "department": "Arts",
   "role": "Music Teacher",
   "justification": "Increased student enrollment in humanities stream."
 }
 ```
-* **Response (201 Created)**:
+
+**Response (201 Created)**
+
 ```json
 {
   "id": 4,
@@ -346,23 +910,105 @@ All endpoints have a `/api/` prefix.
   "role": "Music Teacher",
   "justification": "Increased student enrollment in humanities stream.",
   "status": "Pending",
-  "date": "2026-06-29",
-  "created_by_name": "Admin User"
+  "date": "2026-06-30",
+  "created_by_name": "HR Admin"
 }
 ```
 
-### POST `/api/jobs/approvals/{id}/action/`
-* **Description**: Approve, reject, or send back a pending role or job request.
-* **Auth Required**: Admin User
-* **Request Body**:
+________________________________________
+
+### 3.2 Get All Approval Requests
+
+Returns all pending role requests and job requests awaiting approval.
+
+**Endpoint**
+
+```
+GET /approvals/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/approvals/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/approvals/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
+[
+  {
+    "id": 2,
+    "request_id": "RR-004",
+    "type": "Role Request",
+    "title": "Music Teacher",
+    "department": "Arts",
+    "status": "Pending",
+    "date": "2026-06-30",
+    "history": []
+  }
+]
+```
+
+________________________________________
+
+### 3.3 Take Action on Approval Request
+
+Approve, reject, or send back a pending role or job request.
+
+**Endpoint**
+
+```
+POST /approvals/{id}/action/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/approvals/2/action/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Path Parameters**
+
+| Parameter | Type    | Required | Description            | Example |
+|-----------|---------|----------|------------------------|---------|
+| id        | Integer | Yes      | Approval Request ID    | 2       |
+
+**Request Body (JSON)**
+
+| Field    | Type   | Required | Description                                 | Allowed Values                    | Example                          |
+|----------|--------|----------|---------------------------------------------|-----------------------------------|----------------------------------|
+| action   | String | Yes      | Action to take                              | Approve, Reject, Send Back        | Approve                          |
+| note     | String | No       | Optional note/comment                       |                                   | Approved for headcount increase. |
+| acted_by | String | No       | Name of person taking the action            |                                   | Principal                        |
+
+**Example Request**
+
+```json
+POST https://rms1-1-suhq.onrender.com/api/approvals/2/action/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "action": "Approve",
   "note": "Approved for headcount increase.",
   "acted_by": "Principal"
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 2,
@@ -375,7 +1021,7 @@ All endpoints have a `/api/` prefix.
       "id": 10,
       "action": "Approve",
       "acted_by": "Principal",
-      "date": "2026-06-29",
+      "date": "2026-06-30",
       "note": "Approved for headcount increase."
     }
   ]
@@ -384,13 +1030,46 @@ All endpoints have a `/api/` prefix.
 
 ---
 
-## 📂 4. Applications Endpoints
+## 📂 4. Applications
 
-### POST `/api/applications/applications/`
-* **Description**: Submit job application for a specific posting.
-* **Auth Required**: Candidate User
-* **Request Body**:
+---
+
+### 4.1 Submit Job Application (Candidate)
+
+Submit a job application for a specific published posting.
+
+**Endpoint**
+
+```
+POST /applications/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/applications/
+```
+
+**Auth Required**: Candidate User (JWT Bearer Token)
+
+**Request Body (JSON)**
+
+| Field         | Type    | Required | Description                       | Example                                  |
+|---------------|---------|----------|-----------------------------------|------------------------------------------|
+| posting       | Integer | Yes      | Job Posting ID to apply for       | 1                                        |
+| experience    | String  | Yes      | Candidate's experience summary    | 3 years                                  |
+| qualification | String  | Yes      | Candidate's qualifications        | M.Sc Math, B.Ed                          |
+| cover_letter  | String  | No       | Optional cover letter text        | I would like to apply for the math role. |
+| notice_period | String  | No       | Current notice period             | 30 days                                  |
+| has_referral  | Boolean | No       | Whether candidate has a referral  | false                                    |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/applications/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "posting": 1,
   "experience": "3 years",
@@ -400,48 +1079,155 @@ All endpoints have a `/api/` prefix.
   "has_referral": false
 }
 ```
-* **Response (201 Created)**:
+
+**Response (201 Created)**
+
 ```json
 {
   "id": 12,
   "app_id": "JAPP-012",
-  "role": "High School Math Teacher",
+  "role": "Senior Mathematics Teacher",
   "posting": 1,
   "status": "Applied",
-  "applied_date": "2026-06-29",
+  "applied_date": "2026-06-30",
   "candidate_name": "Jane Doe"
 }
 ```
 
-### GET `/api/applications/applications/mine/`
-* **Description**: Fetch all applications submitted by the logged-in candidate.
-* **Auth Required**: Candidate User
-* **Response (200 OK)**:
+________________________________________
+
+### 4.2 Get My Applications (Candidate)
+
+Fetch all applications submitted by the currently logged-in candidate.
+
+**Endpoint**
+
+```
+GET /applications/mine/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/applications/mine/
+```
+
+**Auth Required**: Candidate User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/applications/mine/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
 [
   {
     "id": 12,
     "app_id": "JAPP-012",
-    "role": "High School Math Teacher",
+    "role": "Senior Mathematics Teacher",
     "posting": 1,
-    "posting_title": "High School Math Teacher",
+    "posting_title": "Senior Mathematics Teacher",
     "status": "Applied",
-    "applied_date": "2026-06-29"
+    "applied_date": "2026-06-30"
   }
 ]
 ```
 
-### PATCH `/api/applications/applications/{id}/update_status/`
-* **Description**: Update application status (triggers async Celery background notification).
-* **Auth Required**: Admin User
-* **Request Body**:
+________________________________________
+
+### 4.3 Get All Applications (Admin)
+
+Returns all job applications across all postings for admin management.
+
+**Endpoint**
+
+```
+GET /applications/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/applications/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/applications/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
+[
+  {
+    "id": 12,
+    "app_id": "JAPP-012",
+    "role": "Senior Mathematics Teacher",
+    "posting": 1,
+    "candidate_name": "Jane Doe",
+    "status": "Applied",
+    "applied_date": "2026-06-30"
+  }
+]
+```
+
+________________________________________
+
+### 4.4 Update Application Status (Admin)
+
+Update the status of a specific application (e.g., shortlist, reject, select). Triggers an automatic background notification to the candidate.
+
+**Endpoint**
+
+```
+PATCH /applications/{id}/update_status/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/applications/12/update_status/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Path Parameters**
+
+| Parameter | Type    | Required | Description        | Example |
+|-----------|---------|----------|--------------------|---------|
+| id        | Integer | Yes      | Application ID     | 12      |
+
+**Request Body (JSON)**
+
+| Field      | Type   | Required | Description                                   | Allowed Values                                       | Example                          |
+|------------|--------|----------|-----------------------------------------------|------------------------------------------------------|----------------------------------|
+| status     | String | Yes      | New application status                        | Applied, Shortlisted, Selected, Rejected, Offered    | Shortlisted                      |
+| admin_note | String | No       | Internal note visible to admins               |                                                      | Strong experience in algebra.    |
+
+**Example Request**
+
+```json
+PATCH https://rms1-1-suhq.onrender.com/api/applications/12/update_status/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "status": "Shortlisted",
   "admin_note": "Strong experience in algebra."
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 12,
@@ -451,19 +1237,149 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
+________________________________________
+
+### 4.5 Submit General Application (Candidate)
+
+Submit a general application not tied to any specific job posting.
+
+**Endpoint**
+
+```
+POST /general-applications/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/general-applications/
+```
+
+**Auth Required**: Candidate User (JWT Bearer Token)
+
+**Example Request**
+
+```json
+POST https://rms1-1-suhq.onrender.com/api/general-applications/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "experience": "5 years",
+  "qualification": "M.A. English, B.Ed",
+  "preferred_role": "English Teacher",
+  "cover_letter": "I am interested in teaching opportunities."
+}
+```
+
+**Response (201 Created)**
+
+```json
+{
+  "id": 5,
+  "app_id": "GA-005",
+  "candidate_name": "Jane Doe",
+  "preferred_role": "English Teacher",
+  "status": "Applied",
+  "applied_date": "2026-06-30"
+}
+```
+
 ---
 
-## 📅 5. Interview Scheduling Endpoints
+## 📅 5. Interview Scheduling
 
-### POST `/api/interviews/interviews/`
-* **Description**: Schedule an interview.
-* **Auth Required**: Admin User
-* **Request Body**:
+---
+
+### 5.1 Get All Panelists
+
+Returns a list of all available interview panelists.
+
+**Endpoint**
+
+```
+GET /panelists/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/panelists/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/panelists/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
+[
+  {
+    "id": 1,
+    "name": "Dr. Suresh Kumar",
+    "email": "suresh@southpoint.edu",
+    "department": "Science"
+  },
+  {
+    "id": 2,
+    "name": "Prof. Anil Baruah",
+    "email": "anil@southpoint.edu",
+    "department": "Science"
+  }
+]
+```
+
+________________________________________
+
+### 5.2 Schedule an Interview
+
+Schedule an interview for a shortlisted candidate.
+
+**Endpoint**
+
+```
+POST /interviews/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/interviews/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Request Body (JSON)**
+
+| Field          | Type     | Required | Description                        | Example                                    |
+|----------------|----------|----------|------------------------------------|--------------------------------------------|
+| application    | Integer  | Yes      | Application ID                     | 12                                         |
+| candidate_name | String   | Yes      | Name of the candidate              | Jane Doe                                   |
+| role           | String   | Yes      | Role being interviewed for         | Senior Mathematics Teacher                 |
+| date           | String   | Yes      | Interview date (YYYY-MM-DD)        | 2026-07-05                                 |
+| time           | String   | Yes      | Interview time (HH:MM:SS)         | 14:00:00                                   |
+| mode           | String   | Yes      | Interview mode                     | Online, Offline                            |
+| meeting_link   | String   | No       | Meeting link (for online mode)     | https://meet.google.com/abc-defg-hij       |
+| round          | Integer  | Yes      | Interview round number             | 1                                          |
+| panel          | Array    | Yes      | List of panelist IDs               | [1, 2]                                     |
+
+**Example Request**
+
+```json
+POST https://rms1-1-suhq.onrender.com/api/interviews/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "application": 12,
   "candidate_name": "Jane Doe",
-  "role": "High School Math Teacher",
+  "role": "Senior Mathematics Teacher",
   "date": "2026-07-05",
   "time": "14:00:00",
   "mode": "Online",
@@ -472,13 +1388,15 @@ All endpoints have a `/api/` prefix.
   "panel": [1, 2]
 }
 ```
-* **Response (201 Created)**:
+
+**Response (201 Created)**
+
 ```json
 {
   "id": 6,
   "interview_id": "INT-006",
   "candidate_name": "Jane Doe",
-  "role": "High School Math Teacher",
+  "role": "Senior Mathematics Teacher",
   "date": "2026-07-05",
   "time": "14:00:00",
   "mode": "Online",
@@ -489,24 +1407,106 @@ All endpoints have a `/api/` prefix.
     {
       "id": 1,
       "name": "Dr. Suresh Kumar",
-      "email": "suresh@school.com",
+      "email": "suresh@southpoint.edu",
       "department": "Science"
     },
     {
       "id": 2,
       "name": "Prof. Anil Baruah",
-      "email": "anil@school.com",
+      "email": "anil@southpoint.edu",
       "department": "Science"
     }
   ]
 }
 ```
 
-### PATCH `/api/interviews/interviews/{id}/score/`
-* **Description**: Submit scores and feedback for the interview (triggers async Celery background notification).
-* **Auth Required**: Admin/Panelist User
-* **Request Body**:
+________________________________________
+
+### 5.3 Get All Interviews
+
+Returns all scheduled interviews for admin management.
+
+**Endpoint**
+
+```
+GET /interviews/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/interviews/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/interviews/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
+[
+  {
+    "id": 6,
+    "interview_id": "INT-006",
+    "candidate_name": "Jane Doe",
+    "role": "Senior Mathematics Teacher",
+    "date": "2026-07-05",
+    "time": "14:00:00",
+    "mode": "Online",
+    "status": "Scheduled",
+    "round": 1
+  }
+]
+```
+
+________________________________________
+
+### 5.4 Submit Interview Score & Feedback
+
+Submit scores and feedback for a completed interview. Triggers an automatic background notification to the candidate.
+
+**Endpoint**
+
+```
+PATCH /interviews/{id}/score/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/interviews/6/score/
+```
+
+**Auth Required**: Admin/Panelist User (JWT Bearer Token)
+
+**Path Parameters**
+
+| Parameter | Type    | Required | Description      | Example |
+|-----------|---------|----------|------------------|---------|
+| id        | Integer | Yes      | Interview ID     | 6       |
+
+**Request Body (JSON)**
+
+| Field          | Type    | Required | Description                   | Allowed Values                          | Example                                       |
+|----------------|---------|----------|-------------------------------|-----------------------------------------|-----------------------------------------------|
+| score          | Integer | Yes      | Interview score (0–100)       | 0 to 100                               | 85                                            |
+| recommendation | String  | Yes      | Panelist recommendation       | Selected, Rejected, On Hold             | Selected                                      |
+| feedback       | String  | No       | Detailed feedback text        |                                         | Strong communication and subject matter skills.|
+| status         | String  | Yes      | Updated interview status      | Completed, No Show, Cancelled           | Completed                                     |
+
+**Example Request**
+
+```json
+PATCH https://rms1-1-suhq.onrender.com/api/interviews/6/score/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "score": 85,
   "recommendation": "Selected",
@@ -514,7 +1514,9 @@ All endpoints have a `/api/` prefix.
   "status": "Completed"
 }
 ```
-* **Response (200 OK)**:
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 6,
@@ -529,39 +1531,107 @@ All endpoints have a `/api/` prefix.
 
 ## ✉️ 6. Offers & Onboarding
 
-### POST `/api/onboarding/offers/`
-* **Description**: Issue a new offer.
-* **Auth Required**: Admin User
-* **Request Body**:
+---
+
+### 6.1 Issue a New Offer
+
+Create and send an offer letter to a selected candidate.
+
+**Endpoint**
+
+```
+POST /offers/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/offers/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Request Body (JSON)**
+
+| Field          | Type    | Required | Description                      | Example                      |
+|----------------|---------|----------|----------------------------------|------------------------------|
+| candidate      | Integer | Yes      | Candidate User ID                | 15                           |
+| candidate_name | String  | Yes      | Candidate full name              | Jane Doe                     |
+| role           | String  | Yes      | Role being offered               | Senior Mathematics Teacher   |
+| ctc            | String  | Yes      | Cost to company / salary offered | ₹45,000 INR                  |
+| issued_date    | String  | Yes      | Date offer was issued (ISO)      | 2026-06-30                   |
+| expiry_date    | String  | Yes      | Date offer expires (ISO)         | 2026-07-05                   |
+| joining_date   | String  | Yes      | Expected joining date (ISO)      | 2026-07-20                   |
+| status         | String  | No       | Initial offer status             | Sent (default)               |
+
+**Example Request**
+
 ```json
+POST https://rms1-1-suhq.onrender.com/api/offers/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
 {
   "candidate": 15,
   "candidate_name": "Jane Doe",
-  "role": "High School Math Teacher",
-  "ctc": "45,000 INR",
-  "issued_date": "2026-06-29",
+  "role": "Senior Mathematics Teacher",
+  "ctc": "₹45,000 INR",
+  "issued_date": "2026-06-30",
   "expiry_date": "2026-07-05",
   "joining_date": "2026-07-20",
   "status": "Sent"
 }
 ```
-* **Response (201 Created)**:
+
+**Response (201 Created)**
+
 ```json
 {
   "id": 4,
   "offer_id": "OFR-004",
   "candidate_name": "Jane Doe",
-  "role": "High School Math Teacher",
-  "ctc": "45,000 INR",
+  "role": "Senior Mathematics Teacher",
+  "ctc": "₹45,000 INR",
   "status": "Sent",
   "joining_date": "2026-07-20"
 }
 ```
 
-### POST `/api/onboarding/offers/{id}/accept/`
-* **Description**: Candidate accepts the offer (initiates onboarding and queues notifications in Celery).
-* **Auth Required**: Candidate User
-* **Response (200 OK)**:
+________________________________________
+
+### 6.2 Accept an Offer (Candidate)
+
+Candidate accepts the offer. This automatically initiates onboarding and queues a notification.
+
+**Endpoint**
+
+```
+POST /offers/{id}/accept/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/offers/4/accept/
+```
+
+**Auth Required**: Candidate User (JWT Bearer Token)
+
+**Path Parameters**
+
+| Parameter | Type    | Required | Description  | Example |
+|-----------|---------|----------|--------------|---------|
+| id        | Integer | Yes      | Offer ID     | 4       |
+
+**Example Request**
+
+```
+POST https://rms1-1-suhq.onrender.com/api/offers/4/accept/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 4,
@@ -571,31 +1641,137 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
+________________________________________
+
+### 6.3 Get All Onboarding Records
+
+Returns all onboarding records for admin management.
+
+**Endpoint**
+
+```
+GET /onboarding/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/onboarding/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/onboarding/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
+```json
+[
+  {
+    "id": 1,
+    "candidate_name": "Jane Doe",
+    "role": "Senior Mathematics Teacher",
+    "joining_date": "2026-07-20",
+    "status": "Pending",
+    "documents_submitted": false
+  }
+]
+```
+
 ---
 
-## 🔔 7. Notifications Endpoints
+## 🔔 7. Notifications
 
-### GET `/api/notifications/`
-* **Description**: Retrieve active notifications for the logged-in user.
-* **Auth Required**: Authenticated User
-* **Response (200 OK)**:
+---
+
+### 7.1 Get My Notifications
+
+Retrieve all notifications for the currently logged-in user.
+
+**Endpoint**
+
+```
+GET /notifications/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/notifications/
+```
+
+**Auth Required**: Authenticated User (JWT Bearer Token)
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/notifications/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
 [
   {
     "id": 102,
     "type": "offer_accepted",
     "title": "Offer Accepted",
-    "message": "You have accepted the offer for High School Math Teacher. Onboarding has been initiated.",
+    "message": "You have accepted the offer for Senior Mathematics Teacher. Onboarding has been initiated.",
     "is_read": false,
-    "created_at": "2026-06-29T22:45:12+05:30"
+    "created_at": "2026-06-30T22:45:12+05:30"
+  },
+  {
+    "id": 101,
+    "type": "status_update",
+    "title": "Application Shortlisted",
+    "message": "Your application for Senior Mathematics Teacher has been shortlisted.",
+    "is_read": true,
+    "created_at": "2026-06-30T18:30:00+05:30"
   }
 ]
 ```
 
-### PATCH `/api/notifications/{id}/mark_read/`
-* **Description**: Mark a single notification as read.
-* **Auth Required**: Authenticated User
-* **Response (200 OK)**:
+________________________________________
+
+### 7.2 Mark Single Notification as Read
+
+Mark a specific notification as read.
+
+**Endpoint**
+
+```
+PATCH /notifications/{id}/mark_read/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/notifications/102/mark_read/
+```
+
+**Auth Required**: Authenticated User (JWT Bearer Token)
+
+**Path Parameters**
+
+| Parameter | Type    | Required | Description        | Example |
+|-----------|---------|----------|--------------------|---------|
+| id        | Integer | Yes      | Notification ID    | 102     |
+
+**Example Request**
+
+```
+PATCH https://rms1-1-suhq.onrender.com/api/notifications/102/mark_read/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
 {
   "id": 102,
@@ -603,12 +1779,81 @@ All endpoints have a `/api/` prefix.
 }
 ```
 
-### PATCH `/api/notifications/mark_all_read/`
-* **Description**: Mark all notifications for the current user as read.
-* **Auth Required**: Authenticated User
-* **Response (200 OK)**:
+________________________________________
+
+### 7.3 Mark All Notifications as Read
+
+Mark all notifications for the current user as read.
+
+**Endpoint**
+
+```
+PATCH /notifications/mark_all_read/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/notifications/mark_all_read/
+```
+
+**Auth Required**: Authenticated User (JWT Bearer Token)
+
+**Example Request**
+
+```
+PATCH https://rms1-1-suhq.onrender.com/api/notifications/mark_all_read/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
 ```json
 {
   "message": "All notifications marked as read."
 }
 ```
+
+---
+
+## 🔑 Authentication Notes
+
+All protected endpoints require a JWT Bearer Token in the request header:
+
+```
+Authorization: Bearer <access_token>
+```
+
+**How to obtain tokens:**
+1. Call `POST /api/auth/login/` with valid email and password
+2. Use the returned `access` token in the `Authorization` header
+3. When the access token expires, call `POST /api/auth/token/refresh/` with the `refresh` token to get a new access token
+
+**Test Credentials (Seeded Data):**
+
+| Role       | Email                       | Password    |
+|------------|-----------------------------|-------------|
+| HR Admin   | hr@southpoint.edu           | Admin@123   |
+| Panelist   | panelist@southpoint.edu     | Panel@123   |
+| Candidate  | priya.sharma@email.com      | Priya@123   |
+
+---
+
+## ⚙️ Status Codes Reference
+
+| Code | Meaning               | When                                        |
+|------|-----------------------|---------------------------------------------|
+| 200  | OK                    | Successful GET, PUT, PATCH requests         |
+| 201  | Created               | Successful POST (new resource created)      |
+| 204  | No Content            | Successful DELETE (resource removed)        |
+| 400  | Bad Request           | Invalid or missing request parameters       |
+| 401  | Unauthorized          | Missing or expired JWT token                |
+| 403  | Forbidden             | Insufficient permissions (wrong role)       |
+| 404  | Not Found             | Resource does not exist                     |
+| 429  | Too Many Requests     | Rate limit exceeded                         |
+| 500  | Internal Server Error | Unexpected server-side error                |
+
+---
+
+*Last Updated: June 30, 2026*
+*South Point School — Recruitment Management System (RMS) Backend*
