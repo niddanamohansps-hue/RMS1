@@ -20,7 +20,7 @@ import os
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,sps-rms-swxo.onrender.com"
+    "localhost,127.0.0.1,https://rms1-1-suhq.onrender.com"
 ).split(",")
 
 render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
