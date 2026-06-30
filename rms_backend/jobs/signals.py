@@ -29,3 +29,42 @@ def clear_caches_on_change(sender, **kwargs):
     statistics, and public job posting lists immediately show fresh, consistent data.
     """
     cache.clear()
+
+
+# ── Auto-create ApprovalRequest when a RoleRequest is created ─────────────
+@receiver(post_save, sender=RoleRequest)
+def create_approval_for_role_request(sender, instance, created, **kwargs):
+    """
+    When a new RoleRequest is submitted, automatically create a corresponding
+    ApprovalRequest so it appears in the /api/approvals/ list.
+    """
+    if created:
+        ApprovalRequest.objects.create(
+            request_id=instance.request_id,
+            type="Role Request",
+            title=instance.role,
+            department=instance.department,
+            submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
+            status="Pending",
+            role_request=instance,
+        )
+
+
+# ── Auto-create ApprovalRequest when a JobRequest is created ──────────────
+@receiver(post_save, sender=JobRequest)
+def create_approval_for_job_request(sender, instance, created, **kwargs):
+    """
+    When a new JobRequest is submitted, automatically create a corresponding
+    ApprovalRequest so it appears in the /api/approvals/ list.
+    """
+    if created:
+        ApprovalRequest.objects.create(
+            request_id=instance.request_id,
+            type="Job Request",
+            title=instance.role,
+            department="",
+            submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
+            status="Pending",
+            job_request=instance,
+        )
+
