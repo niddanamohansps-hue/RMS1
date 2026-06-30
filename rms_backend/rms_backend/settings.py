@@ -23,6 +23,10 @@ ALLOWED_HOSTS = os.environ.get(
     "localhost,127.0.0.1,sps-rms-swxo.onrender.com"
 ).split(",")
 
+render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if render_host and render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_host)
+
 # ─── Installed Apps ──────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",
