@@ -862,7 +862,7 @@ Authorization: Bearer <access_token>
 
 ### 3.1 Submit a Role Request
 
-Submit a request for opening a new role headcount.
+Submit a request for opening a new role headcount. **An ApprovalRequest is automatically created** so the request immediately appears in the `/api/approvals/` list for review.
 
 **Endpoint**
 
@@ -905,7 +905,7 @@ Content-Type: application/json
 ```json
 {
   "id": 4,
-  "request_id": "RR-004",
+  "request_id": "RR-2026-0004",
   "department": "Arts",
   "role": "Music Teacher",
   "justification": "Increased student enrollment in humanities stream.",
@@ -915,11 +915,13 @@ Content-Type: application/json
 }
 ```
 
+> **Note:** This automatically creates a corresponding entry in `/api/approvals/` with `type: "Role Request"` and `status: "Pending"`.
+
 ________________________________________
 
 ### 3.2 Get All Approval Requests
 
-Returns all pending role requests and job requests awaiting approval.
+Returns all approval requests. These are auto-created whenever a Role Request or Job Request is submitted. Supports filtering by `status` and `type`.
 
 **Endpoint**
 
@@ -942,21 +944,59 @@ GET https://rms1-1-suhq.onrender.com/api/approvals/
 Authorization: Bearer <access_token>
 ```
 
+**Query Parameters**
+
+| Parameter | Type   | Required | Description                          | Allowed Values                       | Example        |
+|-----------|--------|----------|--------------------------------------|--------------------------------------|----------------|
+| status    | String | No       | Filter by approval status            | Pending, Approved, Rejected, Sent Back | Pending        |
+| type      | String | No       | Filter by request type               | Role Request, Job Request            | Role Request   |
+
+**Example Requests**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/approvals/
+
+GET https://rms1-1-suhq.onrender.com/api/approvals/?status=Pending
+
+GET https://rms1-1-suhq.onrender.com/api/approvals/?type=Role%20Request
+```
+
 **Response (200 OK)**
 
 ```json
-[
-  {
-    "id": 2,
-    "request_id": "RR-004",
-    "type": "Role Request",
-    "title": "Music Teacher",
-    "department": "Arts",
-    "status": "Pending",
-    "date": "2026-06-30",
-    "history": []
-  }
-]
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "request_id": "RR-2026-0004",
+      "type": "Role Request",
+      "title": "Music Teacher",
+      "department": "Arts",
+      "submitted_by": "HR Admin",
+      "status": "Pending",
+      "date": "2026-06-30",
+      "job_request": null,
+      "role_request": 4,
+      "history": []
+    },
+    {
+      "id": 2,
+      "request_id": "JR-2026-0001",
+      "type": "Job Request",
+      "title": "Physics Teacher",
+      "department": "",
+      "submitted_by": "HR Admin",
+      "status": "Pending",
+      "date": "2026-06-30",
+      "job_request": 1,
+      "role_request": null,
+      "history": []
+    }
+  ]
+}
 ```
 
 ________________________________________
@@ -1023,6 +1063,197 @@ Content-Type: application/json
       "acted_by": "Principal",
       "date": "2026-06-30",
       "note": "Approved for headcount increase."
+    }
+  ]
+}
+```
+
+________________________________________
+
+### 3.4 Submit a Job Request
+
+Submit a request to create a new job vacancy. **An ApprovalRequest is automatically created** so the request immediately appears in the `/api/approvals/` list for review.
+
+**Endpoint**
+
+```
+POST /job-requests/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-requests/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Request Body (JSON)**
+
+| Field         | Type    | Required | Description                      | Example                         |
+|---------------|---------|----------|----------------------------------|---------------------------------|
+| role          | String  | Yes      | Job role title                   | Physics Teacher                 |
+| vacancies     | Integer | No       | Number of vacancies (default 1)  | 2                               |
+| experience    | String  | No       | Experience requirement           | 3+ years                        |
+| salary_range  | String  | No       | Salary range                     | ₹40K–₹50K                      |
+| type          | String  | No       | Employment type (default Full-time) | Full-time, Part-time         |
+| qualification | String  | No       | Required qualification           | M.Sc Physics, B.Ed              |
+
+**Example Request**
+
+```json
+POST https://rms1-1-suhq.onrender.com/api/job-requests/
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "role": "Physics Teacher",
+  "vacancies": 2,
+  "experience": "3+ years",
+  "salary_range": "₹40K–₹50K",
+  "type": "Full-time",
+  "qualification": "M.Sc Physics, B.Ed"
+}
+```
+
+**Response (201 Created)**
+
+```json
+{
+  "id": 1,
+  "request_id": "JR-2026-0001",
+  "role": "Physics Teacher",
+  "vacancies": 2,
+  "experience": "3+ years",
+  "salary_range": "₹40K–₹50K",
+  "type": "Full-time",
+  "qualification": "M.Sc Physics, B.Ed",
+  "status": "Pending",
+  "submitted_by": "",
+  "created_at": "2026-06-30T13:50:00+05:30",
+  "updated_at": "2026-06-30T13:50:00+05:30",
+  "created_by": 1
+}
+```
+
+> **Note:** This automatically creates a corresponding entry in `/api/approvals/` with `type: "Job Request"` and `status: "Pending"`.
+
+________________________________________
+
+### 3.5 Get All Role Requests
+
+Returns all role requests. Supports filtering by `status` and `department`.
+
+**Endpoint**
+
+```
+GET /role-requests/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/role-requests/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Query Parameters**
+
+| Parameter  | Type   | Required | Description              | Allowed Values                | Example  |
+|------------|--------|----------|--------------------------|-------------------------------|----------|
+| status     | String | No       | Filter by request status | Pending, Approved, Rejected   | Pending  |
+| department | String | No       | Filter by department     |                               | Arts     |
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/role-requests/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 4,
+      "created_by_name": "HR Admin",
+      "request_id": "RR-2026-0004",
+      "department": "Arts",
+      "role": "Music Teacher",
+      "justification": "Increased student enrollment in humanities stream.",
+      "status": "Pending",
+      "submitted_by": "",
+      "date": "2026-06-30",
+      "reviewed_at": null,
+      "reviewer_note": "",
+      "created_by": 1
+    }
+  ]
+}
+```
+
+________________________________________
+
+### 3.6 Get All Job Requests
+
+Returns all job requests. Supports filtering by `status` and `type`.
+
+**Endpoint**
+
+```
+GET /job-requests/
+```
+
+**Request URL**
+
+```
+https://rms1-1-suhq.onrender.com/api/job-requests/
+```
+
+**Auth Required**: Admin User (JWT Bearer Token)
+
+**Query Parameters**
+
+| Parameter | Type   | Required | Description              | Allowed Values                | Example    |
+|-----------|--------|----------|--------------------------|-------------------------------|------------|
+| status    | String | No       | Filter by request status | Pending, Approved, Rejected   | Pending    |
+| type      | String | No       | Filter by employment type|                               | Full-time  |
+
+**Example Request**
+
+```
+GET https://rms1-1-suhq.onrender.com/api/job-requests/
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "request_id": "JR-2026-0001",
+      "role": "Physics Teacher",
+      "vacancies": 2,
+      "experience": "3+ years",
+      "salary_range": "₹40K–₹50K",
+      "type": "Full-time",
+      "qualification": "M.Sc Physics, B.Ed",
+      "status": "Pending",
+      "submitted_by": "",
+      "created_at": "2026-06-30T13:50:00+05:30",
+      "updated_at": "2026-06-30T13:50:00+05:30",
+      "created_by": 1
     }
   ]
 }
