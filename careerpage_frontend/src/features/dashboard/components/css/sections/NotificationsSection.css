@@ -1,0 +1,71 @@
+/* ─── NotificationsSection.css ───────────────────────────────────────────── */
+:root {
+  --ns-gold: #c9a84c;
+  --ns-ink: #1a0a0a;
+  --ns-muted: #9a8a8a;
+}
+
+.ns-page-title {
+  font-family: 'Playfair Display', serif;
+  color: var(--ns-ink);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.ns-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Notification row ────────────────────────────────────────────────────── */
+.ns-item {
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ns-item--new-unread {
+  background : #faf4d5;
+  border     : 1px solid #e8d8a7;
+}
+
+.ns-item--read {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+.ns-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.ns-dot--unread {
+  background: var(--ns-gold);
+}
+
+.ns-dot--read {
+  background: #d1d5db;
+}
+
+.ns-content {
+  flex: 1;
+}
+
+.ns-text {
+  font-size: 0.85rem;
+  color: var(--ns-ink);
+  line-height: 1.5;
+}
+
+.ns-time {
+  font-size: 0.72rem;
+  color: var(--ns-muted);
+  margin-top: 4px;
+}

@@ -1,0 +1,158 @@
+/* ─── OnboardingProgress.css ─────────────────────────────────────────────── */
+:root {
+  --op-maroon: #72102a;
+  --op-border: #e5e7eb;
+  --op-ink: #1a0a0a;
+  --op-muted: #6b5c5c;
+  --op-faint: #9a8a8a;
+  --op-divider: #f0f0f0;
+}
+
+.op-card {
+  background: #fff;
+  border: 1px solid var(--op-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.op-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--op-divider);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.op-header svg {
+  color: var(--op-maroon);
+}
+
+
+.op-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--op-ink);
+  margin: 0;
+}
+
+.op-body {
+  padding: 16px 20px;
+}
+
+.op-progress-section {
+  margin-bottom: 16px;
+}
+
+.op-progress-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.op-progress-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a4a4a;
+}
+
+.op-progress-pct {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--op-maroon);
+}
+
+.op-progress-bar-wrap {
+  background: #f0f0f0;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.op-progress-bar-fill {
+  background: var(--op-maroon);
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s;
+}
+
+/* ── Step item list ──────────────────────────────────────────────────────── */
+.op-step-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.op-step-item--last {
+  border-bottom: none;
+}
+
+.op-step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.op-step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.op-step-circle--done {
+  border: 2px solid #065f46;
+  background: #065f46;
+}
+
+.op-step-circle--undone {
+  border: 2px solid #d1d5db;
+  background: transparent;
+}
+
+.op-step-num {
+  font-size: 0.6rem;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.op-step-line {
+  width: 2px;
+  flex: 1;
+  min-height: 12px;
+}
+
+.op-step-line--done {
+  background: #065f46;
+}
+
+.op-step-line--undone {
+  background: #e5e7eb;
+}
+
+.op-step-content {
+  padding-bottom: 8px;
+}
+
+.op-step-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.op-step-title--done {
+  color: #065f46;
+}
+
+.op-step-title--undone {
+  color: var(--op-ink);
+}
+
+.op-step-desc {
+  font-size: 0.75rem;
+  color: var(--op-faint);
+  margin-top: 2px;
+}

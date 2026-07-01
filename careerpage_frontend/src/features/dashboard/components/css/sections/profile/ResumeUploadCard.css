@@ -1,0 +1,116 @@
+/* ─── ResumeUploadCard.css ───────────────────────────────────────────────── */
+:root {
+  --ru-maroon: #72102a;
+  --ru-border: #e5e7eb;
+  --ru-ink: #1a0a0a;
+  --ru-muted: #6b5c5c;
+  --ru-canvas: #faf8f5;
+  --ru-dropzone-bg: #fdf8f9;
+  --ru-error: #d00;
+}
+
+.ru-card {
+  background: #fff;
+  border: 1px solid var(--ru-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.ru-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ru-maroon);
+  margin-bottom: 16px;
+  font-family: 'Playfair Display', serif;
+}
+
+.ru-status-box {
+  border: 1px solid var(--ru-border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+  background: var(--ru-canvas);
+}
+
+.ru-status-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ru-ink);
+  margin-bottom: 6px;
+}
+
+.ru-file-info {
+  font-size: 0.8rem;
+  color: var(--ru-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ru-btn-action {
+  border: 1px solid var(--ru-maroon);
+  color: var(--ru-maroon);
+  background: white;
+  border-radius: 6px;
+  padding: 7px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.ru-btn-action:hover {
+  background: rgba(114, 16, 42, 0.05);
+}
+
+.ru-empty-text {
+  font-size: 0.8rem;
+  color: #9a8a8a;
+  font-style: italic;
+}
+
+/* ── Dropzone ────────────────────────────────────────────────────────────── */
+.ru-dropzone {
+  border: 2px dashed var(--ru-maroon);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--ru-dropzone-bg);
+}
+
+.ru-upload-icon {
+  margin: 0 auto 10px;
+}
+
+.ru-dropzone-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--ru-ink);
+}
+
+.ru-dropzone-subtitle {
+  color: var(--ru-muted);
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.ru-error-msg {
+  color: var(--ru-error);
+  font-size: 0.75rem;
+  margin-top: 6px;
+}
+
+.ru-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ru-hidden-input {
+  display: none;
+}
+

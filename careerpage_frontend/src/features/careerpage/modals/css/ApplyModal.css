@@ -1,0 +1,488 @@
+/* ─── ApplyModal.css ───────────────────────────────────────────────────────── */
+:root {
+  --am-maroon : #72102a;
+  --am-ink    : #1a0a0a;
+  --am-muted  : #6b5c5c;
+  --am-faint  : #9a8a8a;
+  --am-border : #e5e7eb;
+  --am-bg     : #f9fafb;
+  --am-canvas : #f3f4f6;
+}
+
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+.am-backdrop {
+  position        : fixed;
+  inset           : 0;
+  z-index         : 1000;
+  background      : rgba(0, 0, 0, 0.55);
+  display         : flex;
+  align-items     : flex-start;
+  justify-content : center;
+  padding         : 24px 16px;
+  overflow-y      : auto;
+}
+
+/* ── Modal container ─────────────────────────────────────────────────────── */
+.am-modal {
+  position      : relative;
+  background    : var(--am-canvas);
+  border-radius : 16px;
+  width         : 100%;
+  max-width     : 580px;
+  overflow      : hidden;
+  box-shadow    : 0 24px 60px rgba(0, 0, 0, 0.35);
+  margin-bottom : 24px;
+}
+
+/* ── Close button ────────────────────────────────────────────────────────── */
+.am-close-btn {
+  position        : absolute;
+  top             : 14px;
+  right           : 14px;
+  background      : rgba(255, 255, 255, 0.2);
+  border          : none;
+  border-radius   : 50%;
+  width           : 30px;
+  height          : 30px;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  z-index         : 10;
+}
+
+/* ── Header banner ───────────────────────────────────────────────────────── */
+.am-header {
+  background : linear-gradient(135deg, #72102a 0%, #3a0a1a 100%);
+  padding    : 28px 24px 22px;
+}
+
+.am-header-title {
+  color       : #fff;
+  font-size   : 1.4rem;
+  font-weight : 700;
+  font-family : 'Playfair Display', serif;
+  margin-bottom: 8px;
+}
+
+.am-header-sub {
+  color       : rgba(255, 255, 255, 0.75);
+  font-size   : 0.85rem;
+  line-height : 1.6;
+}
+
+/* ── Success state ───────────────────────────────────────────────────────── */
+.am-success {
+  padding         : 40px 32px;
+  text-align      : center;
+  background      : #ffffff;
+  border-radius   : 12px;
+  margin          : 20px;
+  box-shadow      : 0 10px 30px rgba(0, 0, 0, 0.05);
+  border          : 1px solid rgba(114, 16, 42, 0.08);
+  display         : flex;
+  flex-direction  : column;
+  align-items     : center;
+}
+
+.am-success-logo {
+  height        : 95px;
+  width         : auto;
+  margin-bottom : 24px;
+  filter        : drop-shadow(0 4px 10px rgba(0, 0, 0, 0.06));
+}
+
+.am-success-badge-container {
+  display         : flex;
+  justify-content : center;
+  margin-bottom   : 20px;
+}
+
+.am-success-icon-wrapper {
+  background      : rgba(114, 16, 42, 0.08);
+  border          : 2px solid rgba(114, 16, 42, 0.15);
+  border-radius   : 50%;
+  padding         : 14px;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  box-shadow      : 0 6px 20px rgba(114, 16, 42, 0.1);
+  animation       : amSuccessPulse 2s infinite ease-in-out;
+}
+
+.am-success-check-icon {
+  color : var(--am-maroon);
+}
+
+@keyframes amSuccessPulse {
+  0% {
+    transform  : scale(1);
+    box-shadow : 0 6px 20px rgba(114, 16, 42, 0.1);
+  }
+  50% {
+    transform  : scale(1.05);
+    box-shadow : 0 8px 24px rgba(114, 16, 42, 0.2);
+  }
+  100% {
+    transform  : scale(1);
+    box-shadow : 0 6px 20px rgba(114, 16, 42, 0.1);
+  }
+}
+
+.am-success-title {
+  font-family : 'Playfair Display', serif;
+  color       : var(--am-maroon);
+  font-size   : 1.45rem;
+  font-weight : 700;
+  margin      : 0 0 12px;
+}
+
+.am-success-divider {
+  width         : 40px;
+  height        : 3px;
+  background    : #c9a84c;
+  border-radius : 2px;
+  margin-bottom : 18px;
+}
+
+.am-success-msg {
+  color       : var(--am-muted);
+  font-size   : 0.9rem;
+  line-height : 1.6;
+  margin-bottom: 24px;
+  max-width   : 420px;
+}
+
+.am-success-next-steps {
+  width         : 100%;
+  background    : #fdf8f9;
+  border        : 1px solid rgba(114, 16, 42, 0.08);
+  border-radius : 8px;
+  padding       : 18px 20px;
+  margin-bottom : 28px;
+  text-align    : left;
+  box-sizing    : border-box;
+}
+
+.am-success-next-steps h4 {
+  font-size     : 0.85rem;
+  font-weight   : 700;
+  color         : var(--am-maroon);
+  margin        : 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.am-success-next-steps ul {
+  margin       : 0;
+  padding-left : 18px;
+  list-style-type: disc;
+}
+
+.am-success-next-steps li {
+  font-size     : 0.8rem;
+  color         : #5a4c4c;
+  line-height   : 1.5;
+  margin-bottom : 6px;
+}
+
+.am-success-next-steps li:last-child {
+  margin-bottom : 0;
+}
+
+.am-success-close {
+  background    : linear-gradient(135deg, var(--am-maroon) 0%, #901633 100%);
+  color         : #fff;
+  border        : none;
+  border-radius : 8px;
+  padding       : 12px 36px;
+  font-weight   : 600;
+  font-size     : 0.875rem;
+  cursor        : pointer;
+  box-shadow    : 0 4px 12px rgba(114, 16, 42, 0.25);
+  transition    : all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.am-success-close:hover {
+  transform  : translateY(-2px);
+  box-shadow : 0 6px 16px rgba(114, 16, 42, 0.4);
+}
+
+/* ── Form body ───────────────────────────────────────────────────────────── */
+.am-form-body {
+  padding : 20px;
+}
+
+/* ── Section card ────────────────────────────────────────────────────────── */
+.am-section {
+  background    : #fff;
+  border        : 1px solid var(--am-border);
+  border-radius : 12px;
+  padding       : 20px;
+  margin-bottom : 16px;
+}
+
+.am-section-title {
+  font-weight   : 700;
+  font-size     : 0.95rem;
+  color         : var(--am-maroon);
+  margin-bottom : 16px;
+  font-family   : 'Playfair Display', serif;
+}
+
+/* ── Labels ──────────────────────────────────────────────────────────────── */
+.am-label {
+  font-size     : 0.78rem;
+  font-weight   : 600;
+  color         : #4a4a4a;
+  display       : block;
+  margin-bottom : 5px;
+}
+
+.am-label-icon {
+  display     : flex;
+  align-items : center;
+  gap         : 5px;
+}
+
+.am-label-icon svg {
+  color : var(--am-maroon);
+}
+
+.am-required {
+  color : var(--am-maroon);
+}
+
+.am-optional {
+  font-weight : 400;
+  color       : var(--am-faint);
+}
+
+/* ── Inputs / selects ────────────────────────────────────────────────────── */
+.am-input,
+.am-select {
+  width         : 100%;
+  padding       : 10px 12px;
+  border        : 1.5px solid var(--am-border);
+  border-radius : 8px;
+  font-size     : 0.875rem;
+  outline       : none;
+  background    : var(--am-bg);
+  color         : var(--am-ink);
+  box-sizing    : border-box;
+  transition    : border-color 0.2s ease;
+}
+
+.am-input:focus,
+.am-select:focus {
+  border-color : var(--am-maroon);
+}
+
+.am-input--readonly {
+  background : var(--am-canvas);
+  color      : var(--am-muted);
+}
+
+.am-field-full {
+  grid-column : 1 / -1;
+}
+
+/* ── Multi-select trigger ────────────────────────────────────────────────── */
+.am-multiselect-trigger {
+  min-height    : 42px;
+  padding       : 8px 32px 8px 12px;
+  border        : 1.5px solid var(--am-border);
+  border-radius : 8px;
+  background    : var(--am-bg);
+  cursor        : pointer;
+  display       : flex;
+  flex-wrap     : wrap;
+  gap           : 4px;
+  position      : relative;
+}
+
+.am-multiselect-placeholder {
+  color       : #9ca3af;
+  font-size   : 0.875rem;
+  align-self  : center;
+}
+
+.am-multiselect-tag {
+  background    : rgba(114, 16, 42, 0.1);
+  color         : var(--am-maroon);
+  font-size     : 0.72rem;
+  font-weight   : 600;
+  padding       : 2px 8px;
+  border-radius : 999px;
+  cursor        : pointer;
+  display       : flex;
+  align-items   : center;
+  gap           : 4px;
+}
+
+.am-multiselect-arrow {
+  position   : absolute;
+  right      : 10px;
+  top        : 50%;
+  transition : transform 0.2s;
+  color      : var(--am-muted);
+  font-size  : 0.75rem;
+}
+
+/* ── Multi-select dropdown ───────────────────────────────────────────────── */
+.am-multiselect-dropdown {
+  position      : absolute;
+  top           : calc(100% + 4px);
+  left          : 0;
+  right         : 0;
+  background    : #fff;
+  border        : 1.5px solid var(--am-border);
+  border-radius : 8px;
+  z-index       : 100;
+  max-height    : 220px;
+  overflow-y    : auto;
+  box-shadow    : 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.am-multiselect-custom-row {
+  padding        : 8px;
+  border-bottom  : 1px solid #f0f0f0;
+  display        : flex;
+  gap            : 6px;
+}
+
+.am-multiselect-custom-input {
+  flex          : 1;
+  padding       : 6px 10px;
+  border        : 1px solid var(--am-border);
+  border-radius : 6px;
+  font-size     : 0.8rem;
+  outline       : none;
+}
+
+.am-multiselect-add-btn {
+  background    : var(--am-maroon);
+  color         : #fff;
+  border        : none;
+  border-radius : 6px;
+  padding       : 6px 12px;
+  font-size     : 0.78rem;
+  cursor        : pointer;
+  font-weight   : 600;
+}
+
+.am-multiselect-option {
+  padding         : 9px 12px;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  font-size       : 0.82rem;
+  transition      : background 0.1s;
+}
+
+.am-multiselect-option--selected {
+  color      : var(--am-maroon);
+  background : rgba(114, 16, 42, 0.12);
+  font-weight: 600;
+  box-shadow : inset 3px 0 0 var(--am-maroon);
+}
+
+.am-multiselect-option--unselected {
+  color      : var(--am-ink);
+  background : transparent;
+  font-weight: 400;
+}
+
+/* ── Upload area ─────────────────────────────────────────────────────────── */
+.am-upload-zone {
+  border        : 2px dashed var(--am-maroon);
+  border-radius : 10px;
+  padding       : 28px;
+  text-align    : center;
+  cursor        : pointer;
+  background    : #fdf8f9;
+}
+
+.am-upload-zone svg {
+  color  : var(--am-maroon);
+  margin : 0 auto 10px;
+}
+
+.am-upload-filename {
+  color       : var(--am-ink);
+  font-weight : 600;
+  font-size   : 0.875rem;
+}
+
+.am-upload-hint {
+  color      : var(--am-muted);
+  font-size  : 0.75rem;
+  margin-top : 4px;
+}
+
+/* ── Form footer actions ─────────────────────────────────────────────────── */
+.am-form-footer {
+  display         : flex;
+  justify-content : flex-end;
+  gap             : 12px;
+  padding-top     : 4px;
+}
+
+.am-btn-cancel {
+  background    : #fff;
+  border        : 1.5px solid var(--am-border);
+  color         : #4a4a4a;
+  font-weight   : 600;
+  font-size     : 0.875rem;
+  padding       : 12px 28px;
+  border-radius : 8px;
+  cursor        : pointer;
+}
+
+.am-btn-submit {
+  background      : linear-gradient(135deg, var(--am-maroon) 0%, #901633 100%);
+  color           : #fff;
+  font-weight     : 700;
+  font-size       : 0.875rem;
+  padding         : 12px 26px;
+  border-radius   : 8px;
+  border          : none;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  gap             : 10px;
+  box-shadow      : 0 4px 12px rgba(114, 16, 42, 0.25);
+  transition      : all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.am-btn-submit:hover {
+  transform  : translateY(-2px);
+  box-shadow : 0 6px 16px rgba(114, 16, 42, 0.4);
+  background : linear-gradient(135deg, #8c1433 0%, #aa2042 100%);
+}
+
+.am-btn-submit:active {
+  transform  : translateY(0);
+  box-shadow : 0 2px 6px rgba(114, 16, 42, 0.2);
+}
+
+.am-btn-logo {
+  height         : 20px;
+  width          : 20px;
+  object-fit     : contain;
+  filter         : drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  background     : rgba(255, 255, 255, 0.95);
+  padding        : 2px;
+  border-radius  : 50%;
+  border         : 1px solid rgba(255, 255, 255, 0.5);
+  display        : inline-block;
+  vertical-align : middle;
+  box-sizing     : border-box;
+}
+
+/* ── Field spacer ────────────────────────────────────────────────────────── */
+.am-field-mt {
+  margin-top : 14px;
+}

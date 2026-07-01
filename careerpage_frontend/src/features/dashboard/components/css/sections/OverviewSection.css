@@ -1,0 +1,145 @@
+/* ─── OverviewSection.css ────────────────────────────────────────────────── */
+:root {
+  --ov-ink    : #1a0a0a;
+  --ov-muted  : #6b5c5c;
+  --ov-border : #e5e7eb;
+  --ov-divider: #f0f0f0;
+  --ov-faint  : #f9f9f9;
+  --ov-maroon : #72102a;
+}
+
+.ov-page-title {
+  font-family   : 'Playfair Display', serif;
+  color         : var(--ov-ink);
+  font-size     : 1.4rem;
+  font-weight   : 700;
+  margin-bottom : 4px;
+}
+
+.ov-page-sub {
+  color         : var(--ov-muted);
+  font-size     : 0.85rem;
+  margin-bottom : 20px;
+}
+
+/* ── Stats grid ──────────────────────────────────────────────────────────── */
+.ov-stats-grid {
+  display               : grid;
+  grid-template-columns : repeat(auto-fit, minmax(140px, 1fr));
+  gap                   : 14px;
+  margin-bottom         : 24px;
+}
+
+.ov-stat-card {
+  background    : #fff;
+  border        : 1px solid var(--ov-border);
+  border-radius : 10px;
+  padding       : 16px;
+  text-align    : center;
+}
+
+.ov-stat-value {
+  font-size   : 1.8rem;
+  font-weight : 700;
+  line-height : 1;
+}
+
+.ov-stat-label {
+  color      : var(--ov-muted);
+  font-size  : 0.72rem;
+  margin-top : 4px;
+  font-weight: 600;
+}
+
+/* ── Recent Applications card ────────────────────────────────────────────── */
+.ov-recent-card {
+  background    : #fff;
+  border        : 1px solid var(--ov-border);
+  border-radius : 12px;
+  overflow      : hidden;
+}
+
+.ov-recent-header {
+  padding         : 16px 20px;
+  border-bottom   : 1px solid var(--ov-divider);
+  display         : flex;
+  justify-content : space-between;
+  align-items     : center;
+}
+
+.ov-recent-title {
+  font-weight : 700;
+  font-size   : 0.95rem;
+  color       : var(--ov-ink);
+}
+
+.ov-view-all-btn {
+  color       : var(--ov-maroon);
+  font-size   : 0.78rem;
+  font-weight : 600;
+  background  : none;
+  border      : none;
+  cursor      : pointer;
+  display     : flex;
+  align-items : center;
+  gap         : 4px;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.ov-empty {
+  padding    : 30px;
+  text-align : center;
+  color      : var(--ov-muted);
+}
+
+.ov-empty-title {
+  font-size   : 0.85rem;
+  font-weight : 600;
+}
+
+.ov-empty-sub {
+  margin-top : 4px;
+  font-size  : 0.8rem;
+}
+
+/* ── Application row ─────────────────────────────────────────────────────── */
+.ov-app-row {
+  padding         : 14px 20px;
+  border-bottom   : 1px solid var(--ov-faint);
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  gap             : 12px;
+}
+
+.ov-app-title {
+  font-weight : 600;
+  font-size   : 0.875rem;
+  color       : var(--ov-ink);
+}
+
+.ov-app-meta {
+  color       : var(--ov-muted);
+  font-size   : 0.75rem;
+  margin-top  : 2px;
+  display     : flex;
+  gap         : 10px;
+}
+
+.ov-app-meta-item {
+  display     : flex;
+  align-items : center;
+  gap         : 3px;
+}
+
+/* ── Status badge (inline) ───────────────────────────────────────────────── */
+.ov-status-badge {
+  font-size     : 0.7rem;
+  font-weight   : 600;
+  padding       : 4px 10px;
+  border-radius : 999px;
+  display       : flex;
+  align-items   : center;
+  gap           : 4px;
+  white-space   : nowrap;
+}

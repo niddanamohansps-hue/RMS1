@@ -1,0 +1,58 @@
+/* ─── ProfessionalInfoCard.css ───────────────────────────────────────────── */
+:root {
+  --pr-maroon: #72102a;
+  --pr-border: #e5e7eb;
+  --pr-ink: #1a0a0a;
+  --pr-muted: #6b5c5c;
+  --pr-canvas: #faf8f5;
+}
+
+.pr-card {
+  background: #fff;
+  border: 1px solid var(--pr-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.pr-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--pr-maroon);
+  margin-bottom: 16px;
+  font-family: 'Playfair Display', serif;
+}
+
+.pr-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a4a4a;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.pr-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--pr-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  background: var(--pr-canvas);
+  color: var(--pr-ink);
+  box-sizing: border-box;
+}
+
+.pr-group-margin {
+  margin-top: 14px;
+}
+
+.pr-required-star {
+  color: var(--pr-maroon);
+}
+
+.pr-optional-label {
+  font-weight: 400;
+  color: #9a8a8a;
+}
+

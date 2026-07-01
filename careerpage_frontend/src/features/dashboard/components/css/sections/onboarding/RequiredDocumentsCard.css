@@ -1,0 +1,148 @@
+/* ─── RequiredDocumentsCard.css ───────────────────────────────────────────── */
+:root {
+  --rd-maroon: #72102a;
+  --rd-border: #e5e7eb;
+  --rd-ink: #1a0a0a;
+  --rd-muted: #6b5c5c;
+  --rd-divider: #f0f0f0;
+}
+
+.rd-card {
+  background: #fff;
+  border: 1px solid var(--rd-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.rd-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--rd-divider);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rd-header svg {
+  color: var(--rd-maroon);
+}
+
+
+.rd-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--rd-ink);
+  margin: 0;
+}
+
+.rd-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rd-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--rd-maroon);
+  margin-bottom: 8px;
+}
+
+.rd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rd-list--margin {
+  margin-bottom: 20px;
+}
+
+/* ── PF & ESI optional fields box ────────────────────────────────────────── */
+.rd-optional-fields-box {
+  border: 1px solid var(--rd-border);
+  border-radius: 10px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.rd-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a4a4a;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.rd-field-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--rd-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  background: #faf8f5;
+  color: var(--rd-ink);
+  box-sizing: border-box;
+}
+
+.rd-field-input:disabled {
+  background: #f3f4f6;
+  color: var(--rd-muted);
+  cursor: not-allowed;
+}
+
+/* ── Banner ──────────────────────────────────────────────────────────────── */
+.rd-banner--review {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef9f0;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 8px;
+}
+
+.rd-banner-title--review {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #b45309;
+}
+
+.rd-banner-text {
+  color: #374151;
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.rd-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.rd-btn-submit {
+  background: var(--rd-maroon);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.rd-btn-submit:hover {
+  opacity: 0.9;
+}
+
+.rd-banner-icon {
+  flex-shrink: 0;
+}
+

@@ -1,0 +1,566 @@
+/* ─── JobApplicationModal.css ──────────────────────────────────────────────── */
+:root {
+  --jm-maroon : #72102a;
+  --jm-gold   : #c9a84c;
+  --jm-ink    : #1a0a0a;
+  --jm-muted  : #6b5c5c;
+  --jm-faint  : #9a8a8a;
+  --jm-border : #e5e7eb;
+  --jm-bg     : #f9fafb;
+  --jm-canvas : #f3f4f6;
+}
+
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+.jm-backdrop {
+  position        : fixed;
+  inset           : 0;
+  z-index         : 1000;
+  background      : rgba(0, 0, 0, 0.55);
+  display         : flex;
+  align-items     : flex-start;
+  justify-content : center;
+  padding         : 24px 16px;
+  overflow-y      : auto;
+}
+
+/* ── Modal container ─────────────────────────────────────────────────────── */
+.jm-modal {
+  position      : relative;
+  background    : var(--jm-canvas);
+  border-radius : 16px;
+  width         : 100%;
+  max-width     : 560px;
+  overflow      : hidden;
+  box-shadow    : 0 24px 60px rgba(0, 0, 0, 0.35);
+  margin-bottom : 24px;
+}
+
+/* ── Close button ────────────────────────────────────────────────────────── */
+.jm-close-btn {
+  position        : absolute;
+  top             : 14px;
+  right           : 14px;
+  background      : rgba(255, 255, 255, 0.2);
+  border          : none;
+  border-radius   : 50%;
+  width           : 30px;
+  height          : 30px;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  z-index         : 10;
+}
+
+/* ── Header banner ───────────────────────────────────────────────────────── */
+.jm-header {
+  background : linear-gradient(135deg, #72102a 0%, #3a0a1a 100%);
+  padding    : 28px 24px 22px;
+}
+
+.jm-header-title {
+  color         : #fff;
+  font-size     : 1.3rem;
+  font-weight   : 700;
+  font-family   : 'Playfair Display', serif;
+  margin-bottom : 6px;
+}
+
+.jm-header-meta {
+  color     : rgba(255, 255, 255, 0.75);
+  font-size : 0.82rem;
+  display   : flex;
+  gap       : 12px;
+  flex-wrap : wrap;
+}
+
+.jm-header-sep {
+  color : var(--jm-gold);
+}
+
+/* ── Success state ───────────────────────────────────────────────────────── */
+.jm-success {
+  padding         : 40px 32px;
+  text-align      : center;
+  background      : #ffffff;
+  border-radius   : 12px;
+  margin          : 20px;
+  box-shadow      : 0 10px 30px rgba(0, 0, 0, 0.05);
+  border          : 1px solid rgba(114, 16, 42, 0.08);
+  display         : flex;
+  flex-direction  : column;
+  align-items     : center;
+}
+
+.jm-success-logo {
+  height        : 95px;
+  width         : auto;
+  margin-bottom : 24px;
+  filter        : drop-shadow(0 4px 10px rgba(0, 0, 0, 0.06));
+}
+
+.jm-success-badge-container {
+  display         : flex;
+  justify-content : center;
+  margin-bottom   : 20px;
+}
+
+.jm-success-icon-wrapper {
+  background      : rgba(114, 16, 42, 0.08);
+  border          : 2px solid rgba(114, 16, 42, 0.15);
+  border-radius   : 50%;
+  padding         : 14px;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  box-shadow      : 0 6px 20px rgba(114, 16, 42, 0.1);
+  animation       : jmSuccessPulse 2s infinite ease-in-out;
+}
+
+.jm-success-check-icon {
+  color : var(--jm-maroon);
+}
+
+@keyframes jmSuccessPulse {
+  0% {
+    transform  : scale(1);
+    box-shadow : 0 6px 20px rgba(114, 16, 42, 0.1);
+  }
+  50% {
+    transform  : scale(1.05);
+    box-shadow : 0 8px 24px rgba(114, 16, 42, 0.2);
+  }
+  100% {
+    transform  : scale(1);
+    box-shadow : 0 6px 20px rgba(114, 16, 42, 0.1);
+  }
+}
+
+.jm-success-title {
+  font-family : 'Playfair Display', serif;
+  color       : var(--jm-maroon);
+  font-size   : 1.45rem;
+  font-weight : 700;
+  margin      : 0 0 12px;
+}
+
+.jm-success-divider {
+  width         : 40px;
+  height        : 3px;
+  background    : #c9a84c;
+  border-radius : 2px;
+  margin-bottom : 18px;
+}
+
+.jm-success-msg {
+  color       : var(--jm-muted);
+  font-size   : 0.9rem;
+  line-height : 1.6;
+  margin-bottom: 24px;
+  max-width   : 420px;
+}
+
+.jm-success-next-steps {
+  width         : 100%;
+  background    : #fdf8f9;
+  border        : 1px solid rgba(114, 16, 42, 0.08);
+  border-radius : 8px;
+  padding       : 18px 20px;
+  margin-bottom : 28px;
+  text-align    : left;
+  box-sizing    : border-box;
+}
+
+.jm-success-next-steps h4 {
+  font-size     : 0.85rem;
+  font-weight   : 700;
+  color         : var(--jm-maroon);
+  margin        : 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.jm-success-next-steps ul {
+  margin       : 0;
+  padding-left : 18px;
+  list-style-type: disc;
+}
+
+.jm-success-next-steps li {
+  font-size     : 0.8rem;
+  color         : #5a4c4c;
+  line-height   : 1.5;
+  margin-bottom : 6px;
+}
+
+.jm-success-next-steps li:last-child {
+  margin-bottom : 0;
+}
+
+.jm-success-close {
+  background    : linear-gradient(135deg, var(--jm-maroon) 0%, #901633 100%);
+  color         : #fff;
+  border        : none;
+  border-radius : 8px;
+  padding       : 12px 36px;
+  font-weight   : 600;
+  font-size     : 0.875rem;
+  cursor        : pointer;
+  box-shadow    : 0 4px 12px rgba(114, 16, 42, 0.25);
+  transition    : all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.jm-success-close:hover {
+  transform  : translateY(-2px);
+  box-shadow : 0 6px 16px rgba(114, 16, 42, 0.4);
+}
+
+/* ── Form body ───────────────────────────────────────────────────────────── */
+.jm-form-body {
+  padding : 20px;
+}
+
+/* ── Section card ────────────────────────────────────────────────────────── */
+.jm-section {
+  background    : #fff;
+  border        : 1px solid var(--jm-border);
+  border-radius : 12px;
+  padding       : 20px;
+  margin-bottom : 16px;
+}
+
+.jm-section-title {
+  font-family   : 'Playfair Display', serif;
+  font-weight   : 700;
+  font-size     : 0.95rem;
+  color         : var(--jm-maroon);
+  margin-bottom : 16px;
+}
+
+/* ── Labels ──────────────────────────────────────────────────────────────── */
+.jm-label {
+  font-size     : 0.78rem;
+  font-weight   : 600;
+  color         : #4a4a4a;
+  display       : block;
+  margin-bottom : 5px;
+}
+
+.jm-required {
+  color : var(--jm-maroon);
+}
+
+.jm-optional {
+  font-weight : 400;
+  color       : var(--jm-faint);
+}
+
+/* ── Inputs / selects ────────────────────────────────────────────────────── */
+.jm-input,
+.jm-select,
+.jm-textarea {
+  width         : 100%;
+  padding       : 10px 12px;
+  border        : 1.5px solid var(--jm-border);
+  border-radius : 8px;
+  font-size     : 0.875rem;
+  background    : var(--jm-bg);
+  outline       : none;
+  box-sizing    : border-box;
+  color         : var(--jm-ink);
+  transition    : border-color 0.2s ease;
+}
+
+.jm-input:focus,
+.jm-select:focus,
+.jm-textarea:focus {
+  border-color : var(--jm-maroon);
+}
+
+.jm-input--readonly,
+.jm-select--readonly {
+  background : var(--jm-canvas);
+  color      : var(--jm-muted);
+}
+
+.jm-textarea {
+  resize : vertical;
+}
+
+.jm-field-full {
+  grid-column : 1 / -1;
+}
+
+.jm-field-mt {
+  margin-top : 14px;
+}
+
+.jm-field-mb {
+  margin-bottom : 14px;
+}
+
+/* ── Multi-select (same pattern as ApplyModal) ───────────────────────────── */
+.jm-multiselect-trigger {
+  min-height    : 42px;
+  padding       : 8px 32px 8px 12px;
+  border        : 1.5px solid var(--jm-border);
+  border-radius : 8px;
+  cursor        : pointer;
+  display       : flex;
+  flex-wrap     : wrap;
+  gap           : 4px;
+  position      : relative;
+}
+
+.jm-multiselect-trigger--readonly {
+  background : var(--jm-canvas);
+  cursor     : default;
+}
+
+.jm-multiselect-trigger--editable {
+  background : var(--jm-bg);
+}
+
+.jm-multiselect-placeholder {
+  color      : #9ca3af;
+  font-size  : 0.875rem;
+  align-self : center;
+}
+
+.jm-multiselect-tag {
+  background    : rgba(114, 16, 42, 0.1);
+  color         : var(--jm-maroon);
+  font-size     : 0.72rem;
+  font-weight   : 600;
+  padding       : 2px 8px;
+  border-radius : 999px;
+  display       : flex;
+  align-items   : center;
+  gap           : 4px;
+}
+
+.jm-multiselect-tag--editable {
+  cursor : pointer;
+}
+
+.jm-multiselect-tag--readonly {
+  cursor : default;
+}
+
+.jm-multiselect-arrow {
+  position   : absolute;
+  right      : 10px;
+  top        : 50%;
+  transition : transform 0.2s;
+  color      : var(--jm-muted);
+  font-size  : 0.75rem;
+}
+
+.jm-multiselect-dropdown {
+  position      : absolute;
+  top           : calc(100% + 4px);
+  left          : 0;
+  right         : 0;
+  background    : #fff;
+  border        : 1.5px solid var(--jm-border);
+  border-radius : 8px;
+  z-index       : 100;
+  max-height    : 220px;
+  overflow-y    : auto;
+  box-shadow    : 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.jm-multiselect-custom-row {
+  padding        : 8px;
+  border-bottom  : 1px solid #f0f0f0;
+  display        : flex;
+  gap            : 6px;
+}
+
+.jm-multiselect-custom-input {
+  flex          : 1;
+  padding       : 6px 10px;
+  border        : 1px solid var(--jm-border);
+  border-radius : 6px;
+  font-size     : 0.8rem;
+  outline       : none;
+}
+
+.jm-multiselect-add-btn {
+  background    : var(--jm-maroon);
+  color         : #fff;
+  border        : none;
+  border-radius : 6px;
+  padding       : 6px 12px;
+  font-size     : 0.78rem;
+  cursor        : pointer;
+  font-weight   : 600;
+}
+
+.jm-multiselect-option {
+  padding         : 9px 12px;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  font-size       : 0.82rem;
+}
+
+.jm-multiselect-option--selected {
+  color       : var(--jm-maroon);
+  background  : rgba(114, 16, 42, 0.12);
+  font-weight : 600;
+  box-shadow  : inset 3px 0 0 var(--jm-maroon);
+}
+
+.jm-multiselect-option--unselected {
+  color       : var(--jm-ink);
+  background  : transparent;
+  font-weight : 400;
+}
+
+/* ── Edit Profile button ─────────────────────────────────────────────────── */
+.jm-edit-profile-btn {
+  margin-top    : 14px;
+  background    : transparent;
+  border        : 1.5px solid var(--jm-maroon);
+  color         : var(--jm-maroon);
+  font-weight   : 600;
+  font-size     : 0.78rem;
+  padding       : 8px 18px;
+  border-radius : 6px;
+  cursor        : pointer;
+}
+
+/* ── Resume card ─────────────────────────────────────────────────────────── */
+.jm-resume-card {
+  display       : flex;
+  flex-direction: column;
+  gap           : 12px;
+  background    : #fdf8f9;
+  border        : 1.5px solid rgba(114, 16, 42, 0.15);
+  border-radius : 8px;
+  padding       : 16px 20px;
+}
+
+.jm-resume-row {
+  display     : flex;
+  align-items : center;
+  gap         : 10px;
+}
+
+.jm-resume-icon {
+  color : var(--jm-maroon);
+}
+
+.jm-resume-name {
+  font-size   : 0.875rem;
+  font-weight : 600;
+  color       : var(--jm-ink);
+  word-break  : break-all;
+}
+
+.jm-resume-sub {
+  font-size : 0.75rem;
+  color     : var(--jm-muted);
+}
+
+.jm-resume-actions {
+  display   : flex;
+  flex-wrap : wrap;
+  gap       : 8px;
+}
+
+.jm-btn-view {
+  background    : #fff;
+  border        : 1.5px solid var(--jm-maroon);
+  color         : var(--jm-maroon);
+  font-weight   : 600;
+  font-size     : 0.78rem;
+  padding       : 6px 14px;
+  border-radius : 6px;
+  cursor        : pointer;
+}
+
+.jm-btn-update {
+  background    : var(--jm-maroon);
+  color         : #fff;
+  border        : none;
+  font-weight   : 600;
+  font-size     : 0.78rem;
+  padding       : 6px 14px;
+  border-radius : 6px;
+  cursor        : pointer;
+}
+
+/* ── No resume placeholder ───────────────────────────────────────────────── */
+.jm-no-resume {
+  text-align    : center;
+  background    : #fafafa;
+  border        : 1.5px dashed #ccc;
+  border-radius : 8px;
+  padding       : 20px;
+}
+
+.jm-no-resume-msg {
+  font-size     : 0.875rem;
+  color         : var(--jm-muted);
+  margin-bottom : 10px;
+}
+
+.jm-btn-upload-resume {
+  background    : var(--jm-maroon);
+  color         : #fff;
+  border        : none;
+  font-weight   : 600;
+  font-size     : 0.78rem;
+  padding       : 8px 18px;
+  border-radius : 6px;
+  cursor        : pointer;
+}
+
+/* ── Submit button ───────────────────────────────────────────────────────── */
+.jm-btn-submit {
+  background      : linear-gradient(135deg, var(--jm-maroon) 0%, #901633 100%);
+  color           : #fff;
+  font-weight     : 700;
+  font-size       : 0.9rem;
+  padding         : 14px;
+  border-radius   : 8px;
+  border          : none;
+  cursor          : pointer;
+  width           : 100%;
+  letter-spacing  : 0.04em;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  gap             : 10px;
+  box-shadow      : 0 4px 12px rgba(114, 16, 42, 0.25);
+  transition      : all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing      : border-box;
+}
+
+.jm-btn-submit:hover {
+  transform  : translateY(-2px);
+  box-shadow : 0 6px 16px rgba(114, 16, 42, 0.4);
+  background : linear-gradient(135deg, #8c1433 0%, #aa2042 100%);
+}
+
+.jm-btn-submit:active {
+  transform  : translateY(0);
+  box-shadow : 0 2px 6px rgba(114, 16, 42, 0.2);
+}
+
+.jm-btn-logo {
+  height         : 20px;
+  width          : 20px;
+  object-fit     : contain;
+  filter         : drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  background     : rgba(255, 255, 255, 0.95);
+  padding        : 2px;
+  border-radius  : 50%;
+  border         : 1px solid rgba(255, 255, 255, 0.5);
+  display        : inline-block;
+  vertical-align : middle;
+  box-sizing     : border-box;
+}

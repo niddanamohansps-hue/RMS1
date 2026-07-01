@@ -1,0 +1,100 @@
+/* ─── UnsavedChangesModal.css ────────────────────────────────────────────── */
+:root {
+  --uc-maroon : #72102a;
+  --uc-border : #e5e7eb;
+  --uc-muted  : #6b5c5c;
+  --uc-ink    : #4a4a4a;
+  --uc-cream  : #faf8f5;
+}
+
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+.uc-backdrop {
+  position        : fixed;
+  inset           : 0;
+  z-index         : 2000;
+  background      : rgba(0, 0, 0, 0.55);
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  padding         : 20px;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.uc-panel {
+  background    : #fff;
+  border-radius : 16px;
+  padding       : 28px 24px;
+  width         : 100%;
+  max-width     : 400px;
+  box-shadow    : 0 24px 60px rgba(0, 0, 0, 0.35);
+  text-align    : center;
+}
+
+/* ── Icon circle ─────────────────────────────────────────────────────────── */
+.uc-icon-wrap {
+  background      : rgba(114, 16, 42, 0.08);
+  border-radius   : 50%;
+  width           : 56px;
+  height          : 56px;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  margin          : 0 auto 16px;
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.uc-title {
+  font-family   : 'Playfair Display', serif;
+  font-weight   : 700;
+  font-size     : 1.25rem;
+  color         : var(--uc-maroon);
+  margin-bottom : 8px;
+}
+
+/* ── Body text ───────────────────────────────────────────────────────────── */
+.uc-body {
+  color         : var(--uc-muted);
+  font-size     : 0.875rem;
+  line-height   : 1.5;
+  margin-bottom : 24px;
+}
+
+/* ── Action row ──────────────────────────────────────────────────────────── */
+.uc-actions {
+  display : flex;
+  gap     : 12px;
+}
+
+.uc-btn-discard {
+  flex          : 1;
+  background    : var(--uc-cream);
+  border        : 1.5px solid var(--uc-border);
+  border-radius : 8px;
+  padding       : 12px;
+  color         : var(--uc-ink);
+  font-size     : 0.85rem;
+  font-weight   : 600;
+  cursor        : pointer;
+  transition    : background 0.2s;
+}
+
+.uc-btn-discard:hover {
+  background : #f3f4f6;
+}
+
+.uc-btn-save {
+  flex          : 1;
+  background    : var(--uc-maroon);
+  color         : #fff;
+  border        : none;
+  border-radius : 8px;
+  padding       : 12px;
+  font-size     : 0.85rem;
+  font-weight   : 600;
+  cursor        : pointer;
+  transition    : opacity 0.2s;
+}
+
+.uc-btn-save:hover {
+  opacity : 0.9;
+}

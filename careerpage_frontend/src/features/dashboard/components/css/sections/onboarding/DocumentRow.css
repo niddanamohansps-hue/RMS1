@@ -1,0 +1,137 @@
+/* ─── DocumentRow.css ────────────────────────────────────────────────────── */
+:root {
+  --dr-maroon : #72102a;
+  --dr-border : #e5e7eb;
+  --dr-ink    : #1a0a0a;
+  --dr-muted  : #9a8a8a;
+  --dr-soft   : #4a4a4a;
+}
+
+.dr-row-container {
+  border: 1px solid var(--dr-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.dr-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dr-info {
+  flex: 1;
+}
+
+.dr-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--dr-ink);
+}
+
+.dr-note {
+  color: var(--dr-muted);
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+.dr-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dr-badge-uploaded {
+  background: #f0fdf4;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.dr-btn-view {
+  background: #fff;
+  border: 1.5px solid var(--dr-border);
+  color: var(--dr-soft);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.dr-btn-remove {
+  background: transparent;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.dr-btn-upload-wrap {
+  background: rgba(114, 16, 42, 0.07);
+  border: 1px solid var(--dr-maroon);
+  color: var(--dr-maroon);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.dr-btn-camera {
+  background: #faf8f5;
+  border: 1.5px solid var(--dr-border);
+  color: var(--dr-soft);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dr-missing-text {
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.dr-verification-badge {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.dr-pointer-label {
+  cursor: pointer;
+}
+
+.dr-file-input {
+  display: none;
+}
+

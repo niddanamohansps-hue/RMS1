@@ -1,0 +1,190 @@
+/* ─── Navbar.css ───────────────────────────────────────────────────────────── */
+:root {
+  --nb-maroon : #72102a;
+  --nb-gold   : #c9a84c;
+  --nb-cream  : #faf8f5;
+  --nb-ink    : #1a0a0a;
+}
+
+/* ── Nav wrapper ─────────────────────────────────────────────────────────── */
+.navbar {
+  background          : rgba(114, 16, 42, 0.85);
+  backdrop-filter     : blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom       : 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Brand / logo area ───────────────────────────────────────────────────── */
+.navbar-brand {
+  cursor : pointer;
+}
+
+.navbar-school-name {
+  font-family : 'Playfair Display', serif;
+  color       : var(--nb-gold);
+  font-size   : 1.1rem;
+  font-weight : 700;
+  line-height : 1.2;
+}
+
+.navbar-school-sub {
+  color          : rgba(250, 248, 245, 0.7);
+  font-size      : 0.68rem;
+  letter-spacing : 0.1em;
+  text-transform : uppercase;
+}
+
+/* ── Shared button base ──────────────────────────────────────────────────── */
+.nb-btn {
+  font-size      : 0.78rem;
+  font-weight    : 600;
+  letter-spacing : 0.05em;
+  text-transform : uppercase;
+  border-radius  : 2px;
+  cursor         : pointer;
+  transition     : all 0.2s ease;
+  text-align     : center;
+}
+
+/* Outline variant (Login / Dashboard) */
+.nb-btn-outline {
+  border     : 1.5px solid rgba(250, 248, 245, 0.4);
+  color      : var(--nb-cream);
+  background : transparent;
+  font-weight: 500;
+}
+
+.nb-btn-outline:hover {
+  border-color : #fff;
+}
+
+/* Solid / gold variant (Sign Up / Log Out) */
+.nb-btn-solid {
+  background : var(--nb-gold);
+  color      : var(--nb-ink);
+  border     : none;
+}
+
+.nb-btn-solid:hover {
+  opacity : 0.9;
+}
+
+/* ── Mobile hamburger button ─────────────────────────────────────────────── */
+.nb-hamburger {
+  background    : transparent;
+  outline       : none;
+  cursor        : pointer;
+  color         : var(--nb-cream);
+  padding       : 6px 8px;
+  border        : 1.5px solid rgba(250, 248, 245, 0.35);
+  border-radius : 4px;
+  user-select   : none;
+  display       : flex;
+  flex-direction: column;
+  gap           : 4px;
+}
+
+.nb-hamburger-bar {
+  display       : block;
+  width         : 18px;
+  height        : 2px;
+  background    : var(--nb-cream);
+  border-radius : 2px;
+  transition    : transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* Hamburger active transformation (forms an ✕) */
+.nb-hamburger.is-active .nb-hamburger-bar:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.nb-hamburger.is-active .nb-hamburger-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.nb-hamburger.is-active .nb-hamburger-bar:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* ── Mobile menu wrapper, panel, and backdrop ────────────────────────────── */
+.nb-mobile-panel-wrapper {
+  position       : fixed;
+  top            : 76px; /* Exactly below the sticky navbar */
+  left           : 0;
+  right          : 0;
+  bottom         : 0;
+  z-index        : 40; /* Behind navbar (z-50) */
+  display        : flex;
+  flex-direction : column;
+  pointer-events : none;
+  overflow       : hidden; /* Clips the panel when translated up */
+}
+
+.nb-mobile-panel-wrapper.is-open {
+  pointer-events : auto;
+}
+
+.nb-mobile-panel {
+  width          : 100%;
+  background     : rgba(114, 16, 42, 0.85); /* Exact match with navbar background */
+  backdrop-filter: blur(16px) saturate(180%); /* Exact match with navbar blur */
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  padding        : 24px;
+  box-shadow     : 0 10px 30px rgba(0, 0, 0, 0.2);
+  display        : flex;
+  flex-direction : column;
+  align-items    : center;
+  justify-content: center;
+  position       : relative;
+  border-bottom  : 1.5px solid rgba(250, 248, 245, 0.08);
+  transform      : translateY(-100%);
+  transition     : transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index        : 2; /* Above backdrop */
+}
+
+.nb-mobile-panel-wrapper.is-open .nb-mobile-panel {
+  transform      : translateY(0);
+}
+
+.nb-mobile-backdrop {
+  flex           : 1;
+  width          : 100%;
+  background     : rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity        : 0;
+  z-index        : 1; /* Below panel */
+  transition     : opacity 0.3s ease, backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease;
+  pointer-events : none;
+}
+
+.nb-mobile-panel-wrapper.is-open .nb-mobile-backdrop {
+  opacity        : 1;
+  pointer-events : auto;
+}
+
+/* Centered button stack */
+.nb-mobile-actions {
+  width          : 100%;
+  max-width      : 220px;
+  display        : flex;
+  flex-direction : column;
+  gap            : 14px;
+}
+
+.nb-mobile-panel .nb-btn {
+  width       : 100%;
+  padding     : 14px 16px;
+  font-size   : 0.9rem;
+  border-radius: 4px;
+}
+
+/* ── Hide mobile menu elements on desktop views ──────────────────────────── */
+@media (min-width: 640px) {
+  .nb-hamburger {
+    display: none !important;
+  }
+  .nb-mobile-panel-wrapper {
+    display: none !important;
+  }
+}

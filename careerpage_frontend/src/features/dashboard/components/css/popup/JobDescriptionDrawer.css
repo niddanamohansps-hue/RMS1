@@ -1,0 +1,188 @@
+/* ─── JobDescriptionDrawer.css ───────────────────────────────────────────── */
+:root {
+  --jd-maroon : #72102a;
+  --jd-gold   : #9a781b;
+  --jd-ink    : #1a0a0a;
+  --jd-muted  : #6b5c5c;
+  --jd-soft   : #4a4a4a;
+  --jd-border : #e5e7eb;
+  --jd-canvas : #faf8f5;
+}
+
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+.jd-backdrop {
+  position        : fixed;
+  inset           : 0;
+  z-index         : 2000;
+  background      : rgba(0, 0, 0, 0.55);
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  padding         : 24px 16px;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.jd-panel {
+  position      : relative;
+  background    : #fff;
+  border-radius : 16px;
+  width         : 100%;
+  max-width     : 500px;
+  overflow      : hidden;
+  box-shadow    : 0 24px 60px rgba(0, 0, 0, 0.3);
+  padding       : 28px;
+}
+
+/* ── Close button ────────────────────────────────────────────────────────── */
+.jd-close-btn {
+  position        : absolute;
+  top             : 16px;
+  right           : 16px;
+  background      : none;
+  border          : none;
+  cursor          : pointer;
+  color           : #9ca3af;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  padding         : 4px;
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.jd-title {
+  color         : var(--jd-maroon);
+  font-family   : 'Playfair Display', serif;
+  font-size     : 1.3rem;
+  font-weight   : 700;
+  margin-bottom : 6px;
+  padding-right : 24px;
+}
+
+.jd-subtitle {
+  color         : var(--jd-muted);
+  font-size     : 0.82rem;
+  font-weight   : 500;
+  margin-bottom : 20px;
+}
+
+/* ── Pills ───────────────────────────────────────────────────────────────── */
+.jd-pills {
+  display       : flex;
+  gap           : 8px;
+  margin-bottom : 20px;
+  flex-wrap     : wrap;
+}
+
+.jd-pill--type {
+  background    : rgba(114, 16, 42, 0.08);
+  color         : var(--jd-maroon);
+  font-size     : 0.72rem;
+  font-weight   : 600;
+  padding       : 4px 10px;
+  border-radius : 999px;
+}
+
+.jd-pill--deadline {
+  background    : rgba(201, 168, 76, 0.12);
+  color         : var(--jd-gold);
+  font-size     : 0.72rem;
+  font-weight   : 600;
+  padding       : 4px 10px;
+  border-radius : 999px;
+}
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+.jd-section {
+  margin-bottom : 20px;
+}
+
+.jd-section-title {
+  font-size     : 0.85rem;
+  font-weight   : 700;
+  color         : var(--jd-ink);
+  margin-bottom : 6px;
+}
+
+.jd-description {
+  font-size   : 0.82rem;
+  color       : var(--jd-soft);
+  line-height : 1.6;
+}
+
+/* ── Qualification list ──────────────────────────────────────────────────── */
+.jd-qual-list {
+  padding-left : 16px;
+  margin       : 0;
+}
+
+.jd-qual-item {
+  font-size       : 0.82rem;
+  color           : var(--jd-soft);
+  line-height     : 1.6;
+  margin-bottom   : 4px;
+  list-style-type : disc;
+}
+
+/* ── Additional info box ─────────────────────────────────────────────────── */
+.jd-additional {
+  margin-top  : 20px;
+  border-top  : 1.5px solid var(--jd-border);
+  padding-top : 20px;
+}
+
+.jd-additional-title {
+  font-size     : 0.85rem;
+  font-weight   : 700;
+  color         : var(--jd-maroon);
+  margin-bottom : 12px;
+}
+
+.jd-info-box {
+  background     : var(--jd-canvas);
+  border         : 1px solid var(--jd-border);
+  border-radius  : 10px;
+  padding        : 14px;
+  display        : flex;
+  flex-direction : column;
+  gap            : 10px;
+}
+
+.jd-info-label {
+  font-size       : 0.72rem;
+  color           : var(--jd-muted);
+  font-weight     : 600;
+  text-transform  : uppercase;
+}
+
+.jd-info-value {
+  font-size   : 0.82rem;
+  color       : var(--jd-ink);
+  font-weight : 500;
+  margin-top  : 2px;
+}
+
+.jd-info-value--pre {
+  font-size   : 0.82rem;
+  color       : var(--jd-soft);
+  margin-top  : 2px;
+  white-space : pre-wrap;
+  line-height : 1.5;
+}
+
+/* ── Footer action ───────────────────────────────────────────────────────── */
+.jd-footer {
+  margin-top       : 24px;
+  display          : flex;
+  justify-content  : flex-end;
+}
+
+.jd-btn-close {
+  background    : var(--jd-maroon);
+  color         : #fff;
+  border        : none;
+  border-radius : 8px;
+  padding       : 10px 24px;
+  font-weight   : 600;
+  font-size     : 0.82rem;
+  cursor        : pointer;
+}

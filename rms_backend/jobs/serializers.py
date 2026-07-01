@@ -27,6 +27,7 @@ class ExistingRoleSerializer(serializers.ModelSerializer):
 
 class RoleRequestSerializer(serializers.ModelSerializer):
     created_by_name = serializers.SerializerMethodField(read_only=True)
+    history = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model  = RoleRequest
@@ -35,6 +36,24 @@ class RoleRequestSerializer(serializers.ModelSerializer):
 
     def get_created_by_name(self, obj):
         return obj.created_by.get_full_name() if obj.created_by else obj.submitted_by
+
+    def get_history(self, obj):
+        history_list = []
+        history_list.append({
+            "act": "Submitted",
+            "by": obj.submitted_by or (obj.created_by.get_full_name() if obj.created_by else "Current User"),
+            "date": obj.date.isoformat() if obj.date else "",
+            "note": ""
+        })
+        for apr in obj.approvals.all():
+            for h in apr.history.all().order_by("date"):
+                history_list.append({
+                    "act": h.action,
+                    "by": h.acted_by,
+                    "date": h.date.isoformat() if h.date else "",
+                    "note": h.note or ""
+                })
+        return history_list
 
     def create(self, validated_data):
         validated_data["request_id"] = auto_id("RR", RoleRequest)
@@ -51,6 +70,8 @@ class RoleRequestStatusSerializer(serializers.ModelSerializer):
 
 
 class JobRequestSerializer(serializers.ModelSerializer):
+    history = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model  = JobRequest
         fields = "__all__"
@@ -63,6 +84,24 @@ class JobRequestSerializer(serializers.ModelSerializer):
             validated_data["created_by"] = request.user
         return super().create(validated_data)
 
+    def get_history(self, obj):
+        history_list = []
+        history_list.append({
+            "act": "Submitted",
+            "by": obj.submitted_by or (obj.created_by.get_full_name() if obj.created_by else "Current User"),
+            "date": obj.created_at.date().isoformat() if obj.created_at else "",
+            "note": ""
+        })
+        for apr in obj.approvals.all():
+            for h in apr.history.all().order_by("date"):
+                history_list.append({
+                    "act": h.action,
+                    "by": h.acted_by,
+                    "date": h.date.isoformat() if h.date else "",
+                    "note": h.note or ""
+                })
+        return history_list
+
 
 class ApprovalHistorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -73,11 +112,95 @@ class ApprovalHistorySerializer(serializers.ModelSerializer):
 
 class ApprovalRequestSerializer(serializers.ModelSerializer):
     history = ApprovalHistorySerializer(many=True, read_only=True)
+    justification = serializers.SerializerMethodField(read_only=True)
+    vacancies = serializers.SerializerMethodField(read_only=True)
+    experience = serializers.SerializerMethodField(read_only=True)
+    salary_range = serializers.SerializerMethodField(read_only=True)
+    employment_type = serializers.SerializerMethodField(read_only=True)
+    qualification = serializers.SerializerMethodField(read_only=True)
+    source_request_id = serializers.SerializerMethodField(read_only=True)
+    source_db_id = serializers.SerializerMethodField(read_only=True)
+    description = serializers.SerializerMethodField(read_only=True)
+    location = serializers.SerializerMethodField(read_only=True)
+    educational_qualifications = serializers.SerializerMethodField(read_only=True)
+    skills_required = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model  = ApprovalRequest
         fields = "__all__"
         read_only_fields = ["date"]
+
+    def get_source_request_id(self, obj):
+        """The request_id of the linked RoleRequest or JobRequest."""
+        if obj.role_request:
+            return obj.role_request.request_id
+        if obj.job_request:
+            return obj.job_request.request_id
+        return None
+
+    def get_source_db_id(self, obj):
+        """The pk of the linked RoleRequest or JobRequest."""
+        if obj.role_request:
+            return obj.role_request.pk
+        if obj.job_request:
+            return obj.job_request.pk
+        return None
+
+    def get_justification(self, obj):
+        if obj.role_request:
+            return obj.role_request.justification
+        if obj.job_request:
+            return obj.job_request.justification or obj.job_request.description or ""
+        return ""
+
+    def get_vacancies(self, obj):
+        if obj.job_request:
+            return obj.job_request.vacancies
+        return None
+
+    def get_experience(self, obj):
+        if obj.job_request:
+            return obj.job_request.experience
+        if obj.role_request:
+            return obj.role_request.experience
+        return ""
+
+    def get_salary_range(self, obj):
+        if obj.job_request:
+            return obj.job_request.salary_range
+        if obj.role_request:
+            return obj.role_request.salary_range
+        return ""
+
+    def get_employment_type(self, obj):
+        if obj.job_request:
+            return obj.job_request.type
+        return ""
+
+    def get_qualification(self, obj):
+        if obj.job_request:
+            return obj.job_request.qualification
+        return ""
+
+    def get_description(self, obj):
+        if obj.job_request:
+            return obj.job_request.description
+        return ""
+
+    def get_location(self, obj):
+        if obj.job_request:
+            return obj.job_request.location
+        return ""
+
+    def get_educational_qualifications(self, obj):
+        if obj.job_request:
+            return obj.job_request.educational_qualifications
+        return ""
+
+    def get_skills_required(self, obj):
+        if obj.job_request:
+            return obj.job_request.skills_required
+        return ""
 
 
 class ApprovalActionSerializer(serializers.Serializer):
@@ -122,4 +245,5 @@ class JobPostingPublicSerializer(serializers.ModelSerializer):
             "id", "posting_id", "role", "department", "type", "category",
             "location", "description", "qualifications", "experience",
             "salary_range", "deadline", "expiry_date", "status",
+            "educational_qualifications", "skills_required",
         ]

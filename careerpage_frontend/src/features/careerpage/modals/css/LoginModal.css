@@ -1,0 +1,557 @@
+/* ─── LoginModal.css ───────────────────────────────────────────────────────── */
+:root {
+  --lm-maroon : #72102a;
+  --lm-gold   : #c9a84c;
+  --lm-ink    : #1a0a0a;
+  --lm-muted  : #6b5c5c;
+  --lm-cream  : #faf8f5;
+  --lm-border : rgba(0, 0, 0, 0.15);
+}
+
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+.lm-backdrop {
+  position        : fixed;
+  inset           : 0;
+  z-index         : 1000;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  padding         : 16px;
+}
+
+.lm-bg-image {
+  position   : absolute;
+  inset      : 0;
+  width      : 100%;
+  height     : 100%;
+  object-fit : cover;
+}
+
+.lm-bg-overlay {
+  position   : absolute;
+  inset      : 0;
+  background : rgba(60, 10, 20, 0.72);
+}
+
+/* ── Modal panel ─────────────────────────────────────────────────────────── */
+.lm-modal {
+  position      : relative;
+  background    : #fff;
+  border-radius : 16px;
+  width         : 100%;
+  max-width     : 520px;
+  overflow      : hidden;
+  box-shadow    : 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Close button ────────────────────────────────────────────────────────── */
+.lm-close-btn {
+  position        : absolute;
+  top             : 14px;
+  right           : 14px;
+  background      : rgba(0, 0, 0, 0.08);
+  border          : none;
+  border-radius   : 50%;
+  width           : 30px;
+  height          : 30px;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  z-index         : 10;
+  color           : #555;
+}
+
+/* ── Header banner ───────────────────────────────────────────────────────── */
+.lm-header {
+  background : linear-gradient(160deg, #72102a 0%, #4a0a1a 100%);
+  padding    : 28px 24px 20px;
+  text-align : center;
+}
+
+.lm-header-logo {
+  width        : 64px;
+  height       : 64px;
+  object-fit   : contain;
+  margin       : 0 auto 10px;
+  display      : block;
+}
+
+.lm-header-school {
+  color          : var(--lm-gold);
+  font-family    : 'Playfair Display', serif;
+  font-size      : 1.15rem;
+  font-weight    : 700;
+  letter-spacing : 0.05em;
+}
+
+.lm-header-city {
+  color          : rgba(250, 248, 245, 0.7);
+  font-size      : 0.65rem;
+  letter-spacing : 0.2em;
+  margin-top     : 2px;
+}
+
+.lm-header-motto {
+  color          : var(--lm-gold);
+  font-size      : 0.6rem;
+  letter-spacing : 0.2em;
+  margin-top     : 2px;
+  opacity        : 0.8;
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+.lm-tabs {
+  display       : flex;
+  border-bottom : 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.lm-tab-btn {
+  flex           : 1;
+  padding        : 12px;
+  font-size      : 0.8rem;
+  font-weight    : 700;
+  letter-spacing : 0.08em;
+  text-transform : uppercase;
+  border         : none;
+  cursor         : pointer;
+  background     : transparent;
+  transition     : all 0.2s;
+}
+
+.lm-tab-btn--active {
+  color         : var(--lm-maroon);
+  border-bottom : 2.5px solid var(--lm-maroon);
+}
+
+.lm-tab-btn--inactive {
+  color         : #888;
+  border-bottom : 2.5px solid transparent;
+}
+
+/* ── Content padding ─────────────────────────────────────────────────────── */
+.lm-content {
+  padding : 24px;
+}
+
+/* ── Section heading ─────────────────────────────────────────────────────── */
+.lm-section-heading {
+  margin-bottom : 18px;
+}
+
+.lm-section-title {
+  font-family : 'Playfair Display', serif;
+  color       : var(--lm-ink);
+  font-size   : 1.2rem;
+  font-weight : 700;
+}
+
+.lm-section-sub {
+  color      : var(--lm-muted);
+  font-size  : 0.8rem;
+  margin-top : 2px;
+}
+
+/* ── Form layout ─────────────────────────────────────────────────────────── */
+.lm-form {
+  display        : flex;
+  flex-direction : column;
+  gap            : 12px;
+}
+
+.lm-form--gap14 {
+  display        : flex;
+  flex-direction : column;
+  gap            : 14px;
+}
+
+/* ── Input wrapper (for icon + input) ────────────────────────────────────── */
+.lm-input-wrap {
+  position : relative;
+}
+
+.lm-input-icon {
+  position  : absolute;
+  left      : 12px;
+  top       : 50%;
+  transform : translateY(-50%);
+  color     : #888;
+}
+
+/* ── Text inputs ─────────────────────────────────────────────────────────── */
+.lm-input {
+  width         : 100%;
+  padding       : 11px 12px 11px 36px;
+  border        : 1.5px solid var(--lm-border);
+  border-radius : 8px;
+  font-size     : 0.85rem;
+  outline       : none;
+  background    : var(--lm-cream);
+  color         : var(--lm-ink);
+  box-sizing    : border-box;
+  transition    : border-color 0.2s ease;
+}
+
+.lm-input:focus {
+  border-color : var(--lm-maroon);
+}
+
+.lm-input--pad-right {
+  padding-right : 36px;
+}
+
+/* ── Password visibility toggle ──────────────────────────────────────────── */
+.lm-eye-btn {
+  position   : absolute;
+  right      : 10px;
+  top        : 50%;
+  transform  : translateY(-50%);
+  background : none;
+  border     : none;
+  cursor     : pointer;
+  color      : #888;
+  padding    : 0;
+}
+
+/* ── Remember me / forgot row ────────────────────────────────────────────── */
+.lm-remember-row {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+}
+
+.lm-remember-label {
+  display     : flex;
+  align-items : center;
+  gap         : 6px;
+  cursor      : pointer;
+  font-size   : 0.78rem;
+  color       : #555;
+}
+
+.lm-forgot-link {
+  color       : var(--lm-maroon);
+  font-size   : 0.78rem;
+  font-weight : 600;
+  text-decoration: none;
+  cursor      : pointer;
+}
+
+/* ── Error messages ──────────────────────────────────────────────────────── */
+.lm-error {
+  color     : #d00;
+  font-size : 0.78rem;
+}
+
+.lm-error--sm {
+  color     : #d00;
+  font-size : 0.75rem;
+}
+
+/* ── Primary CTA buttons ─────────────────────────────────────────────────── */
+.lm-btn-primary {
+  background      : var(--lm-maroon);
+  color           : #fff;
+  font-weight     : 700;
+  font-size       : 0.85rem;
+  letter-spacing  : 0.1em;
+  border          : none;
+  border-radius   : 8px;
+  padding         : 13px;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  gap             : 8px;
+  transition      : opacity 0.2s ease;
+}
+
+.lm-btn-primary:hover {
+  opacity : 0.9;
+}
+
+/* ── Outline / secondary buttons ─────────────────────────────────────────── */
+.lm-btn-outline {
+  width           : 100%;
+  border          : 1.5px solid var(--lm-maroon);
+  color           : var(--lm-maroon);
+  background      : transparent;
+  font-weight     : 700;
+  font-size       : 0.82rem;
+  letter-spacing  : 0.1em;
+  border-radius   : 8px;
+  padding         : 11px;
+  cursor          : pointer;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  gap             : 8px;
+  margin-top      : 8px;
+}
+
+.lm-btn-outline--sm {
+  width         : 100%;
+  border        : 1.5px solid var(--lm-maroon);
+  color         : var(--lm-maroon);
+  background    : transparent;
+  font-weight   : 600;
+  font-size     : 0.8rem;
+  border-radius : 8px;
+  padding       : 10px;
+  cursor        : pointer;
+  margin-top    : 10px;
+}
+
+.lm-btn-text {
+  background      : transparent;
+  color           : var(--lm-maroon);
+  border          : none;
+  font-size       : 0.8rem;
+  font-weight     : 600;
+  cursor          : pointer;
+  align-self      : center;
+  text-decoration : underline;
+}
+
+.lm-btn-text--muted {
+  background      : transparent;
+  color           : var(--lm-muted);
+  border          : none;
+  font-size       : 0.75rem;
+  cursor          : pointer;
+  align-self      : center;
+  text-decoration : underline;
+}
+
+/* ── "Don't have an account?" hint ──────────────────────────────────────── */
+.lm-switch-hint {
+  text-align : center;
+  margin-top : 14px;
+  font-size  : 0.78rem;
+  color      : var(--lm-muted);
+}
+
+/* ── Two-column name grid ────────────────────────────────────────────────── */
+.lm-name-grid {
+  display               : grid;
+  grid-template-columns : 1fr 1fr;
+  gap                   : 8px;
+}
+
+/* ── Phone char counter ──────────────────────────────────────────────────── */
+.lm-phone-count {
+  position  : absolute;
+  right     : 12px;
+  top       : 50%;
+  transform : translateY(-50%);
+  font-size : 0.7rem;
+}
+
+.lm-phone-count--ok {
+  color : #065f46;
+}
+
+.lm-phone-count--pending {
+  color : #9ca3af;
+}
+
+/* ── OTP info banner ─────────────────────────────────────────────────────── */
+.lm-otp-banner {
+  background    : #f0fdf4;
+  border        : 1.5px solid #6ee7b7;
+  border-radius : 8px;
+  padding       : 10px 12px;
+  font-size     : 0.78rem;
+  color         : #065f46;
+  font-weight   : 600;
+}
+
+/* ── OTP resend row ──────────────────────────────────────────────────────── */
+.lm-otp-row {
+  display         : flex;
+  justify-content : space-between;
+  align-items     : center;
+  font-size       : 0.78rem;
+}
+
+.lm-otp-timer {
+  color : var(--lm-muted);
+}
+
+.lm-otp-resend-btn {
+  background      : transparent;
+  color           : var(--lm-maroon);
+  border          : none;
+  cursor          : pointer;
+  font-weight     : 600;
+  padding         : 0;
+  text-decoration : underline;
+  font-size       : 0.78rem;
+}
+
+/* ── Success state ───────────────────────────────────────────────────────── */
+.lm-signup-success {
+  padding         : 20px 10px;
+  text-align      : center;
+  background      : #ffffff;
+  display         : flex;
+  flex-direction  : column;
+  align-items     : center;
+}
+
+.lm-signup-success-logo {
+  height        : 95px;
+  width         : auto;
+  margin-bottom : 20px;
+  filter        : drop-shadow(0 4px 10px rgba(0, 0, 0, 0.06));
+}
+
+.lm-signup-success-title {
+  font-family : 'Playfair Display', serif;
+  color       : var(--lm-maroon);
+  font-size   : 1.35rem;
+  font-weight : 700;
+  margin      : 0 0 10px;
+}
+
+.lm-signup-success-divider {
+  width         : 40px;
+  height        : 3px;
+  background    : var(--lm-gold);
+  border-radius : 2px;
+  margin-bottom : 16px;
+}
+
+.lm-signup-success-msg {
+  color         : var(--lm-muted);
+  font-size     : 0.85rem;
+  line-height   : 1.6;
+  margin-bottom : 20px;
+  max-width     : 400px;
+}
+
+.lm-signup-success-next-steps {
+  width         : 100%;
+  background    : #fdf8f9;
+  border        : 1px solid rgba(114, 16, 42, 0.08);
+  border-radius : 8px;
+  padding       : 16px 18px;
+  margin-bottom : 20px;
+  text-align    : left;
+  box-sizing    : border-box;
+}
+
+.lm-signup-success-next-steps h4 {
+  font-size     : 0.8rem;
+  font-weight   : 700;
+  color         : var(--lm-maroon);
+  margin        : 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lm-signup-success-next-steps ul {
+  margin       : 0;
+  padding-left : 18px;
+  list-style-type: disc;
+}
+
+.lm-signup-success-next-steps li {
+  font-size     : 0.78rem;
+  color         : #5a4c4c;
+  line-height   : 1.5;
+  margin-bottom : 5px;
+}
+
+.lm-signup-success-next-steps li:last-child {
+  margin-bottom : 0;
+}
+
+.lm-signup-success-loader-wrap {
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  gap             : 8px;
+  margin-bottom   : 20px;
+}
+
+.lm-signup-success-spinner {
+  width         : 16px;
+  height        : 16px;
+  border        : 2px solid rgba(114, 16, 42, 0.2);
+  border-radius : 50%;
+  border-top-color: var(--lm-maroon);
+  animation     : lmSuccessSpin 1s infinite linear;
+  display       : inline-block;
+}
+
+@keyframes lmSuccessSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.lm-signup-success-redirect-msg {
+  font-size : 0.76rem;
+  color     : var(--lm-muted);
+}
+
+.lm-signup-success-close {
+  background      : linear-gradient(135deg, var(--lm-maroon) 0%, #901633 100%);
+  color           : #fff;
+  border          : none;
+  border-radius   : 8px;
+  padding         : 11px 28px;
+  font-weight     : 600;
+  font-size       : 0.82rem;
+  cursor          : pointer;
+  box-shadow      : 0 4px 12px rgba(114, 16, 42, 0.25);
+  transition      : all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing  : 0.05em;
+  text-transform  : uppercase;
+}
+
+.lm-signup-success-close:hover {
+  transform  : translateY(-2px);
+  box-shadow : 0 6px 16px rgba(114, 16, 42, 0.4);
+}
+
+/* Reset success */
+.lm-reset-success {
+  text-align : center;
+  padding    : 24px 0;
+}
+
+.lm-reset-success-icon {
+  font-size : 2.5rem;
+  color     : #065f46;
+}
+
+.lm-reset-success-title {
+  font-family : 'Playfair Display', serif;
+  color       : var(--lm-maroon);
+  font-size   : 1.15rem;
+  font-weight : 700;
+  margin-top  : 8px;
+}
+
+.lm-reset-success-msg {
+  color      : var(--lm-muted);
+  font-size  : 0.82rem;
+  margin-top : 4px;
+}
+
+/* ── Footer info strip ───────────────────────────────────────────────────── */
+.lm-footer-strip {
+  background    : #f5f0e8;
+  padding       : 10px 20px;
+  border-top    : 1px solid rgba(0, 0, 0, 0.06);
+  display       : flex;
+  flex-wrap     : wrap;
+  justify-content: center;
+  gap           : 12px;
+}
+
+.lm-footer-item {
+  color     : var(--lm-muted);
+  font-size : 0.65rem;
+}

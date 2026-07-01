@@ -70,11 +70,29 @@ class MeView(APIView):
             if field in request.data:
                 setattr(user, field, request.data[field])
         user.save()
-        if user.is_candidate and "profile" in request.data:
+        if user.is_candidate:
             profile, _ = CandidateProfile.objects.get_or_create(user=user)
-            ps = CandidateProfileUpdateSerializer(profile, data=request.data["profile"], partial=True)
-            ps.is_valid(raise_exception=True)
-            ps.save()
+            profile_data = request.data.get("profile")
+            if isinstance(profile_data, str):
+                import json
+                try:
+                    profile_data = json.loads(profile_data)
+                except ValueError:
+                    profile_data = {}
+            if profile_data is None:
+                profile_data = {}
+            
+            file_data = {}
+            if "profile.resume" in request.FILES:
+                file_data["resume"] = request.FILES["profile.resume"]
+            elif "resume" in request.FILES:
+                file_data["resume"] = request.FILES["resume"]
+            
+            serializer_data = {**profile_data, **file_data}
+            if serializer_data:
+                ps = CandidateProfileUpdateSerializer(profile, data=serializer_data, partial=True)
+                ps.is_valid(raise_exception=True)
+                ps.save()
         return Response(UserSerializer(user).data)
 
 

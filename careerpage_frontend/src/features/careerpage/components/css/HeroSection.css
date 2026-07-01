@@ -1,0 +1,113 @@
+/* ─── HeroSection.css ──────────────────────────────────────────────────────── */
+:root {
+  --hs-gold  : #c9a84c;
+  --hs-cream : #faf8f5;
+  --hs-ink   : #1a0a0a;
+}
+
+/* ── Section wrapper ─────────────────────────────────────────────────────── */
+.hero-section {
+  min-height : 88vh;
+}
+
+/* ── Dark gradient overlay on campus image ───────────────────────────────── */
+.hero-overlay {
+  background : linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.93) 0%,
+    rgba(0, 0, 0, 0.78) 30%,
+    rgba(0, 0, 0, 0.35) 75%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+}
+
+/* ── Inner content wrapper ───────────────────────────────────────────────── */
+.hero-content {
+  min-height : 88vh;
+}
+
+/* ── Main headline ───────────────────────────────────────────────────────── */
+.hero-heading {
+  font-family : 'Playfair Display', serif;
+  color       : var(--hs-cream);
+  font-size   : clamp(2.2rem, 5vw, 3.8rem);
+  line-height : 1.15;
+  font-weight : 700;
+}
+
+.hero-heading-accent {
+  color : var(--hs-gold);
+}
+
+/* ── Sub-paragraph ───────────────────────────────────────────────────────── */
+.hero-subtext {
+  color       : rgba(250, 248, 245, 0.78);
+  font-size   : 1rem;
+  line-height : 1.8;
+}
+
+/* ── CTA buttons ─────────────────────────────────────────────────────────── */
+.hero-btn-primary {
+  background     : var(--hs-gold);
+  color          : var(--hs-ink);
+  font-weight    : 600;
+  font-size      : 0.875rem;
+  letter-spacing : 0.06em;
+  text-transform : uppercase;
+  text-decoration: none;
+  border-radius  : 2px;
+  transition     : opacity 0.2s ease;
+  cursor         : pointer;
+}
+
+.hero-btn-primary:hover {
+  opacity : 0.9;
+}
+
+.hero-btn-outline {
+  border     : 1.5px solid rgba(250, 248, 245, 0.45);
+  color      : var(--hs-cream);
+  font-weight: 500;
+  font-size  : 0.875rem;
+  background : transparent;
+  cursor     : pointer;
+  border-radius: 2px;
+  transition : border-color 0.2s ease;
+}
+
+.hero-btn-outline:hover {
+  border-color : #fff;
+}
+
+/* ── Trust indicator row ─────────────────────────────────────────────────── */
+.trust-icon {
+  color      : var(--hs-gold);
+  flex-shrink: 0;
+}
+
+.trust-text {
+  color     : rgba(250, 248, 245, 0.7);
+  font-size : 0.78rem;
+}
+
+/* ── Stats column ────────────────────────────────────────────────────────── */
+.stat-item {
+  border-left  : 3px solid var(--hs-gold);
+  padding-left : 20px;
+}
+
+.stat-value {
+  color       : var(--hs-cream);
+  font-size   : 2.2rem;
+  font-weight : 700;
+  line-height : 1;
+}
+
+.stat-label {
+  color          : rgba(250, 248, 245, 0.6);
+  font-size      : 0.75rem;
+  letter-spacing : 0.1em;
+  font-weight    : 600;
+  text-transform : uppercase;
+  margin-top     : 4px;
+}

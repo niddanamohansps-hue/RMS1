@@ -1,0 +1,140 @@
+/* ─── SkillsMultiSelect.css ──────────────────────────────────────────────── */
+:root {
+  --sms-maroon: #72102a;
+  --sms-border: #e5e7eb;
+  --sms-ink: #1a0a0a;
+  --sms-muted: #6b5c5c;
+  --sms-canvas: #faf8f5;
+}
+
+.sms-trigger {
+  min-height: 42px;
+  padding: 8px 32px 8px 12px;
+  border: 1.5px solid var(--sms-border);
+  border-radius: 8px;
+  background: var(--sms-canvas);
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.sms-placeholder {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  align-self: center;
+}
+
+.sms-badge {
+  background: rgba(114, 16, 42, 0.1);
+  color: var(--sms-maroon);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sms-caret {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transition: transform 0.2s;
+  color: var(--sms-muted);
+  font-size: 0.75rem;
+}
+
+.sms-caret--open {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.sms-caret--closed {
+  transform: translateY(-50%) rotate(0deg);
+}
+
+/* ── Dropdown ────────────────────────────────────────────────────────────── */
+.sms-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid var(--sms-border);
+  border-radius: 8px;
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.sms-custom-row {
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 6px;
+}
+
+.sms-custom-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--sms-border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.sms-btn-add {
+  background: var(--sms-maroon);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sms-btn-add:hover {
+  opacity: 0.9;
+}
+
+.sms-option {
+  padding: 9px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+
+.sms-option--selected {
+  color: var(--sms-maroon);
+  background: rgba(114, 16, 42, 0.12);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--sms-maroon);
+}
+
+.sms-option--unselected {
+  color: var(--sms-ink);
+  background: transparent;
+  font-weight: 400;
+}
+
+.sms-option--unselected:hover {
+  background: #f9f9f9;
+}
+
+.sms-wrapper {
+  position: relative;
+}
+
+.sms-checkmark {
+  color: var(--sms-maroon);
+}
+

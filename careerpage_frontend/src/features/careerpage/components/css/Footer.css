@@ -1,0 +1,38 @@
+/* ─── Footer.css ───────────────────────────────────────────────────────────── */
+:root {
+  --ft-muted  : #6b5c5c;
+  --ft-border : rgba(107, 26, 26, 0.12);
+}
+
+/* ── Footer wrapper ──────────────────────────────────────────────────────── */
+.footer {
+  background  : #f8f9fa;
+  border-top  : 1px solid var(--ft-border);
+}
+
+/* ── School name / address text ──────────────────────────────────────────── */
+.footer-school-name {
+  color     : var(--ft-muted);
+  font-size : 0.8rem;
+}
+
+/* ── Navigation links row ────────────────────────────────────────────────── */
+.footer-links {
+  font-size : 0.78rem;
+}
+
+.footer-link {
+  color      : var(--ft-muted);
+  text-decoration: none;
+  transition : color 0.2s ease;
+}
+
+.footer-link:hover {
+  color : #72102a;
+}
+
+/* ── Copyright text ──────────────────────────────────────────────────────── */
+.footer-copy {
+  font-size : 0.75rem;
+  color     : var(--ft-muted);
+}

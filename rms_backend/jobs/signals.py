@@ -31,12 +31,13 @@ def clear_caches_on_change(sender, **kwargs):
     cache.clear()
 
 
-# ── Auto-create ApprovalRequest when a RoleRequest is created ─────────────
+# ── Auto-create ApprovalRequest when a RoleRequest is created or resubmitted ─────────────
 @receiver(post_save, sender=RoleRequest)
 def create_approval_for_role_request(sender, instance, created, **kwargs):
     """
     When a new RoleRequest is submitted, automatically create a corresponding
     ApprovalRequest so it appears in the /api/approvals/ list.
+    If it's updated (resubmitted) and its status changes to "Pending", create a new ApprovalRequest.
     """
     if created:
         ApprovalRequest.objects.create(
@@ -48,14 +49,29 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
             status="Pending",
             role_request=instance,
         )
+    else:
+        if instance.status == "Pending":
+            # If it's updated to Pending (resubmitted), check if there is already an active Pending approval
+            has_pending = ApprovalRequest.objects.filter(role_request=instance, status="Pending").exists()
+            if not has_pending:
+                ApprovalRequest.objects.create(
+                    request_id=instance.request_id,
+                    type="Role Request",
+                    title=instance.role,
+                    department=instance.department,
+                    submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
+                    status="Pending",
+                    role_request=instance,
+                )
 
 
-# ── Auto-create ApprovalRequest when a JobRequest is created ──────────────
+# ── Auto-create ApprovalRequest when a JobRequest is created or resubmitted ──────────────
 @receiver(post_save, sender=JobRequest)
 def create_approval_for_job_request(sender, instance, created, **kwargs):
     """
     When a new JobRequest is submitted, automatically create a corresponding
     ApprovalRequest so it appears in the /api/approvals/ list.
+    If it's updated (resubmitted) and its status changes to "Pending", create a new ApprovalRequest.
     """
     if created:
         ApprovalRequest.objects.create(
@@ -67,4 +83,19 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
             status="Pending",
             job_request=instance,
         )
+    else:
+        if instance.status == "Pending":
+            # If it's updated to Pending (resubmitted), check if there is already an active Pending approval
+            has_pending = ApprovalRequest.objects.filter(job_request=instance, status="Pending").exists()
+            if not has_pending:
+                ApprovalRequest.objects.create(
+                    request_id=instance.request_id,
+                    type="Job Request",
+                    title=instance.role,
+                    department="",
+                    submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
+                    status="Pending",
+                    job_request=instance,
+                )
+
 

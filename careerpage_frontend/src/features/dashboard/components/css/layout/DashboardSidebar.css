@@ -1,0 +1,157 @@
+/* ─── DashboardSidebar.css ───────────────────────────────────────────────── */
+:root {
+  --ds-maroon  : #72102a;
+  --ds-ink     : #1a0a0a;
+  --ds-muted   : #6b5c5c;
+  --ds-border  : #f0f0f0;
+  --ds-border2 : #e5e7eb;
+  --ds-canvas  : #fff;
+}
+
+/* ── Sidebar root ────────────────────────────────────────────────────────── */
+.ds-sidebar {
+  width         : 220px;
+  background    : var(--ds-canvas);
+  border-right  : 1px solid var(--ds-border2);
+  flex-shrink   : 0;
+  display       : flex;
+  flex-direction: column;
+  overflow-y    : auto;
+}
+
+/* ── Avatar section ──────────────────────────────────────────────────────── */
+.ds-avatar-section {
+  padding       : 20px 16px;
+  border-bottom : 1px solid var(--ds-border);
+  text-align    : center;
+}
+
+.ds-avatar-wrap {
+  position      : relative;
+  width         : 64px;
+  height        : 64px;
+  margin        : 0 auto 10px;
+  cursor        : pointer;
+  border-radius : 50%;
+  overflow      : hidden;
+  border        : 2px solid var(--ds-maroon);
+  box-shadow    : 0 2px 8px rgba(0,0,0,0.1);
+  transition    : transform 0.2s, border-color 0.2s;
+}
+
+.ds-avatar-img {
+  width      : 100%;
+  height     : 100%;
+  object-fit : cover;
+}
+
+.ds-avatar-initials {
+  width           : 100%;
+  height          : 100%;
+  background      : linear-gradient(135deg, var(--ds-maroon), #4a0a1a);
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  font-size       : 1.4rem;
+  color           : #fff;
+  font-weight     : 700;
+}
+
+.ds-avatar-overlay {
+  position        : absolute;
+  inset           : 0;
+  background      : rgba(0, 0, 0, 0.4);
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  opacity         : 0;
+  transition      : opacity 0.2s;
+  color           : #fff;
+  font-size       : 0.65rem;
+  font-weight     : 600;
+}
+
+.ds-avatar-wrap:hover .ds-avatar-overlay {
+  opacity : 1;
+}
+
+.ds-avatar-wrap:hover {
+  transform    : scale(1.05);
+  border-color : #c9a84c;
+}
+
+.ds-user-name {
+  font-weight : 600;
+  font-size   : 0.875rem;
+  color       : var(--ds-ink);
+}
+
+.ds-user-role {
+  color      : var(--ds-muted);
+  font-size  : 0.72rem;
+  margin-top : 2px;
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+.ds-nav {
+  padding : 12px 8px;
+  flex    : 1;
+}
+
+.ds-nav-btn {
+  width          : 100%;
+  display        : flex;
+  align-items    : center;
+  gap            : 10px;
+  padding        : 10px 12px;
+  border-radius  : 8px;
+  border         : none;
+  cursor         : pointer;
+  font-size      : 0.82rem;
+  margin-bottom  : 2px;
+  transition     : all 0.15s;
+  text-align     : left;
+}
+
+.ds-nav-btn--active {
+  background  : rgba(114, 16, 42, 0.08);
+  color       : var(--ds-maroon);
+  font-weight : 600;
+}
+
+.ds-nav-btn--inactive {
+  background  : transparent;
+  color       : #4a4a4a;
+  font-weight : 400;
+}
+
+.ds-notif-badge {
+  margin-left   : auto;
+  background    : var(--ds-maroon);
+  color         : #fff;
+  font-size     : 0.6rem;
+  font-weight   : 700;
+  border-radius : 999px;
+  padding       : 1px 6px;
+}
+
+/* ── Logout ──────────────────────────────────────────────────────────────── */
+.ds-logout-wrap {
+  padding    : 12px 8px;
+  border-top : 1px solid var(--ds-border);
+}
+
+.ds-logout-btn {
+  width       : 100%;
+  display     : flex;
+  align-items : center;
+  gap         : 10px;
+  padding     : 10px 12px;
+  border-radius: 8px;
+  border      : none;
+  cursor      : pointer;
+  background  : transparent;
+  color       : #991b1b;
+  font-size   : 0.82rem;
+  font-weight : 500;
+}

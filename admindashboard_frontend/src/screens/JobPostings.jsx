@@ -1,0 +1,635 @@
+import { useState, useRef } from "react";
+import { T, font } from "../theme";
+import { useBreakpoint, useHorizontalScroll } from "../hooks";
+import { Card, SectionTitle, Table, Mono, Badge, Input, Modal, ModalHeader, Btn } from "../components/ui";
+
+export default function JobPostings({ postings, setPostings, jobRequests, existingRoles }) {
+  const bp = useBreakpoint();
+  const isMobile = bp === "mobile";
+  const [search, setSearch] = useState("");
+  const [selectedPostingId, setSelectedPostingId] = useState(null);
+  const [selectedJobForModal, setSelectedJobForModal] = useState(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [filterActiveIndex, setFilterActiveIndex] = useState(0);
+  const scrollRef = useRef(null);
+  const hScroll = useHorizontalScroll();
+
+  const getJobDetails = (posting) => {
+    const jr = (jobRequests || []).find((r) => r.role === posting.role);
+    const er = (existingRoles || []).find((r) => r.role === posting.role);
+    return {
+      vacancies: posting.vacancies || jr?.vacancies || "—",
+      exp: posting.exp || jr?.exp || er?.experience || "—",
+      qual: posting.qual || jr?.qual || "—",
+      type: posting.type || jr?.type || er?.type || "—",
+      salary: posting.salary || jr?.salary || er?.salaryRange || "—",
+      location: posting.location || jr?.location || "—",
+      description: posting.description || jr?.description || "—",
+      justification: posting.justification || jr?.justification || "—",
+    };
+  };
+
+  const selectedRole = postings.find((p) => p.id === selectedPostingId)?.role ?? null;
+
+  const selectPosting = (id) => {
+    setSelectedPostingId((prev) => (prev === id ? null : id));
+    setSearch("");
+  };
+
+  const scrollCarousel = (dir) => {
+    hScroll.ref.current?.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
+  };
+
+  const filtered = postings.filter(
+    (p) =>
+      (selectedPostingId === null || p.id === selectedPostingId) &&
+      (p.role?.toLowerCase().includes(search.toLowerCase()) ||
+        p.channel?.toLowerCase().includes(search.toLowerCase())),
+  );
+
+  const shareJob = (job) => {
+    const link = `https://careers.school.com/job/${job.id}`;
+    navigator.clipboard.writeText(link).catch(() => { });
+    alert(`Job link copied!\n\n${link}`);
+  };
+
+  const toggleStatus = (id, currentStatus) => {
+    const newStatus = currentStatus === "Published" ? "Unpublished" : "Published";
+    setPostings((prev) => prev.map((item) => item.id === id ? { ...item, status: newStatus } : item));
+  };
+
+  const stats = [
+    { label: "Published", value: postings.filter((p) => p.status === "Published").length, color: T.green },
+    { label: "Unpublished", value: postings.filter((p) => p.status !== "Published").length, color: T.amber },
+    { label: "Total Applications", value: postings.reduce((s, p) => s + (p.apps || 0), 0), color: T.blue },
+  ];
+
+  return (
+    <div>
+      <SectionTitle title="Job Postings" sub="Manage and publish approved jobs to your career portal" />
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
+        {stats.map((s, idx) => (
+          <div key={s.label} className="animate-fade-in-up" style={{ animationDelay: `${idx * 0.06}s` }}>
+            <Card style={{ padding: isMobile ? 14 : 18 }}>
+              <div className="animate-count-up" style={{ fontSize: isMobile ? font['2xl'] : font['3xl'], fontWeight: font.black, fontFamily: font.heading, color: s.color, animationDelay: `${idx * 0.06 + 0.1}s` }}>{s.value}</div>
+              <div style={{ fontSize: font.sm + 1, fontWeight: font.bold, fontFamily: font.body, color: T.ink, marginTop: 4 }}>{s.label}</div>
+            </Card>
+          </div>
+        ))}
+      </div>
+
+      {postings.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.inkMid }}>
+              {selectedPostingId ? (
+                <span>
+                  Filtering by <span style={{ color: T.primary }}>{selectedRole}</span>
+                  <button
+                    onClick={() => selectPosting(null)}
+                    style={{ marginLeft: 8, fontSize: 11, color: T.inkFaint, background: "none", border: `1px solid ${T.border}`, borderRadius: 6, padding: "2px 8px", cursor: "pointer" }}
+                  >
+                    Clear ×
+                  </button>
+                </span>
+              ) : (
+                <span style={{ color: T.inkFaint }}>Select a job to filter postings</span>
+              )}
+            </div>
+            {!isMobile && (
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => scrollCarousel("left")} style={{ background: T.surface, border: `1.5px solid ${T.border}`, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, color: T.inkMid, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+                <button onClick={() => scrollCarousel("right")} style={{ background: T.surface, border: `1.5px solid ${T.border}`, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, color: T.inkMid, display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+              </div>
+            )}
+          </div>
+
+          {isMobile ? (
+            <>
+              <div
+                ref={hScroll.ref}
+                onScroll={(e) => {
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = e.currentTarget.clientWidth;
+                  if (cardWidth > 0) {
+                    const newIndex = Math.round(scrollLeft / cardWidth);
+                    setFilterActiveIndex(newIndex);
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  overflowX: "auto",
+                  WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  gap: 12,
+                  paddingBottom: 4,
+                }}
+              >
+                <div
+                  onClick={() => {
+                    selectPosting(null);
+                    setFilterActiveIndex(0);
+                    if (hScroll.ref.current) {
+                      const cards = hScroll.ref.current.children;
+                      if (cards[0]) cards[0].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
+                  }}
+                  style={{
+                    flexShrink: 0, width: "100%", border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
+                    borderRadius: 16, padding: "18px 20px", cursor: "pointer",
+                    background: !selectedPostingId ? T.primaryLight : T.surface,
+                    display: "flex", flexDirection: "row", alignItems: "center", gap: 16,
+                    transition: "all 0.2s",
+                    boxShadow: !selectedPostingId ? `0 4px 20px ${T.primary}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <div style={{
+                    width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+                    background: !selectedPostingId ? T.primary : T.border,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 22, color: "#fff",
+                  }}>◈</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: !selectedPostingId ? T.primary : T.ink }}>All Postings</div>
+                    <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 2 }}>{postings.reduce((s, p) => s + (p.apps || 0), 0)} total applications</div>
+                  </div>
+                  {!selectedPostingId && (
+                    <div style={{ background: T.primary, color: "#fff", borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>Active</div>
+                  )}
+                </div>
+
+                {postings.map((p, idx) => {
+                  const isSelected = selectedPostingId === p.id;
+                  const initials = p.role.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+                  const details = getJobDetails(p);
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        selectPosting(p.id);
+                        setFilterActiveIndex(idx + 1);
+                        if (hScroll.ref.current) {
+                          const cards = hScroll.ref.current.children;
+                          if (cards[idx + 1]) cards[idx + 1].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
+                      style={{
+                        flexShrink: 0, width: "100%", border: `2px solid ${isSelected ? T.primary : T.border}`,
+                        borderRadius: 16, padding: "18px 20px", cursor: "pointer",
+                        background: isSelected ? T.primaryLight : T.surface,
+                        transition: "all 0.2s",
+                        boxShadow: isSelected ? `0 4px 20px ${T.primary}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{
+                          width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
+                          background: isSelected ? T.primary : "#E2E8F0",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 17, fontWeight: 800,
+                          color: isSelected ? "#fff" : T.inkMid,
+                        }}>{initials}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, lineHeight: 1.3, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{p.role}</div>
+                          <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 2 }}>{p.channel} Posting</div>
+                        </div>
+                        {isSelected && (
+                          <div style={{ background: T.primary, color: "#fff", borderRadius: 99, padding: "4px 12px", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>Active</div>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, gap: 8 }}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <span style={{
+                            fontSize: 11, borderRadius: 99, padding: "3px 10px", fontWeight: 700,
+                            background: details.type === "Full-time" ? T.primaryLight : T.tealLight,
+                            color: details.type === "Full-time" ? T.primary : T.teal,
+                          }}>{details.type}</span>
+                        </div>
+                        <div style={{ flexShrink: 0, textAlign: "right" }}>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: isSelected ? T.primary : T.ink }}>{p.apps ?? 0}</span>
+                          <span style={{ fontSize: 10, color: T.inkFaint, display: "block", lineHeight: 1 }}>applications</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
+                {[null, ...postings.map((p) => p.id)].map((id, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      if (id === null) selectPosting(null);
+                      else selectPosting(id);
+                      setFilterActiveIndex(i);
+                      if (hScroll.ref.current) {
+                        const cards = hScroll.ref.current.children;
+                        if (cards[i]) cards[i].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                      }
+                    }}
+                    style={{
+                      width: filterActiveIndex === i ? 20 : 6,
+                      height: 6, borderRadius: 99,
+                      background: filterActiveIndex === i ? T.primary : T.border,
+                      cursor: "pointer", transition: "all 0.2s",
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 8, width: 40, zIndex: 2, background: `linear-gradient(to right, ${T.canvas}, transparent)`, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 8, width: 40, zIndex: 2, background: `linear-gradient(to left, ${T.canvas}, transparent)`, pointerEvents: "none" }} />
+              <div
+                ref={hScroll.ref}
+                className="carousel-scroll hscroll-track"
+                onWheel={hScroll.onWheel}
+                onMouseDown={hScroll.onMouseDown}
+                onMouseMove={hScroll.onMouseMove}
+                onMouseUp={hScroll.onMouseUp}
+                onMouseLeave={hScroll.onMouseLeave}
+                style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8, WebkitOverflowScrolling: "touch", cursor: "grab", userSelect: "none" }}
+              >
+              <div
+                onClick={() => selectPosting(null)}
+                style={{
+                  flexShrink: 0, width: 200, border: `2px solid ${!selectedPostingId ? T.primary : T.border}`,
+                  borderRadius: 14, padding: "16px 18px", cursor: "pointer",
+                  background: !selectedPostingId ? T.primaryLight : T.surface,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  gap: 8, transition: "all 0.15s", minHeight: 140,
+                }}
+              >
+                <div style={{ fontSize: 24, opacity: 0.5 }}>◈</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: !selectedPostingId ? T.primary : T.ink, textAlign: "center" }}>All Postings</div>
+                <div style={{ fontSize: 11, color: T.inkFaint, textAlign: "center" }}>{postings.reduce((s, p) => s + (p.apps || 0), 0)} applications</div>
+              </div>
+
+              {postings.map((p) => {
+                const isSelected = selectedPostingId === p.id;
+                const details = getJobDetails(p);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => selectPosting(p.id)}
+                    style={{
+                      flexShrink: 0, width: 280, border: `2px solid ${isSelected ? T.primary : T.border}`,
+                      borderRadius: 14, padding: "14px 16px", cursor: "pointer",
+                      background: isSelected ? T.primaryLight : T.surface,
+                      transition: "all 0.18s",
+                      display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 140,
+                      boxShadow: isSelected ? `0 4px 20px ${T.primary}22` : "0 1px 4px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, lineHeight: 1.3, flex: 1 }}>{p.role}</div>
+                        <span style={{ fontSize: 10, fontWeight: 700, borderRadius: 99, padding: "2px 7px", background: details.type === "Full-time" ? T.primaryLight : T.tealLight, color: details.type === "Full-time" ? T.primary : T.teal }}>{details.type}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: T.inkLight }}>{p.channel} Posting</div>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                      <span style={{ fontSize: 12, color: T.inkMid }}><strong>{p.apps ?? 0}</strong> applications</span>
+                      {isSelected && <span style={{ fontSize: 10, fontWeight: 700, background: T.primary, color: "#fff", borderRadius: 99, padding: "2px 8px" }}>Selected</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isMobile ? (
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
+            {filtered.length} posting{filtered.length !== 1 ? "s" : ""}
+          </div>
+
+          <div
+            ref={scrollRef}
+            onScroll={(e) => {
+              const scrollLeft = e.currentTarget.scrollLeft;
+              const cardWidth = e.currentTarget.clientWidth;
+              const newIndex = Math.round(scrollLeft / cardWidth);
+              setCurrentCardIndex(newIndex);
+            }}
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              gap: 16,
+              padding: "0 16px 20px",
+              margin: "0 -16px",
+            }}
+          >
+            {filtered.map((p, idx) => {
+              const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedJobForModal(p)}
+                  style={{
+                    flexShrink: 0,
+                    minWidth: "calc(100% - 32px)",
+                    background: cardBackground,
+                    color: "#fff",
+                    borderRadius: 20,
+                    padding: 24,
+                    position: "relative",
+                    boxShadow: "0 14px 40px rgba(0,0,0,0.25)",
+                    cursor: "pointer",
+                    minHeight: 380,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.9)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                    {idx + 1} of {filtered.length}
+                  </div>
+
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div
+                        style={{
+                          width: 48, height: 48, borderRadius: "50%",
+                          background: "rgba(255,255,255,0.15)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0,
+                        }}
+                      >
+                        💼
+                      </div>
+                      <div style={{ paddingRight: 64 }}>
+                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{p.role}</h3>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
+                          {p.channel}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.1)",
+                      backdropFilter: "blur(8px)",
+                      borderRadius: 12,
+                      padding: 18,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      marginTop: 16,
+                      flex: 1,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Job ID</span>
+                      <Mono v={p.id} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Posted</span>
+                      <span style={{ fontSize: 13, color: "#fff" }}>{p.posted || "—"}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Expiry</span>
+                      <span style={{ fontSize: 13, color: "#fff" }}>{p.expiry || "—"}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Applications</span>
+                      <span style={{ fontSize: 13, color: "#fff", fontWeight: 700 }}>{p.apps ?? 0}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</span>
+                      <span
+                        style={{
+                          borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700,
+                          background: p.status === "Published" ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
+                          color: p.status === "Published" ? "#34D399" : "#FBBF24",
+                          border: `1px solid ${p.status === "Published" ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
+                        }}
+                      >
+                        {p.status || "Unpublished"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: "12px 0 0", display: "flex", justifyContent: "flex-end", gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                    {p.status === "Published" && (
+                      <button
+                        onClick={() => shareJob(p)}
+                        style={{ border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                      >
+                        Share
+                      </button>
+                    )}
+                    <button
+                      onClick={() => toggleStatus(p.id, p.status)}
+                      style={{
+                        background: p.status === "Published" ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)",
+                        color: p.status === "Published" ? "#FCA5A5" : "#34D399",
+                        border: `1px solid ${p.status === "Published" ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
+                        borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontWeight: 700, fontSize: 12,
+                      }}
+                    >
+                      {p.status === "Published" ? "Unpublish" : "Publish"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {filtered.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10, paddingBottom: 8 }}>
+              {filtered.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => scrollRef.current?.scrollTo({ left: (i * scrollRef.current.clientWidth), behavior: "smooth" })}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: currentCardIndex === i ? T.primary : T.border,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <Card>
+          <div style={{ padding: "16px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <Input
+              placeholder="Search role..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ maxWidth: isMobile ? "100%" : 280 }}
+            />
+          </div>
+
+          <Table
+            cols={["Job ID", "Role", "Posted", "Expiry", "Applications", "Status", "Actions"]}
+            onRowClick={(i) => setSelectedJobForModal(filtered[i])}
+            rows={filtered.map((p) => [
+              <Mono v={p.id} />,
+              <div>
+                <div style={{ fontWeight: 800, color: T.ink }}>{p.role}</div>
+              </div>,
+              <span style={{ fontSize: 12, color: T.inkMid }}>{p.posted}</span>,
+              <span style={{ fontSize: 12, color: T.inkMid }}>{p.expiry}</span>,
+              <span style={{ fontWeight: 700, color: T.ink }}>{p.apps ?? 0}</span>,
+              <span
+                style={{
+                  borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, display: "inline-block",
+                  ...(p.status === "Published"
+                    ? { background: T.greenLight, color: T.green, border: `1px solid ${T.green}` }
+                    : { background: T.amberLight, color: T.amber, border: `1px solid ${T.amber}` }),
+                }}
+              >
+                {p.status || "Unpublished"}
+              </span>,
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
+                {p.status === "Published" && (
+                  <button
+                    onClick={() => shareJob(p)}
+                    style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                  >
+                    Share
+                  </button>
+                )}
+                <button
+                  onClick={() => toggleStatus(p.id, p.status)}
+                  style={{
+                    border: "none",
+                    background: p.status === "Published" ? "#FEE2E2" : T.greenLight,
+                    color: p.status === "Published" ? "#DC2626" : T.green,
+                    borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12,
+                  }}
+                >
+                  {p.status === "Published" ? "Unpublish" : "Publish"}
+                </button>
+              </div>,
+            ])}
+          />
+        </Card>
+      )}
+
+      {selectedJobForModal && (() => {
+        const details = getJobDetails(selectedJobForModal);
+        return (
+          <Modal open={!!selectedJobForModal} onClose={() => setSelectedJobForModal(null)} maxWidth={600}>
+            <ModalHeader title="Job Posting Details" onClose={() => setSelectedJobForModal(null)} />
+
+            <div style={{
+              background: "linear-gradient(135deg, #72102a 0%, #3a0010 100%)",
+              margin: isMobile ? "-4px -16px 20px" : "-4px -24px 20px",
+              padding: isMobile ? "18px 20px" : "24px 28px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+            }}>
+              <div style={{
+                width: 54, height: 54, borderRadius: 14,
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 24, flexShrink: 0,
+              }}>
+                💼
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                  {selectedJobForModal.id} · {selectedJobForModal.channel || "Posting Channel"}
+                </div>
+                <h3 style={{ margin: 0, fontSize: font.lg + 1, fontWeight: font.black, fontFamily: font.heading, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {selectedJobForModal.role}
+                </h3>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "5px 14px",
+                  background: selectedJobForModal.status === "Published" ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.12)",
+                  color: selectedJobForModal.status === "Published" ? "#6EE7B7" : "rgba(255,255,255,0.7)",
+                  border: `1px solid ${selectedJobForModal.status === "Published" ? "rgba(110,231,183,0.35)" : "rgba(255,255,255,0.18)"}`,
+                  letterSpacing: "0.02em",
+                }}>
+                  {selectedJobForModal.status || "Unpublished"}
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>
+                  {selectedJobForModal.apps || 0} applications
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              {[
+                { label: "Vacancies", value: details.vacancies },
+                { label: "Experience", value: details.exp },
+                { label: "Qualification", value: details.qual },
+                { label: "Employment Type", value: details.type },
+                { label: "Salary Range", value: details.salary },
+                { label: "Location", value: details.location },
+                { label: "Posted Date", value: selectedJobForModal.posted || "—" },
+                { label: "Expiry", value: selectedJobForModal.expiry || "—" },
+              ].map((item, idx) => (
+                <div key={idx} style={{
+                  padding: "10px 12px", background: T.canvas, border: `1px solid ${T.border}`,
+                  borderRadius: 8, display: "flex", flexDirection: "column", gap: 3
+                }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {item.label}
+                  </span>
+                  <div style={{ fontSize: 12.5, color: T.ink, fontWeight: 600 }}>
+                    {item.value || "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {details.description && details.description !== "—" && (
+              <div style={{ marginBottom: 14, background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Job Description</div>
+                <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{details.description}</div>
+              </div>
+            )}
+            {details.justification && details.justification !== "—" && (
+              <div style={{ marginBottom: 14, background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Justification</div>
+                <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{details.justification}</div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "flex-end", borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+              {selectedJobForModal.status === "Published" && (
+                <Btn label="Share" variant="outline" onClick={(e) => { e.stopPropagation(); shareJob(selectedJobForModal); }} />
+              )}
+              <Btn
+                label={selectedJobForModal.status === "Published" ? "Unpublish" : "Publish"}
+                variant={selectedJobForModal.status === "Published" ? "danger" : "success"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleStatus(selectedJobForModal.id, selectedJobForModal.status);
+                  setSelectedJobForModal((prev) =>
+                    prev ? { ...prev, status: prev.status === "Published" ? "Unpublished" : "Published" } : null
+                  );
+                }}
+              />
+            </div>
+          </Modal>
+        );
+      })()}
+    </div>
+  );
+}

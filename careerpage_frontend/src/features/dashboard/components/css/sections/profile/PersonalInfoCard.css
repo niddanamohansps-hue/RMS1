@@ -1,0 +1,175 @@
+/* ─── PersonalInfoCard.css ───────────────────────────────────────────────── */
+:root {
+  --pic-maroon: #72102a;
+  --pic-border: #e5e7eb;
+  --pic-ink: #1a0a0a;
+  --pic-muted: #6b5c5c;
+  --pic-canvas: #faf8f5;
+  --pic-disabled-bg: #f3f4f6;
+  --pic-valid: #065f46;
+  --pic-error: #991b1b;
+}
+
+.pic-card {
+  background: #fff;
+  border: 1px solid var(--pic-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.pic-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--pic-maroon);
+  margin-bottom: 16px;
+  font-family: 'Playfair Display', serif;
+}
+
+.pic-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a4a4a;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.pic-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--pic-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  background: var(--pic-canvas);
+  color: var(--pic-ink);
+  box-sizing: border-box;
+}
+
+.pic-input[readonly] {
+  background: var(--pic-disabled-bg);
+  color: var(--pic-muted);
+}
+
+.pic-input--otp {
+  letter-spacing: 0.15em;
+}
+
+.pic-input--otp-error {
+  border-color: #fca5a5;
+}
+
+/* ── Banners ─────────────────────────────────────────────────────────────── */
+.pic-banner-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0fdf4;
+  border: 1px solid #6ee7b7;
+  border-radius: 8px;
+}
+
+.pic-banner-success-text {
+  font-size: 0.85rem;
+  color: var(--pic-valid);
+  font-weight: 600;
+}
+
+.pic-banner-info {
+  font-size: 0.75rem;
+  color: var(--pic-valid);
+  background: #f0fdf4;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #6ee7b7;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.pic-btn-primary {
+  background: var(--pic-maroon);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pic-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.pic-btn-secondary {
+  background: transparent;
+  color: var(--pic-maroon);
+  border: 1px solid var(--pic-maroon);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pic-btn-secondary:hover {
+  background: rgba(114, 16, 42, 0.05);
+}
+
+.pic-btn-verify {
+  background: var(--pic-valid);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pic-btn-verify:hover {
+  opacity: 0.9;
+}
+
+.pic-btn-cancel {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--pic-muted);
+  border: none;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ── Error message ───────────────────────────────────────────────────────── */
+.pic-error-msg {
+  color: var(--pic-error);
+  font-size: 0.75rem;
+}
+
+/* ── Layout Helpers ──────────────────────────────────────────────────────── */
+.pic-email-col {
+  grid-column: 1 / -1;
+}
+
+.pic-email-display-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pic-email-edit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pic-email-input-row {
+  display: flex;
+  gap: 8px;
+}
+

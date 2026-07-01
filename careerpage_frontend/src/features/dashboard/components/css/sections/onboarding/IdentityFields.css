@@ -1,0 +1,94 @@
+/* ─── IdentityFields.css ─────────────────────────────────────────────────── */
+:root {
+  --idf-maroon: #72102a;
+  --idf-ink: #1a0a0a;
+  --idf-muted: #6b5c5c;
+  --idf-border: #e5e7eb;
+  --idf-valid: #065f46;
+  --idf-invalid: #dc2626;
+  --idf-divider: #f3f4f6;
+  --idf-canvas: #faf8f5;
+  --idf-disabled-bg: #f3f4f6;
+}
+
+.idf-container {
+  margin-top: 12px;
+  border-top: 1px solid var(--idf-divider);
+  padding-top: 12px;
+}
+
+.idf-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a4a4a;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.idf-label--bank {
+  margin-bottom: 10px;
+}
+
+.idf-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.idf-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--idf-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  background: var(--idf-canvas);
+  color: var(--idf-ink);
+  box-sizing: border-box;
+}
+
+.idf-input--short {
+  max-width: 260px;
+}
+
+.idf-input:disabled {
+  background: var(--idf-disabled-bg);
+  color: var(--idf-muted);
+  cursor: not-allowed;
+}
+
+.idf-input--valid {
+  border-color: var(--idf-valid);
+}
+
+.idf-status-valid {
+  color: var(--idf-valid);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.idf-status-invalid {
+  color: var(--idf-invalid);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.idf-status-info {
+  color: var(--idf-muted);
+  font-size: 0.72rem;
+}
+
+.idf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.idf-required-star {
+  color: var(--idf-maroon);
+}
+

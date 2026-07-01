@@ -1,0 +1,79 @@
+/* ─── ProfilePicturePopup.css ────────────────────────────────────────────── */
+:root {
+  --pp-maroon : #72102a;
+  --pp-border : #e5e7eb;
+  --pp-cream  : #faf8f5;
+  --pp-muted  : #4a4a4a;
+}
+
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+.pp-backdrop {
+  position        : fixed;
+  inset           : 0;
+  z-index         : 1100;
+  background      : rgba(0, 0, 0, 0.55);
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  padding         : 20px;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.pp-panel {
+  background    : #fff;
+  border-radius : 16px;
+  padding       : 24px;
+  width         : 100%;
+  max-width     : 320px;
+  box-shadow    : 0 20px 40px rgba(0, 0, 0, 0.3);
+  text-align    : center;
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.pp-title {
+  font-family   : 'Playfair Display', serif;
+  font-weight   : 700;
+  font-size     : 1.1rem;
+  color         : var(--pp-maroon);
+  margin-bottom : 16px;
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+.pp-actions {
+  display        : flex;
+  flex-direction : column;
+  gap            : 10px;
+}
+
+.pp-btn-photo {
+  background    : var(--pp-maroon);
+  color         : #fff;
+  border        : none;
+  border-radius : 10px;
+  padding       : 12px;
+  font-size     : 0.85rem;
+  font-weight   : 600;
+  cursor        : pointer;
+}
+
+.pp-label-upload {
+  background    : var(--pp-cream);
+  border        : 1.5px solid var(--pp-border);
+  border-radius : 10px;
+  padding       : 12px;
+  color         : var(--pp-muted);
+  font-size     : 0.85rem;
+  font-weight   : 600;
+  cursor        : pointer;
+  display       : block;
+}
+
+.pp-btn-cancel {
+  background      : none;
+  border          : none;
+  color           : #6b5c5c;
+  font-size       : 0.78rem;
+  cursor          : pointer;
+  text-decoration : underline;
+  margin-top      : 6px;
+}
