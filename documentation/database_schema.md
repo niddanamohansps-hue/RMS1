@@ -59,6 +59,7 @@ Handles organizational roles, categorizations, internal requests, and public job
     "ExistingRole": {
       "description": "Master list of organizational roles and current headcount.",
       "fields": {
+        "id": { "type": "Primary Key", "attributes": "Auto-increment" },
         "role_id": { "type": "String(30)", "attributes": "Unique" },
         "department": { "type": "String(100)", "attributes": "Choices" },
         "role": { "type": "String(200)", "attributes": "Required" },
@@ -67,14 +68,84 @@ Handles organizational roles, categorizations, internal requests, and public job
         "status": { "type": "String(20)", "attributes": "Default: 'Active'" }
       }
     },
+    "RoleRequest": {
+      "description": "Requests to create new roles.",
+      "fields": {
+        "id": { "type": "Primary Key", "attributes": "Auto-increment" },
+        "request_id": { "type": "String(30)", "attributes": "Unique" },
+        "role": { "type": "String(200)", "attributes": "Required" },
+        "department": { "type": "String(100)", "attributes": "Required" },
+        "experience": { "type": "String(50)", "attributes": "Blank" },
+        "salary_range": { "type": "String(100)", "attributes": "Blank" },
+        "status": { "type": "String(20)", "attributes": "Choices: ['Pending', 'Approved', 'Rejected', 'Sent Back']" },
+        "submitted_by": { "type": "String(200)", "attributes": "Blank" }
+      }
+    },
+    "JobRequest": {
+      "description": "Requests to open new job postings.",
+      "fields": {
+        "id": { "type": "Primary Key", "attributes": "Auto-increment" },
+        "request_id": { "type": "String(30)", "attributes": "Unique" },
+        "role": { "type": "String(200)", "attributes": "Required" },
+        "vacancies": { "type": "Integer", "attributes": "Default: 1" },
+        "experience": { "type": "String(50)", "attributes": "Blank" },
+        "salary_range": { "type": "String(100)", "attributes": "Blank" },
+        "type": { "type": "String(50)", "attributes": "Default: 'Full-time'" },
+        "qualification": { "type": "String(200)", "attributes": "Blank" },
+        "educational_qualifications": { "type": "Text", "attributes": "Blank" },
+        "skills_required": { "type": "Text", "attributes": "Blank" },
+        "description": { "type": "Text", "attributes": "Blank" },
+        "justification": { "type": "Text", "attributes": "Blank" },
+        "location": { "type": "String(200)", "attributes": "Blank" },
+        "status": { "type": "String(20)", "attributes": "Choices: ['Pending', 'Approved', 'Rejected', 'Sent Back']" },
+        "submitted_by": { "type": "String(200)", "attributes": "Blank" }
+      }
+    },
+    "ApprovalRequest": {
+      "description": "Approval request ticket for Role/Job request.",
+      "fields": {
+        "id": { "type": "Primary Key", "attributes": "Auto-increment" },
+        "request_id": { "type": "String(30)", "attributes": "Unique" },
+        "type": { "type": "String(20)", "attributes": "Choices: ['Role Request', 'Job Request']" },
+        "title": { "type": "String(200)", "attributes": "Required" },
+        "department": { "type": "String(100)", "attributes": "Blank" },
+        "submitted_by": { "type": "String(200)", "attributes": "Blank" },
+        "status": { "type": "String(20)", "attributes": "Choices: ['Pending', 'Approved', 'Rejected', 'Sent Back']" },
+        "role_request_id": { "type": "Foreign Key", "attributes": "To role_requests, Nullable" },
+        "job_request_id": { "type": "Foreign Key", "attributes": "To job_requests, Nullable" }
+      }
+    },
+    "ApprovalHistory": {
+      "description": "Log of actions taken on an approval request.",
+      "fields": {
+        "id": { "type": "Primary Key", "attributes": "Auto-increment" },
+        "approval_id": { "type": "Foreign Key", "attributes": "To approval_requests" },
+        "action": { "type": "String(20)", "attributes": "Choices: ['Approved', 'Rejected', 'Sent Back']" },
+        "note": { "type": "Text", "attributes": "Blank" },
+        "acted_by": { "type": "String(200)", "attributes": "Blank" }
+      }
+    },
     "JobPosting": {
       "description": "Public-facing job advertisements.",
       "fields": {
+        "id": { "type": "Primary Key", "attributes": "Auto-increment" },
         "posting_id": { "type": "String(30)", "attributes": "Unique" },
         "role": { "type": "String(200)", "attributes": "Required" },
+        "department": { "type": "String(100)", "attributes": "Blank" },
+        "type": { "type": "String(50)", "attributes": "Default: 'Full-time'" },
         "category_id": { "type": "Foreign Key", "attributes": "To job_categories" },
-        "status": { "type": "String(20)", "attributes": "Default: 'Unpublished'" },
-        "channel": { "type": "String(20)", "attributes": "Default: 'External'" },
+        "location": { "type": "String(200)", "attributes": "Default: 'Guwahati, Assam'" },
+        "description": { "type": "Text", "attributes": "Blank" },
+        "qualifications": { "type": "JSONField", "attributes": "Default: []" },
+        "experience": { "type": "String(50)", "attributes": "Blank" },
+        "salary_range": { "type": "String(100)", "attributes": "Blank" },
+        "qualification": { "type": "String(200)", "attributes": "Blank" },
+        "educational_qualifications": { "type": "Text", "attributes": "Blank" },
+        "skills_required": { "type": "Text", "attributes": "Blank" },
+        "channel": { "type": "String(20)", "attributes": "Choices: ['External', 'Internal'], Default: 'External'" },
+        "status": { "type": "String(20)", "attributes": "Choices: ['Published', 'Unpublished', 'Closed'], Default: 'Unpublished'" },
+        "posted_date": { "type": "Date", "attributes": "Blank" },
+        "expiry_date": { "type": "Date", "attributes": "Blank" },
         "deadline": { "type": "String(100)", "attributes": "Blank" },
         "job_request_id": { "type": "Foreign Key", "attributes": "To job_requests" }
       }
