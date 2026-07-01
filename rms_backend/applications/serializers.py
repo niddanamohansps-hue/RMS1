@@ -14,6 +14,16 @@ class JobApplicationSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["app_id", "role", "applied_date", "candidate", "updated_at"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request and request.user and request.user.role == "candidate":
+            if "status" in self.fields:
+                self.fields["status"].read_only = True
+            if "admin_note" in self.fields:
+                self.fields["admin_note"].read_only = True
+
+
     def get_candidate_name(self, obj):
         return obj.candidate.get_full_name()
 
@@ -64,6 +74,16 @@ class GeneralApplicationSerializer(serializers.ModelSerializer):
         model  = GeneralApplication
         fields = "__all__"
         read_only_fields = ["app_id", "applied_date", "candidate"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request and request.user and request.user.role == "candidate":
+            if "status" in self.fields:
+                self.fields["status"].read_only = True
+            if "admin_note" in self.fields:
+                self.fields["admin_note"].read_only = True
+
 
     def get_candidate_name(self, obj):
         return obj.candidate.get_full_name()
