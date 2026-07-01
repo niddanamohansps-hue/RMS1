@@ -17,10 +17,10 @@ Below is a detailed performance audit of every API endpoint in the system. The a
 | Endpoint | Method | DB Query Pattern | Optimization Status | Performance Rating |
 | :--- | :--- | :--- | :--- | :--- |
 | `/api/job-categories/` | GET | `1 query` | Fetches flat category list. | ⚡ **Excellent** |
-| `/api/existing-roles/` | GET | `1 query` | Fetches flat roles list. Vacancies computed in memory. | ⚡ **Excellent** |
+| `/api/roles/` | GET | `1 query` | Fetches flat roles list. Vacancies computed in memory. | ⚡ **Excellent** |
 | `/api/role-requests/` | GET | `1 query` | **Optimized**: Uses `select_related("created_by")` to fetch author details in a single query (fixed N+1). | ⚡ **Excellent** |
 | `/api/job-requests/` | GET | `1 query` | Fetches flat job requests list. | ⚡ **Excellent** |
-| `/api/approval-requests/` | GET | `2 queries` | **Optimized**: Prefetches history records in a single batch query (fixed N+1). | ⚡ **Excellent** |
+| `/api/approvals/` | GET | `2 queries` | **Optimized**: Prefetches history records in a single batch query (fixed N+1). | ⚡ **Excellent** |
 | `/api/job-postings/` | GET | `1 query` | **Optimized**: Category is loaded via `select_related` and application counts are annotated in a single database query (fixed N+1). | ⚡ **Excellent** |
 | `/api/job-postings/public/` | GET | `0 queries` | **Cached**: Served from Redis/LocMem. Invalidated on save/delete. | 🚀 **Blazing Fast** |
 | `/api/dashboard/stats/` | GET | `0 queries` | **Cached**: Served from Redis/LocMem. Invalidated on model saves/deletes. If cache expires, runs 10 fast COUNT aggregates. | 🚀 **Blazing Fast** |
@@ -31,8 +31,8 @@ Below is a detailed performance audit of every API endpoint in the system. The a
 
 | Endpoint | Method | DB Query Pattern | Optimization Status | Performance Rating |
 | :--- | :--- | :--- | :--- | :--- |
-| `/api/job-applications/` | GET | `1 query` | **Optimized**: Candidate and Job Posting details are joined via `select_related`. | ⚡ **Excellent** |
-| `/api/job-applications/mine/` | GET | `1 query` | **Optimized**: Fetches candidate's own applications with post details joined. | ⚡ **Excellent** |
+| `/api/applications/` | GET | `1 query` | **Optimized**: Candidate and Job Posting details are joined via `select_related`. | ⚡ **Excellent** |
+| `/api/applications/mine/` | GET | `1 query` | **Optimized**: Fetches candidate's own applications with post details joined. | ⚡ **Excellent** |
 | `/api/general-applications/` | GET | `1 query` | **Optimized**: Joins candidate profile via `select_related`. | ⚡ **Excellent** |
 | `/api/general-applications/mine/` | GET | `1 query` | **Optimized**: Candidate profile is pre-fetched via `select_related`. | ⚡ **Excellent** |
 

@@ -31,41 +31,41 @@ Both frontends use JSON Web Tokens (JWT) for authentication. The endpoints belon
 The Admin Dashboard is the internal portal for HR and Admin staff. It consumes endpoints designed for full CRUD operations and workflow management. All requests require an `Authorization: Bearer <token>` header belonging to an admin user.
 
 ### Jobs & Organization Mapping
-Base URL: `/api/jobs/`
+Base URL: `/api/`
 
 | Endpoint | Methods | Description |
 |---|---|---|
-| `/job-categories/` | GET, POST, PUT, DELETE | Manage job categories |
-| `/roles/` | GET, POST, PUT, DELETE | Manage existing roles and master headcount |
-| `/role-requests/` | GET, POST, PUT, DELETE | Process internal role creation requests |
-| `/job-requests/` | GET, POST, PUT, DELETE | Process requests to open new job postings |
-| `/approvals/` | GET, POST, PUT | HR approval workflows for requests |
-| `/job-postings/` | GET, POST, PUT, DELETE | Create and manage public job postings |
-| `/dashboard/stats/`| GET | Aggregated statistics for the admin dashboard home |
+| `/api/job-categories/` | GET, POST, PUT, DELETE | Manage job categories |
+| `/api/roles/` | GET, POST, PUT, DELETE | Manage existing roles and master headcount |
+| `/api/role-requests/` | GET, POST, PUT, DELETE | Process internal role creation requests |
+| `/api/job-requests/` | GET, POST, PUT, DELETE | Process requests to open new job postings |
+| `/api/approvals/` | GET, POST, PUT | HR approval workflows for requests |
+| `/api/job-postings/` | GET, POST, PUT, DELETE | Create and manage public job postings |
+| `/api/dashboard/stats/`| GET | Aggregated statistics for the admin dashboard home |
 
 ### Applications Management
-Base URL: `/api/applications/`
+Base URL: `/api/`
 
 | Endpoint | Methods | Description |
 |---|---|---|
-| `/applications/` | GET, PUT | View and update statuses of job applications |
-| `/general-applications/`| GET, PUT | View general talent pool applications |
+| `/api/applications/` | GET, PUT, PATCH | View and update statuses of job applications |
+| `/api/general-applications/`| GET, PUT, PATCH | View general talent pool applications |
 
 ### Interviews & Scheduling
-Base URL: `/api/interviews/`
+Base URL: `/api/`
 
 | Endpoint | Methods | Description |
 |---|---|---|
-| `/panelists/` | GET, POST, PUT, DELETE | Manage internal interview panelists |
-| `/interviews/` | GET, POST, PUT, DELETE | Schedule, update, and review interviews |
+| `/api/panelists/` | GET, POST, PUT, DELETE | Manage internal interview panelists |
+| `/api/interviews/` | GET, POST, PUT, DELETE | Schedule, update, and review interviews |
 
 ### Offers & Onboarding
-Base URL: `/api/onboarding/`
+Base URL: `/api/`
 
 | Endpoint | Methods | Description |
 |---|---|---|
-| `/offers/` | GET, POST, PUT, DELETE | Generate and send offer letters |
-| `/onboarding/` | GET, PUT | Track and verify candidate onboarding tasks |
+| `/api/offers/` | GET, POST, PUT, DELETE | Generate and send offer letters |
+| `/api/onboarding/` | GET, PUT, PATCH | Track and verify candidate onboarding tasks |
 
 ---
 
@@ -78,21 +78,27 @@ No authentication required.
 
 | Endpoint | Methods | Description |
 |---|---|---|
-| `/api/jobs/job-postings/` | GET | List published, active job postings |
-| `/api/jobs/job-postings/{id}/`| GET | Get details for a specific job posting |
+| `/api/job-postings/public/` | GET | List published, active job postings |
+| `/api/job-postings/public/{id}/`| GET | Get details for a specific job posting |
 
 ### Candidate Actions
 Requires candidate authentication (`Authorization: Bearer <token>`). Endpoints automatically scope to the authenticated user's ID.
 
 | Endpoint | Methods | Description |
 |---|---|---|
-| `/api/applications/applications/` | POST | Apply for a specific job posting |
-| `/api/applications/applications/` | GET | View the status of the candidate's own applications |
-| `/api/applications/general-applications/` | POST | Submit a general application profile |
-| `/api/interviews/interviews/` | GET | View candidate's own scheduled interviews |
-| `/api/onboarding/offers/` | GET, PUT | View own offer letters, accept or reject |
-| `/api/onboarding/onboarding/` | GET, PUT | Update own onboarding tasks (upload docs, profile) |
-| `/api/notifications/notifications/` | GET, PUT | Retrieve and mark notifications as read |
+| `/api/applications/` | POST | Apply for a specific job posting |
+| `/api/applications/` | GET | View the status of the candidate's own applications |
+| `/api/applications/mine/` | GET | Retrieve candidate's own list of job applications |
+| `/api/general-applications/` | POST | Submit a general application profile |
+| `/api/general-applications/mine/` | GET | Retrieve candidate's own list of general applications |
+| `/api/interviews/` | GET | View candidate's own scheduled interviews |
+| `/api/offers/` | GET | View own offer letters |
+| `/api/offers/{id}/accept/` | POST | Accept own offer letter |
+| `/api/offers/{id}/decline/` | POST | Decline own offer letter |
+| `/api/onboarding/` | GET | View candidate's own onboarding checklist / tasks |
+| `/api/notifications/` | GET | Retrieve own notifications |
+| `/api/notifications/{id}/mark_read/` | PATCH | Mark specific notification as read |
+| `/api/notifications/mark_all_read/` | PATCH | Mark all notifications as read |
 
 ## Architecture Flow
 1. **Frontend Request:** The React apps (using `axios` or `fetch`) send requests to the Django REST framework endpoints.
