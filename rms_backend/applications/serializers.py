@@ -53,9 +53,21 @@ class JobApplicationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data["app_id"] = auto_id("JAPP", JobApplication)
-        validated_data["candidate"] = self.context["request"].user
+        user = self.context["request"].user
+        validated_data["candidate"] = user
         if validated_data.get("posting"):
             validated_data["role"] = validated_data["posting"].role
+
+        # If experience or qualification are not provided, populate from profile
+        profile = getattr(user, "profile", None)
+        if profile:
+            if not validated_data.get("experience"):
+                validated_data["experience"] = profile.years_of_experience
+            if not validated_data.get("qualification"):
+                edu = profile.educational_qualification or ""
+                deg = profile.degree_name or ""
+                validated_data["qualification"] = f"{edu} ({deg})" if (edu and deg) else (edu or deg or "")
+
         return super().create(validated_data)
 
 

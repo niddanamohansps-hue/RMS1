@@ -173,11 +173,11 @@ function AppContent() {
   }, []);
 
   const handleApplyJob = (job) => {
+    setSelectedJob(job);
     if (!loggedInUser) {
       navigate("/login");
       return;
     }
-    setSelectedJob(job);
     navigate(`/jobs/${job.id}/apply`);
   };
 
@@ -251,35 +251,46 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={
           <LoginModal
-            onClose={() => navigate("/")}
+            onClose={() => { setSelectedJob(null); navigate("/"); }}
             initialTab="login"
             onLoginSuccess={() => {
-              navigate("/");
               loadCandidateData();
+              if (selectedJob) {
+                navigate(`/jobs/${selectedJob.id}/apply`);
+              } else {
+                navigate("/");
+              }
             }}
-            onSignupSuccess={() => {
-              navigate("/");
+            onSignupSuccess={(data) => {
+              setSignupData(data);
+              navigate("/apply");
               loadCandidateData();
             }}
           />
         } />
         <Route path="/signup" element={
           <LoginModal
-            onClose={() => navigate("/")}
+            onClose={() => { setSelectedJob(null); navigate("/"); }}
             initialTab="signup"
             onLoginSuccess={() => {
-              navigate("/");
               loadCandidateData();
+              if (selectedJob) {
+                navigate(`/jobs/${selectedJob.id}/apply`);
+              } else {
+                navigate("/");
+              }
             }}
-            onSignupSuccess={() => {
-              navigate("/");
+            onSignupSuccess={(data) => {
+              setSignupData(data);
+              navigate("/apply");
               loadCandidateData();
             }}
           />
         } />
         <Route path="/apply" element={
           <ApplyModal
-            onClose={() => navigate("/")}
+            signupData={signupData}
+            onClose={() => { setSelectedJob(null); navigate("/"); }}
             onSubmitData={async (data) => {
               try {
                 await api.put("/auth/me/", {
@@ -304,7 +315,11 @@ function AppContent() {
               } catch (err) {
                 toast.error("Failed to submit general application: " + err.message);
               }
-              navigate("/");
+              if (selectedJob) {
+                navigate(`/jobs/${selectedJob.id}/apply`);
+              } else {
+                navigate("/");
+              }
             }}
           />
         } />
@@ -331,7 +346,9 @@ function AppContent() {
                   notice_period: formData.noticePeriod,
                   has_referral: formData.hasReferral === "Yes",
                   referral_emp_id: formData.referralEmpId || "",
-                  referred_by: formData.hasReferral === "Yes" ? "Employee" : "None"
+                  referred_by: formData.hasReferral === "Yes" ? "Employee" : "None",
+                  experience: professionalData ? professionalData.experience : (savedProfileData?.experience || ""),
+                  qualification: professionalData ? `${professionalData.education} (${professionalData.degreeName})` : (savedProfileData ? `${savedProfileData.education} (${savedProfileData.degreeName})` : ""),
                 });
                 
                 toast.success("Application submitted successfully!");

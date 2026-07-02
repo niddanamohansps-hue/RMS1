@@ -50,6 +50,12 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
             role_request=instance,
         )
     else:
+        # Sync title and department of all approvals linked to this role request
+        ApprovalRequest.objects.filter(role_request=instance).update(
+            title=instance.role,
+            department=instance.department
+        )
+
         if instance.status == "Cancelled":
             ApprovalRequest.objects.filter(role_request=instance, status="Pending").update(status="Cancelled")
         elif instance.status == "Pending":

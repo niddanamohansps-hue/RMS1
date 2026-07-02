@@ -131,3 +131,61 @@ class CacheAndTaskTestCase(TestCase):
         job_request.refresh_from_db()
         self.assertEqual(approval.status, "Rejected")
         self.assertEqual(job_request.status, "Rejected")
+
+    def test_approval_action_modifies_role_request(self):
+        """
+        Verify that fields updated during approval action are synchronized
+        to the underlying RoleRequest and ApprovalRequest title/department.
+        """
+        # Create a RoleRequest and corresponding ApprovalRequest
+        role_request = RoleRequest.objects.create(
+            request_id="RR-TEST-03",
+            role="Maths Teacher",
+            department="Science",
+            salary_range="30000-40000",
+            experience="1-3",
+            status="Pending",
+            created_by=self.admin_user
+        )
+        approval = ApprovalRequest.objects.create(
+            request_id="RR-TEST-03",
+            type="Role Request",
+            title="Maths Teacher",
+            department="Science",
+            status="Pending",
+            role_request=role_request
+        )
+
+        client = APIClient()
+        client.force_authenticate(user=self.admin_user)
+
+        # Action: Send Back with modified fields
+        payload = {
+            "action": "Send Back",
+            "note": "Please modify role details",
+            "department": "Arts",
+            "role": "Art Teacher",
+            "salary_range": "35000-45000",
+            "experience": "2-4"
+        }
+        response = client.post(f"/api/approvals/{approval.id}/action/", payload)
+        self.assertEqual(response.status_code, 200)
+
+        # Refresh objects
+        approval.refresh_from_db()
+        role_request.refresh_from_db()
+
+        # Check status and comments
+        self.assertEqual(approval.status, "Sent Back")
+        self.assertEqual(role_request.status, "Sent Back")
+
+        # Check updated fields
+        self.assertEqual(role_request.role, "Art Teacher")
+        self.assertEqual(role_request.department, "Arts")
+        self.assertEqual(role_request.salary_range, "35000-45000")
+        self.assertEqual(role_request.experience, "2-4")
+
+        # Check ApprovalRequest updated title & department
+        self.assertEqual(approval.title, "Art Teacher")
+        self.assertEqual(approval.department, "Arts")
+

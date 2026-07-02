@@ -119,6 +119,21 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
         acted_by   = serializer.validated_data.get("acted_by") or request.user.get_full_name()
         note       = serializer.validated_data.get("note", "")
 
+        # Update RoleRequest if type is Role Request
+        if approval.type == "Role Request" and approval.role_request:
+            role_req = approval.role_request
+            if "role" in serializer.validated_data:
+                role_req.role = serializer.validated_data["role"]
+                approval.title = serializer.validated_data["role"]
+            if "department" in serializer.validated_data:
+                role_req.department = serializer.validated_data["department"]
+                approval.department = serializer.validated_data["department"]
+            if "salary_range" in serializer.validated_data:
+                role_req.salary_range = serializer.validated_data["salary_range"]
+            if "experience" in serializer.validated_data:
+                role_req.experience = serializer.validated_data["experience"]
+            role_req.save()
+
         approval.status = new_status
         approval.save()
 

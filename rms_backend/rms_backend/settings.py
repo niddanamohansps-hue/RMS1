@@ -20,7 +20,7 @@ import os
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,https://rms1-1-suhq.onrender.com"
+    "*" if DEBUG else "localhost,127.0.0.1,https://rms1-1-suhq.onrender.com"
 ).split(",")
 
 render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -148,14 +148,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ─── CORS ─────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ORIGINS",
-    default="http://localhost:5173,http://localhost:5174",
+    default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174,http://192.168.55.104:5173,http://192.168.55.104:5174",
     cast=Csv(),
 )
 CORS_ALLOW_CREDENTIALS = True
 
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
-    default="http://localhost:5173,http://localhost:5174",
+    default="http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174,http://192.168.55.104:5173,http://192.168.55.104:5174",
     cast=Csv(),
 )
 

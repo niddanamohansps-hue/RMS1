@@ -580,11 +580,18 @@ function AppContent() {
             const actionVerb = actionVerbMap[n.status];
             if (!actionVerb) continue; // unknown status, skip
             try {
-              await api.post(`/approvals/${c.db_id}/action/`, {
+              const payload = {
                 action: actionVerb,
                 note: n.comment || "",
                 acted_by: currentUser?.name || "HR Admin",
-              });
+              };
+              if (n.type === "Role Request") {
+                payload.department = n.dept || "";
+                payload.role = n.role || "";
+                payload.salary_range = n.salary ? n.salary.replace(/^₹/, "") : "";
+                payload.experience = n.experience || "";
+              }
+              await api.post(`/approvals/${c.db_id}/action/`, payload);
               // Perform side effects on successful approval
               if (n.status === "Approved") {
                 if (n.type === "Role Request") {

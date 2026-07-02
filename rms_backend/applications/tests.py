@@ -174,3 +174,21 @@ class JobApplicationAPITestCase(APITestCase):
         app = JobApplication.objects.get(app_id=response.data["app_id"])
         self.assertEqual(app.status, "Applied")
         self.assertEqual(app.admin_note, "")
+
+    def test_job_application_saves_experience_and_qualification(self):
+        """Verify that experience and qualification fields are saved correctly in the JobApplication model."""
+        self.client.force_authenticate(user=self.candidate)
+        url = reverse("applications-list")
+        data = {
+            "posting": self.posting.id,
+            "cover_letter": "I love math.",
+            "experience": "5 years",
+            "qualification": "M.Sc (Mathematics)",
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        app = JobApplication.objects.get(app_id=response.data["app_id"])
+        self.assertEqual(app.experience, "5 years")
+        self.assertEqual(app.qualification, "M.Sc (Mathematics)")
+

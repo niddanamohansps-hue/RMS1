@@ -204,9 +204,13 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
 
 
 class ApprovalActionSerializer(serializers.Serializer):
-    action   = serializers.ChoiceField(choices=["Approve", "Reject", "Send Back"])
-    note     = serializers.CharField(required=False, allow_blank=True)
-    acted_by = serializers.CharField(required=False)
+    action       = serializers.ChoiceField(choices=["Approve", "Reject", "Send Back"])
+    note         = serializers.CharField(required=False, allow_blank=True)
+    acted_by     = serializers.CharField(required=False)
+    department   = serializers.CharField(required=False, allow_blank=True)
+    role         = serializers.CharField(required=False, allow_blank=True)
+    salary_range = serializers.CharField(required=False, allow_blank=True)
+    experience   = serializers.CharField(required=False, allow_blank=True)
 
 
 class JobPostingSerializer(serializers.ModelSerializer):

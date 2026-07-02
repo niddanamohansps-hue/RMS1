@@ -116,6 +116,18 @@ export function ApplyModal({ onClose, signupData, onSubmitData }) {
     portfolio: "",
   });
 
+  useEffect(() => {
+    if (signupData) {
+      if (signupData.name) setFirstName(signupData.name);
+      if (signupData.lastName) setLastName(signupData.lastName);
+      setForm((f) => ({
+        ...f,
+        email: signupData.email || f.email,
+        phone: signupData.phone || f.phone,
+      }));
+    }
+  }, [signupData]);
+
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const handleSubmit = (e) => {
