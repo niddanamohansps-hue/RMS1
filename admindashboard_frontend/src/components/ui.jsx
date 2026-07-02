@@ -73,6 +73,8 @@ export const Btn = ({
   onClick,
   style = {},
   className = "",
+  loading = false,
+  disabled = false,
 }) => {
   const variants = {
     primary: { bg: T.primary, color: "#fff", border: T.primary },
@@ -86,29 +88,50 @@ export const Btn = ({
     amber: { bg: T.amberLight, color: T.amber, border: "#FDE68A" },
   };
   const v = variants[variant] || variants.primary;
+  const isBtnDisabled = disabled || loading;
   return (
     <button
-      onClick={onClick}
+      onClick={isBtnDisabled ? undefined : onClick}
+      disabled={isBtnDisabled}
       className={`btn-hover ${className}`}
       style={{
-        background: v.bg,
-        color: v.color,
-        border: `1.5px solid ${v.border}`,
+        background: isBtnDisabled ? (variant === "ghost" || variant === "outline" ? "transparent" : T.border) : v.bg,
+        color: isBtnDisabled ? T.inkLight : v.color,
+        border: `1.5px solid ${isBtnDisabled ? T.border : v.border}`,
         borderRadius: radius.md,
         padding: small ? "5px 12px" : "8px 18px",
         fontSize: small ? font.sm + 1 : font.base,
         fontWeight: font.bold,
         fontFamily: font.body,
-        cursor: "pointer",
+        cursor: isBtnDisabled ? "not-allowed" : "pointer",
         whiteSpace: "nowrap",
         lineHeight: 1.4,
         transition: transition.fast,
         minWidth: 0,
         letterSpacing: "0.01em",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        opacity: loading ? 0.85 : 1,
         ...style,
       }}
     >
-      {label}
+      {loading && (
+        <span
+          style={{
+            width: small ? 12 : 14,
+            height: small ? 12 : 14,
+            border: `2px solid ${variant === "ghost" || variant === "outline" ? T.primary : "#fff"}`,
+            borderTop: "2px solid transparent",
+            borderRadius: "50%",
+            animation: "spin 0.6s linear infinite",
+            display: "inline-block",
+            flexShrink: 0,
+          }}
+        />
+      )}
+      <span>{loading ? "Processing..." : label}</span>
     </button>
   );
 };

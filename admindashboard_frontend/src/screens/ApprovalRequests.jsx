@@ -63,94 +63,6 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
 
     setRequests((prev) => prev.map((item) => (item.id === r.id ? updated : item)));
 
-    if (r.type === "Role Request") {
-      setRoleRequests((prev) =>
-        prev.map((item) => {
-          // Match by sourceId (request_id of the linked RoleRequest) OR by db_id
-          const matchById = String(item.id) === String(r.sourceId);
-          const matchByDbId = r.source_db_id && String(item.db_id) === String(r.source_db_id);
-          if (!matchById && !matchByDbId) return item;
-          const updated2 = {
-            ...item,
-            dept: r.dept,
-            role: r.role,
-            status: action,   // "Sent Back" shown in UI; backend sanitizes to "Pending"
-            comment: customComment || "",
-            history: updated.history,
-            salaryRange: r.salary ? r.salary.replace(/^₹/, "") : item.salaryRange,
-            experience: r.experience || item.experience,
-          };
-          delete updated2.minSalary;
-          delete updated2.maxSalary;
-          delete updated2.minExperience;
-          delete updated2.maxExperience;
-          return updated2;
-        }),
-      );
-    }
-    if (r.type === "Job Request") {
-      setJobRequests((prev) =>
-        prev.map((item) => {
-          const matchById = String(item.id) === String(r.sourceId);
-          const matchByDbId = r.source_db_id && String(item.db_id) === String(r.source_db_id);
-          if (!matchById && !matchByDbId) return item;
-          return {
-            ...item,
-            status: action,
-            comment: customComment || "",
-            history: updated.history,
-            vacancies: r.vacancies !== undefined ? r.vacancies : item.vacancies,
-            qual: r.qual !== undefined ? r.qual : item.qual,
-            type: r.empType !== undefined ? r.empType : item.type,
-            description: r.description !== undefined ? r.description : item.description,
-            educationalQualifications: r.educationalQualifications !== undefined ? r.educationalQualifications : item.educationalQualifications,
-            skillsRequired: r.skillsRequired !== undefined ? r.skillsRequired : item.skillsRequired,
-          };
-        }),
-      );
-    }
-
-
-    if (action === "Approved" && r.type === "Role Request") {
-      setExistingRoles((prev) => {
-        const exists = prev.some((x) => x.role === r.role && x.dept === r.dept);
-        if (exists) return prev;
-        const cleanedSalary = r.salary ? r.salary.replace(/^₹/, "") : "";
-        return [...prev, {
-          id: `ROL-${Date.now()}`, dept: r.dept, role: r.role, type: "Full-time",
-          headcount: 1, filled: 0, currentFilled: 0, status: "Inactive", currentStatus: "Inactive",
-          experience: r.experience || "—",
-          salaryRange: cleanedSalary || "—",
-        }];
-      });
-      if (onNavigateToExistingRoles) {
-        setTimeout(() => { onNavigateToExistingRoles(); }, 300);
-      }
-    }
-
-    if (action === "Approved" && r.type === "Job Request") {
-      setJobPostings((prev) => {
-        const exists = prev.some((p) => p.role === r.role);
-        if (exists) return prev;
-        return [...prev, {
-          id: `POST-${Date.now()}`, role: r.role, channel: "Career Page",
-          status: "Unpublished", posted: now, expiry: "30 Days", apps: 0,
-          location: r.location || "",
-          salary: r.salary || "",
-          vacancies: r.vacancies || "",
-          exp: r.experience || "",
-          qual: r.qual || "",
-          type: r.empType || "",
-          description: r.description || "",
-          educationalQualifications: r.educationalQualifications || "",
-          skillsRequired: r.skillsRequired || "",
-        }];
-      });
-      if (onNavigateToApplications) {
-        setTimeout(() => { onNavigateToApplications(); }, 300);
-      }
-    }
-
     if (sel && sel.id === r.id) {
       setSel(updated);
     }
@@ -165,10 +77,12 @@ export default function ApprovalRequests({ requests, setRequests, setExistingRol
       const minE = sel.minExp ?? (sel.experience ? String(sel.experience).split("-")[0]?.trim() : "");
       const maxE = sel.maxExp ?? (sel.experience ? String(sel.experience).split("-")[1]?.trim() : "");
 
-      const errs = {};
-      if (minS && maxS && parseSal(minS) >= parseSal(maxS)) errs.minSalary = "Min salary must be less than max salary";
-      if (minE && maxE && parseFloat(minE) >= parseFloat(maxE)) errs.minExp = "Min experience must be less than max experience";
-      if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+      if (action === "Approved") {
+        const errs = {};
+        if (minS && maxS && parseSal(minS) >= parseSal(maxS)) errs.minSalary = "Min salary must be less than max salary";
+        if (minE && maxE && parseFloat(minE) >= parseFloat(maxE)) errs.minExp = "Min experience must be less than max experience";
+        if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+      }
 
       updatedSel.salary = minS && maxS ? `₹${minS}-${maxS}` : sel.salary;
       updatedSel.experience = minE && maxE ? `${minE}-${maxE}` : sel.experience;

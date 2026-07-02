@@ -66,6 +66,7 @@ class RoleRequest(models.Model):
         ("Approved",  "Approved"),
         ("Rejected",  "Rejected"),
         ("Sent Back", "Sent Back"),
+        ("Cancelled", "Cancelled"),
     ]
 
     request_id    = models.CharField(max_length=30, unique=True)
@@ -98,6 +99,7 @@ class JobRequest(models.Model):
         ("Approved",  "Approved"),
         ("Rejected",  "Rejected"),
         ("Sent Back", "Sent Back"),
+        ("Cancelled", "Cancelled"),
     ]
 
     request_id    = models.CharField(max_length=30, unique=True)

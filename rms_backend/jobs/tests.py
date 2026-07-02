@@ -2,10 +2,11 @@ from django.test import TestCase
 from django.core.cache import cache
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from jobs.models import JobPosting, JobCategory
+from jobs.models import JobPosting, JobCategory, ApprovalRequest, JobRequest, RoleRequest
 from jobs.tasks import check_expired_job_postings
 from notifications.tasks import create_notification_task
 from notifications.models import Notification
+from rest_framework.test import APIClient
 
 class CacheAndTaskTestCase(TestCase):
     def setUp(self):
@@ -83,3 +84,50 @@ class CacheAndTaskTestCase(TestCase):
         self.assertEqual(notif.title, "System Alert")
         self.assertEqual(notif.message, "Database maintenance completed.")
         self.assertIn("created for admin@school.com", res)
+
+    def test_approval_accept_and_reject_actions(self):
+        """
+        Verify that accepting and rejecting approvals behaves correctly on the backend.
+        """
+        # Create a JobRequest and corresponding ApprovalRequest
+        job_request = JobRequest.objects.create(
+            request_id="JR-TEST-02",
+            role="Science Teacher",
+            status="Pending",
+            created_by=self.admin_user
+        )
+        approval = ApprovalRequest.objects.create(
+            request_id="JR-TEST-02",
+            type="Job Request",
+            title="Science Teacher",
+            status="Pending",
+            job_request=job_request
+        )
+
+        client = APIClient()
+        client.force_authenticate(user=self.admin_user)
+
+        # 1. Accept Action
+        response = client.post(f"/api/approvals/{approval.id}/action/", {"action": "Approve", "note": "Approved note"})
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify status updates
+        approval.refresh_from_db()
+        job_request.refresh_from_db()
+        self.assertEqual(approval.status, "Approved")
+        self.assertEqual(job_request.status, "Approved")
+
+        # 2. Reject Action
+        # Reset to Pending first
+        approval.status = "Pending"
+        approval.save()
+        job_request.status = "Pending"
+        job_request.save()
+
+        response = client.post(f"/api/approvals/{approval.id}/action/", {"action": "Reject", "note": "Rejected note"})
+        self.assertEqual(response.status_code, 200)
+
+        approval.refresh_from_db()
+        job_request.refresh_from_db()
+        self.assertEqual(approval.status, "Rejected")
+        self.assertEqual(job_request.status, "Rejected")

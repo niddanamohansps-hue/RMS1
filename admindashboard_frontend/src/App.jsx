@@ -121,7 +121,7 @@ function AppContent() {
 
   // Valid statuses for RoleRequest / JobRequest in the backend
   const sanitizeRequestStatus = (status) => {
-    const valid = ["Pending", "Approved", "Rejected", "Sent Back"];
+    const valid = ["Pending", "Approved", "Rejected", "Sent Back", "Cancelled"];
     return valid.includes(status) ? status : "Pending";
   };
 
@@ -177,12 +177,13 @@ function AppContent() {
   });
 
   const fromBackendApproval = (ap) => ({
-    id: ap.request_id,
+    id: ap.id,
     db_id: ap.id,
     type: ap.type,
     title: ap.title,
     dept: ap.department,
     by: ap.submitted_by,
+    requestedBy: ap.submitted_by || "HR Admin",
     date: ap.date,
     status: ap.status,
     // source_request_id = the linked RoleRequest/JobRequest's own request_id
@@ -487,288 +488,369 @@ function AppContent() {
   };
 
   const setRoleRequests = async (updateArg) => {
-    const current = roleRequests;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    if (next.length > current.length) {
-      const added = next.find(n => !current.some(c => c.id === n.id));
-      if (added) {
-        try {
-          await api.post("/role-requests/", toBackendRoleRequest(added));
-        } catch (err) { alert("Create request failed: " + err.message); }
-      }
-    } else if (next.length < current.length) {
-      const deleted = current.find(c => !next.some(n => n.id === c.id));
-      if (deleted && deleted.db_id) {
-        try {
-          await api.delete(`/role-requests/${deleted.db_id}/`);
-        } catch (err) { alert("Delete failed: " + err.message); }
-      }
-    } else {
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+    setIsLoading(true);
+    try {
+      const current = roleRequests;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      if (next.length > current.length) {
+        const added = next.find(n => !current.some(c => c.id === n.id));
+        if (added) {
           try {
-            await api.put(`/role-requests/${c.db_id}/`, toBackendRoleRequest(n));
-          } catch (err) { alert("Update failed: " + err.message); }
+            await api.post("/role-requests/", toBackendRoleRequest(added));
+          } catch (err) { alert("Create request failed: " + err.message); }
+        }
+      } else if (next.length < current.length) {
+        const deleted = current.find(c => !next.some(n => n.id === c.id));
+        if (deleted && deleted.db_id) {
+          try {
+            await api.delete(`/role-requests/${deleted.db_id}/`);
+          } catch (err) { alert("Delete failed: " + err.message); }
+        }
+      } else {
+        for (const n of next) {
+          const c = current.find(x => x.id === n.id);
+          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+            try {
+              await api.put(`/role-requests/${c.db_id}/`, toBackendRoleRequest(n));
+            } catch (err) { alert("Update failed: " + err.message); }
+          }
         }
       }
+      // After role request changes, also refresh approvals (they may have linked records)
+      await Promise.all([loadRoleRequests(), loadApprovals()]);
+    } finally {
+      setIsLoading(false);
     }
-    // After role request changes, also refresh approvals (they may have linked records)
-    await Promise.all([loadRoleRequests(), loadApprovals()]);
   };
 
   const setJobRequests = async (updateArg) => {
-    const current = jobRequests;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    if (next.length > current.length) {
-      const added = next.find(n => !current.some(c => c.id === n.id));
-      if (added) {
-        try {
-          await api.post("/job-requests/", toBackendJobRequest(added));
-        } catch (err) { alert("Create request failed: " + err.message); }
-      }
-    } else if (next.length < current.length) {
-      const deleted = current.find(c => !next.some(n => n.id === c.id));
-      if (deleted && deleted.db_id) {
-        try {
-          await api.delete(`/job-requests/${deleted.db_id}/`);
-        } catch (err) { alert("Delete failed: " + err.message); }
-      }
-    } else {
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+    setIsLoading(true);
+    try {
+      const current = jobRequests;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      if (next.length > current.length) {
+        const added = next.find(n => !current.some(c => c.id === n.id));
+        if (added) {
           try {
-            await api.put(`/job-requests/${c.db_id}/`, toBackendJobRequest(n));
-          } catch (err) { alert("Update failed: " + err.message); }
+            await api.post("/job-requests/", toBackendJobRequest(added));
+          } catch (err) { alert("Create request failed: " + err.message); }
+        }
+      } else if (next.length < current.length) {
+        const deleted = current.find(c => !next.some(n => n.id === c.id));
+        if (deleted && deleted.db_id) {
+          try {
+            await api.delete(`/job-requests/${deleted.db_id}/`);
+          } catch (err) { alert("Delete failed: " + err.message); }
+        }
+      } else {
+        for (const n of next) {
+          const c = current.find(x => x.id === n.id);
+          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+            try {
+              await api.put(`/job-requests/${c.db_id}/`, toBackendJobRequest(n));
+            } catch (err) { alert("Update failed: " + err.message); }
+          }
         }
       }
+      await Promise.all([loadJobRequests(), loadApprovals()]);
+    } finally {
+      setIsLoading(false);
     }
-    await Promise.all([loadJobRequests(), loadApprovals()]);
   };
 
   const setApprovalRequests = async (updateArg) => {
-    const current = approvalRequests;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    // Backend ApprovalActionSerializer expects verb form: "Approve", "Reject", "Send Back"
-    const actionVerbMap = {
-      "Approved":  "Approve",
-      "Rejected":  "Reject",
-      "Sent Back": "Send Back",
-    };
-    for (const n of next) {
-      const c = current.find(x => x.id === n.id);
-      if (c && c.status !== n.status && c.db_id) {
-        if (n.status === "Pending") {
-          try {
-            await api.patch(`/approvals/${c.db_id}/`, { status: "Pending" });
-          } catch (err) { alert("Resubmit failed: " + err.message); }
-        } else {
-          const actionVerb = actionVerbMap[n.status];
-          if (!actionVerb) continue; // unknown status, skip
-          try {
-            await api.post(`/approvals/${c.db_id}/action/`, {
-              action: actionVerb,
-              note: n.comment || "",
-              acted_by: currentUser?.name || "HR Admin",
-            });
-          } catch (err) { alert("Action failed: " + err.message); }
+    setIsLoading(true);
+    try {
+      const current = approvalRequests;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      // Backend ApprovalActionSerializer expects verb form: "Approve", "Reject", "Send Back"
+      const actionVerbMap = {
+        "Approved":  "Approve",
+        "Rejected":  "Reject",
+        "Sent Back": "Send Back",
+      };
+      for (const n of next) {
+        const c = current.find(x => x.id === n.id);
+        if (c && c.status !== n.status && c.db_id) {
+          if (n.status === "Pending") {
+            try {
+              await api.patch(`/approvals/${c.db_id}/`, { status: "Pending" });
+            } catch (err) { alert("Resubmit failed: " + err.message); }
+          } else {
+            const actionVerb = actionVerbMap[n.status];
+            if (!actionVerb) continue; // unknown status, skip
+            try {
+              await api.post(`/approvals/${c.db_id}/action/`, {
+                action: actionVerb,
+                note: n.comment || "",
+                acted_by: currentUser?.name || "HR Admin",
+              });
+              // Perform side effects on successful approval
+              if (n.status === "Approved") {
+                if (n.type === "Role Request") {
+                  setExistingRoles((prev) => {
+                    const exists = prev.some((x) => x.role === n.role && x.dept === n.dept);
+                    if (exists) return prev;
+                    const cleanedSalary = n.salary ? n.salary.replace(/^₹/, "") : "";
+                    return [...prev, {
+                      id: `ROL-${Date.now()}`, dept: n.dept, role: n.role, type: "Full-time",
+                      headcount: 1, filled: 0, currentFilled: 0, status: "Inactive", currentStatus: "Inactive",
+                      experience: n.experience || "—",
+                      salaryRange: cleanedSalary || "—",
+                    }];
+                  });
+                  setTimeout(() => { navigate("/dashboard/existing-roles"); }, 300);
+                } else if (n.type === "Job Request") {
+                  setJobPostings((prev) => {
+                    const exists = prev.some((p) => p.role === n.role);
+                    if (exists) return prev;
+                    return [...prev, {
+                      id: `POST-${Date.now()}`, role: n.role, channel: "Career Page",
+                      status: "Unpublished", posted: new Date().toLocaleDateString(), expiry: "30 Days", apps: 0,
+                      location: n.location || "",
+                      salary: n.salary || "",
+                      vacancies: n.vacancies || "",
+                      exp: n.experience || "",
+                      qual: n.qual || "",
+                      type: n.empType || "",
+                      description: n.description || "",
+                      educationalQualifications: n.educationalQualifications || "",
+                      skillsRequired: n.skillsRequired || "",
+                    }];
+                  });
+                  setTimeout(() => { navigate("/dashboard/applications"); }, 300);
+                }
+              }
+            } catch (err) { alert("Action failed: " + err.message); }
+          }
         }
       }
+      // Approval action affects approvals + the linked source request
+      await Promise.all([loadApprovals(), loadRoleRequests(), loadJobRequests()]);
+    } finally {
+      setIsLoading(false);
     }
-    // Approval action affects approvals + the linked source request
-    await Promise.all([loadApprovals(), loadRoleRequests(), loadJobRequests()]);
   };
 
   const setJobPostings = async (updateArg) => {
-    const current = jobPostings;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    
-    if (next.length > current.length) {
-      const added = next.find(n => !current.some(c => c.id === n.id));
-      if (added) {
-        try {
-          await api.post("/job-postings/", toBackendPosting(added));
-        } catch (err) { alert("Create posting failed: " + err.message); }
-      }
-    } else if (next.length < current.length) {
-      const deleted = current.find(c => !next.some(n => n.id === c.id));
-      if (deleted && deleted.db_id) {
-        try {
-          await api.delete(`/job-postings/${deleted.db_id}/`);
-        } catch (err) { alert("Delete failed: " + err.message); }
-      }
-    } else {
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+    setIsLoading(true);
+    try {
+      const current = jobPostings;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      
+      if (next.length > current.length) {
+        const added = next.find(n => !current.some(c => c.id === n.id));
+        if (added) {
           try {
-            if (c.status !== n.status) {
-              if (n.status === "Published") {
-                await api.post(`/job-postings/${c.db_id}/publish/`);
-              } else if (n.status === "Unpublished") {
-                await api.post(`/job-postings/${c.db_id}/unpublish/`);
+            await api.post("/job-postings/", toBackendPosting(added));
+          } catch (err) { alert("Create posting failed: " + err.message); }
+        }
+      } else if (next.length < current.length) {
+        const deleted = current.find(c => !next.some(n => n.id === c.id));
+        if (deleted && deleted.db_id) {
+          try {
+            await api.delete(`/job-postings/${deleted.db_id}/`);
+          } catch (err) { alert("Delete failed: " + err.message); }
+        }
+      } else {
+        for (const n of next) {
+          const c = current.find(x => x.id === n.id);
+          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+            try {
+              if (c.status !== n.status) {
+                if (n.status === "Published") {
+                  await api.post(`/job-postings/${c.db_id}/publish/`);
+                } else if (n.status === "Unpublished") {
+                  await api.post(`/job-postings/${c.db_id}/unpublish/`);
+                } else {
+                  await api.put(`/job-postings/${c.db_id}/`, toBackendPosting(n));
+                }
               } else {
                 await api.put(`/job-postings/${c.db_id}/`, toBackendPosting(n));
               }
-            } else {
-              await api.put(`/job-postings/${c.db_id}/`, toBackendPosting(n));
-            }
-          } catch (err) { alert("Update posting failed: " + err.message); }
+            } catch (err) { alert("Update posting failed: " + err.message); }
+          }
         }
       }
+      await loadJobPostings();
+    } finally {
+      setIsLoading(false);
     }
-    await loadJobPostings();
   };
 
   const setJobApplications = async (updateArg) => {
-    const current = jobApplications;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    for (const n of next) {
-      const c = current.find(x => x.id === n.id);
-      if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-        try {
-          if (c.status !== n.status || c.admin_note !== n.admin_note) {
-            await api.patch(`/applications/${c.db_id}/update_status/`, {
-              status: n.status,
-              admin_note: n.admin_note || "",
-            });
-          }
-        } catch (err) { alert("Update status failed: " + err.message); }
+    setIsLoading(true);
+    try {
+      const current = jobApplications;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      for (const n of next) {
+        const c = current.find(x => x.id === n.id);
+        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+          try {
+            if (c.status !== n.status || c.admin_note !== n.admin_note) {
+              await api.patch(`/applications/${c.db_id}/update_status/`, {
+                status: n.status,
+                admin_note: n.admin_note || "",
+              });
+            }
+          } catch (err) { alert("Update status failed: " + err.message); }
+        }
       }
+      await loadApplications();
+    } finally {
+      setIsLoading(false);
     }
-    await loadApplications();
   };
 
   const setGeneralApplications = async (updateArg) => {
-    const current = generalApplications;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    for (const n of next) {
-      const c = current.find(x => x.id === n.id);
-      if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-        try {
-          await api.patch(`/general-applications/${c.db_id}/`, {
-            status: n.status,
-            admin_note: n.admin_note || "",
-          });
-        } catch (err) { alert("Update failed: " + err.message); }
+    setIsLoading(true);
+    try {
+      const current = generalApplications;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      for (const n of next) {
+        const c = current.find(x => x.id === n.id);
+        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+          try {
+            await api.patch(`/general-applications/${c.db_id}/`, {
+              status: n.status,
+              admin_note: n.admin_note || "",
+            });
+          } catch (err) { alert("Update failed: " + err.message); }
+        }
       }
+      await loadApplications();
+    } finally {
+      setIsLoading(false);
     }
-    await loadApplications();
   };
 
   const setInterviews = async (updateArg) => {
-    const current = interviews;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    if (next.length > current.length) {
-      const added = next.find(n => !current.some(c => c.id === n.id));
-      if (added) {
-        try {
-          const panelIds = (added.panel || []).map(name => {
-            const p = panelists.find(px => px.name === name);
-            return p ? p.id : null;
-          }).filter(id => id !== null);
-
-          const matchedApp = jobApplications.find(a => a.name === added.candidate);
-          const payload = toBackendInterview(added, panelIds);
-          if (matchedApp && matchedApp.db_id) {
-            payload.application = matchedApp.db_id;
-          }
-          await api.post("/interviews/", payload);
-        } catch (err) { alert("Schedule interview failed: " + err.message); }
-      }
-    } else if (next.length < current.length) {
-      const deleted = current.find(c => !next.some(n => n.id === c.id));
-      if (deleted && deleted.db_id) {
-        try {
-          await api.delete(`/interviews/${deleted.db_id}/`);
-        } catch (err) { alert("Delete failed: " + err.message); }
-      }
-    } else {
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+    setIsLoading(true);
+    try {
+      const current = interviews;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      if (next.length > current.length) {
+        const added = next.find(n => !current.some(c => c.id === n.id));
+        if (added) {
           try {
-            const panelIds = (n.panel || []).map(name => {
+            const panelIds = (added.panel || []).map(name => {
               const p = panelists.find(px => px.name === name);
               return p ? p.id : null;
             }).filter(id => id !== null);
-            await api.put(`/interviews/${c.db_id}/`, toBackendInterview(n, panelIds));
-          } catch (err) { alert("Update failed: " + err.message); }
+
+            const matchedApp = jobApplications.find(a => a.name === added.candidate);
+            const payload = toBackendInterview(added, panelIds);
+            if (matchedApp && matchedApp.db_id) {
+              payload.application = matchedApp.db_id;
+            }
+            await api.post("/interviews/", payload);
+          } catch (err) { alert("Schedule interview failed: " + err.message); }
+        }
+      } else if (next.length < current.length) {
+        const deleted = current.find(c => !next.some(n => n.id === c.id));
+        if (deleted && deleted.db_id) {
+          try {
+            await api.delete(`/interviews/${deleted.db_id}/`);
+          } catch (err) { alert("Delete failed: " + err.message); }
+        }
+      } else {
+        for (const n of next) {
+          const c = current.find(x => x.id === n.id);
+          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+            try {
+              const panelIds = (n.panel || []).map(name => {
+                const p = panelists.find(px => px.name === name);
+                return p ? p.id : null;
+              }).filter(id => id !== null);
+              await api.put(`/interviews/${c.db_id}/`, toBackendInterview(n, panelIds));
+            } catch (err) { alert("Update failed: " + err.message); }
+          }
         }
       }
+      await loadInterviews();
+    } finally {
+      setIsLoading(false);
     }
-    await loadInterviews();
   };
 
   const setOffers = async (updateArg) => {
-    const current = offers;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    
-    if (next.length > current.length) {
-      const added = next.find(n => !current.some(c => c.id === n.id));
-      if (added) {
-        try {
-          const matchedApp = jobApplications.find(a => a.name === added.candidate);
-          const candidateId = matchedApp ? matchedApp.candidate_id : null;
-          if (candidateId) {
-            await api.post("/offers/", toBackendOffer(added, candidateId));
-          } else {
-            console.error("Could not find candidate application for offer creation");
-          }
-        } catch (err) { alert("Issue offer failed: " + err.message); }
-      }
-    } else if (next.length < current.length) {
-      const deleted = current.find(c => !next.some(n => n.id === c.id));
-      if (deleted && deleted.db_id) {
-        try {
-          await api.delete(`/offers/${deleted.db_id}/`);
-        } catch (err) { alert("Delete failed: " + err.message); }
-      }
-    } else {
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+    setIsLoading(true);
+    try {
+      const current = offers;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      
+      if (next.length > current.length) {
+        const added = next.find(n => !current.some(c => c.id === n.id));
+        if (added) {
           try {
-            const matchedApp = jobApplications.find(a => a.name === n.candidate);
+            const matchedApp = jobApplications.find(a => a.name === added.candidate);
             const candidateId = matchedApp ? matchedApp.candidate_id : null;
-            await api.put(`/offers/${c.db_id}/`, toBackendOffer(n, candidateId));
-          } catch (err) { alert("Update failed: " + err.message); }
+            if (candidateId) {
+              await api.post("/offers/", toBackendOffer(added, candidateId));
+            } else {
+              console.error("Could not find candidate application for offer creation");
+            }
+          } catch (err) { alert("Issue offer failed: " + err.message); }
+        }
+      } else if (next.length < current.length) {
+        const deleted = current.find(c => !next.some(n => n.id === c.id));
+        if (deleted && deleted.db_id) {
+          try {
+            await api.delete(`/offers/${deleted.db_id}/`);
+          } catch (err) { alert("Delete failed: " + err.message); }
+        }
+      } else {
+        for (const n of next) {
+          const c = current.find(x => x.id === n.id);
+          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
+            try {
+              const matchedApp = jobApplications.find(a => a.name === n.candidate);
+              const candidateId = matchedApp ? matchedApp.candidate_id : null;
+              await api.put(`/offers/${c.db_id}/`, toBackendOffer(n, candidateId));
+            } catch (err) { alert("Update failed: " + err.message); }
+          }
         }
       }
+      await loadOffers();
+    } finally {
+      setIsLoading(false);
     }
-    await loadOffers();
   };
 
   const setPanelists = async (updateArg) => {
-    const current = panelists;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    
-    if (next.length > current.length) {
-      const added = next.find(n => !current.some(c => c.email === n.email));
-      if (added) {
-        try {
-          await api.post("/panelists/", added);
-        } catch (err) { alert("Add panelist failed: " + err.message); }
-      }
-    } else if (next.length < current.length) {
-      const deleted = current.find(c => !next.some(n => n.email === c.email));
-      if (deleted && deleted.id) {
-        try {
-          await api.delete(`/panelists/${deleted.id}/`);
-        } catch (err) { alert("Delete failed: " + err.message); }
-      }
-    } else {
-      for (const n of next) {
-        const c = current.find(x => x.email === n.email);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.id) {
+    setIsLoading(true);
+    try {
+      const current = panelists;
+      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      
+      if (next.length > current.length) {
+        const added = next.find(n => !current.some(c => c.email === n.email));
+        if (added) {
           try {
-            await api.put(`/panelists/${c.id}/`, n);
-          } catch (err) { alert("Update failed: " + err.message); }
+            await api.post("/panelists/", added);
+          } catch (err) { alert("Add panelist failed: " + err.message); }
+        }
+      } else if (next.length < current.length) {
+        const deleted = current.find(c => !next.some(n => n.email === c.email));
+        if (deleted && deleted.id) {
+          try {
+            await api.delete(`/panelists/${deleted.id}/`);
+          } catch (err) { alert("Delete failed: " + err.message); }
+        }
+      } else {
+        for (const n of next) {
+          const c = current.find(x => x.email === n.email);
+          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.id) {
+            try {
+              await api.put(`/panelists/${c.id}/`, n);
+            } catch (err) { alert("Update failed: " + err.message); }
+          }
         }
       }
+      await loadPanelists();
+    } finally {
+      setIsLoading(false);
     }
-    await loadPanelists();
   };
 
   useEffect(() => { saveSession("currentUser", currentUser); }, [currentUser]);

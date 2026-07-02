@@ -146,20 +146,6 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
 
     if (editingId !== null) {
       setRoleRequests((prev) => prev.map((r) => r.id === editingId ? { ...r, ...updatedForms[0] } : r));
-      setApprovalRequests((prev) =>
-        prev.map((apr) =>
-          String(apr.sourceId) === String(editingId)
-            ? {
-                ...apr,
-                dept: updatedForms[0].dept,
-                role: updatedForms[0].role,
-                experience: updatedForms[0].experience,
-                salary: updatedForms[0].salaryRange ? `₹${updatedForms[0].salaryRange}` : "",
-                just: updatedForms[0].just,
-              }
-            : apr
-        )
-      );
     } else {
       const newRequests = updatedForms.map((f, i) => ({
         ...f,
@@ -168,24 +154,6 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
         history: [{ act: "Submitted", by: "Current User", date: f.date || new Date().toLocaleDateString(), note: "" }],
       }));
       setRoleRequests((prev) => [...prev, ...newRequests]);
-      setApprovalRequests((prev) => [
-        ...prev,
-        ...newRequests.map((r) => ({
-          id: `APR-${Date.now()}-${Math.random()}`,
-          dept: r.dept,
-          role: r.role,
-          experience: r.experience,
-          requestedBy: "Current User",
-          date: r.date,
-          salary: r.salaryRange ? `₹${r.salaryRange}` : "",
-          just: r.just,
-          status: "Pending",
-          comment: "",
-          history: [{ act: "Submitted", by: "Current User", date: r.date, note: "" }],
-          sourceId: r.id,
-          type: "Role Request",
-        })),
-      ]);
     }
     setRoleForms([emptyForm()]);
     setShowForm(false);
@@ -215,22 +183,6 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
     delete updated.maxExperience;
 
     setRoleRequests((prev) => prev.map((r) => r.id === selectedRequest.id ? updated : r));
-
-    setApprovalRequests((prev) =>
-      prev.map((apr) =>
-        String(apr.sourceId) === String(selectedRequest.id)
-          ? {
-              ...apr,
-              dept: updated.dept,
-              role: updated.role,
-              experience: updated.experience,
-              salary: updated.salaryRange ? `₹${updated.salaryRange}` : "",
-              just: updated.just,
-              status: submitAsPending ? apr.status : updated.status,
-            }
-          : apr
-      )
-    );
 
     setShowViewModal(false);
     setSelectedRequest(null);
@@ -273,13 +225,6 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
     delete updated.maxExperience;
 
     setRoleRequests((prev) => prev.map((r) => r.id === selectedRequest.id ? updated : r));
-    setApprovalRequests((prev) =>
-      prev.map((apr) =>
-        String(apr.sourceId) === String(selectedRequest.id)
-          ? { ...apr, status: "Approved", history: updated.history }
-          : apr
-      )
-    );
 
     if (setExistingRoles) {
       setExistingRoles((prev) => {
@@ -316,16 +261,10 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
     setRoleRequests((prev) =>
       prev.map((r) => (r.id === reqId ? { ...r, status: "Cancelled" } : r))
     );
-    setApprovalRequests((prev) =>
-      prev.map((apr) =>
-        String(apr.sourceId) === String(reqId) ? { ...apr, status: "Cancelled" } : apr
-      )
-    );
     setShowViewModal(false);
     setSelectedRequest(null);
     setOriginalRequest(null);
   };
-
   return (
     <div>
       <SectionTitle
@@ -403,10 +342,13 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
           <div style={{ flex: 1 }}>
             <strong style={{ color: T.amber, fontSize: 13 }}>Action Required (Sent Back): </strong>
             <span style={{ fontSize: 13, color: T.ink }}>
-              Request for <strong>{r.role}</strong> was returned with comment: <em>...</em>
+              Request for <strong>{r.role}</strong> was returned
+              {(r.comment || (r.history && r.history.length > 0 && r.history[r.history.length - 1]?.note)) && (
+                <> with comment: <em>&ldquo;{r.comment || r.history[r.history.length - 1].note}&rdquo;</em></>
+              )}
             </span>
           </div>
-          <Btn label="View Request" small variant="amber" onClick={() => { setSelectedRequest(r); setShowViewModal(true); }} />
+          <Btn label="View Request" small variant="amber" onClick={() => { setSelectedRequest(r); setOriginalRequest(r); setShowViewModal(true); }} />
         </div>
       ))}
 

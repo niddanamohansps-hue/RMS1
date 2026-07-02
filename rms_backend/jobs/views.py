@@ -141,6 +141,12 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
         if new_status == "Sent Back" and approval.type == "Job Request" and approval.job_request:
             approval.job_request.status = "Sent Back"
             approval.job_request.save()
+        if new_status == "Rejected" and approval.type == "Job Request" and approval.job_request:
+            approval.job_request.status = "Rejected"
+            approval.job_request.save()
+        if new_status == "Rejected" and approval.type == "Role Request" and approval.role_request:
+            approval.role_request.status = "Rejected"
+            approval.role_request.save()
 
         return Response(ApprovalRequestSerializer(approval).data)
 

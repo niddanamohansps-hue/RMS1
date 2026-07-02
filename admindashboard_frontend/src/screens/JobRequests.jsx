@@ -102,28 +102,6 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
 
     setJobRequests((prev) => prev.map((r) => r.id === selectedRequest.id ? updated : r));
 
-    setApprovalRequests((prev) =>
-      prev.map((apr) =>
-        String(apr.sourceId) === String(selectedRequest.id)
-          ? {
-              ...apr,
-              role: updated.role,
-              location: updated.location,
-              salary: updated.salary,
-              vacancies: updated.vacancies,
-              exp: updated.exp,
-              qual: updated.qual,
-              empType: updated.type,
-              just: updated.justification,
-              description: updated.description,
-              educationalQualifications: updated.educationalQualifications,
-              skillsRequired: updated.skillsRequired,
-              status: submitAsPending ? apr.status : updated.status,
-            }
-          : apr
-      )
-    );
-
     setShowViewModal(false);
     setSelectedRequest(null);
     setOriginalRequest(null);
@@ -156,13 +134,6 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
       history: [...(selectedRequest.history || []), entry],
     };
     setJobRequests((prev) => prev.map((r) => r.id === selectedRequest.id ? updated : r));
-    setApprovalRequests((prev) =>
-      prev.map((apr) =>
-        String(apr.sourceId) === String(selectedRequest.id)
-          ? { ...apr, status: "Approved", history: updated.history }
-          : apr
-      )
-    );
     setJobPostings((prev) => {
       const alreadyExists = prev.some((p) => p.role === selectedRequest.role);
       if (alreadyExists) return prev;
@@ -206,11 +177,6 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
     setJobRequests((prev) =>
       prev.map((r) => (r.id === reqId ? { ...r, status: "Cancelled" } : r))
     );
-    setApprovalRequests((prev) =>
-      prev.map((apr) =>
-        String(apr.sourceId) === String(reqId) ? { ...apr, status: "Cancelled" } : apr
-      )
-    );
     setShowViewModal(false);
     setSelectedRequest(null);
     setOriginalRequest(null);
@@ -225,26 +191,6 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
   const submitRequests = () => {
     if (editingId !== null) {
       setJobRequests((prev) => prev.map((r) => r.id === editingId ? { ...r, ...jobForms[0] } : r));
-      setApprovalRequests((prev) =>
-        prev.map((apr) =>
-          String(apr.sourceId) === String(editingId)
-            ? {
-                ...apr,
-                role: jobForms[0].role,
-                location: jobForms[0].location,
-                salary: jobForms[0].salary,
-                vacancies: jobForms[0].vacancies,
-                exp: jobForms[0].exp,
-                qual: jobForms[0].qual,
-                empType: jobForms[0].type,
-                just: jobForms[0].justification,
-                description: jobForms[0].description,
-                educationalQualifications: jobForms[0].educationalQualifications,
-                skillsRequired: jobForms[0].skillsRequired,
-              }
-            : apr
-        )
-      );
     } else {
       const now = new Date().toLocaleDateString();
       const newRequests = jobForms.map((f, i) => ({
@@ -256,31 +202,6 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
         history: [{ act: "Submitted", by: "Current User", date: now, note: "" }],
       }));
       setJobRequests((prev) => [...prev, ...newRequests]);
-      setApprovalRequests((prev) => [
-        ...prev,
-        ...newRequests.map((r) => ({
-          id: `APR-${Date.now()}-${Math.random()}`,
-          dept: "N/A",
-          role: r.role,
-          requestedBy: "Current User",
-          date: now,
-          location: r.location,
-          salary: r.salary,
-          vacancies: r.vacancies,
-          exp: r.exp,
-          qual: r.qual,
-          empType: r.type,
-          just: r.justification,
-          description: r.description,
-          educationalQualifications: r.educationalQualifications,
-          skillsRequired: r.skillsRequired,
-          status: "Pending",
-          comment: "",
-          history: [{ act: "Submitted", by: "Current User", date: now, note: "" }],
-          sourceId: r.id,
-          type: "Job Request",
-        })),
-      ]);
     }
     setJobForms([emptyForm()]);
     setShowForm(false);

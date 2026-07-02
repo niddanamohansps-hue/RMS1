@@ -50,7 +50,9 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
             role_request=instance,
         )
     else:
-        if instance.status == "Pending":
+        if instance.status == "Cancelled":
+            ApprovalRequest.objects.filter(role_request=instance, status="Pending").update(status="Cancelled")
+        elif instance.status == "Pending":
             # If it's updated to Pending (resubmitted), check if there is already an active Pending approval
             has_pending = ApprovalRequest.objects.filter(role_request=instance, status="Pending").exists()
             if not has_pending:
@@ -84,7 +86,9 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
             job_request=instance,
         )
     else:
-        if instance.status == "Pending":
+        if instance.status == "Cancelled":
+            ApprovalRequest.objects.filter(job_request=instance, status="Pending").update(status="Cancelled")
+        elif instance.status == "Pending":
             # If it's updated to Pending (resubmitted), check if there is already an active Pending approval
             has_pending = ApprovalRequest.objects.filter(job_request=instance, status="Pending").exists()
             if not has_pending:
