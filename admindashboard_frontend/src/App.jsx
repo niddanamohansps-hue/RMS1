@@ -140,6 +140,7 @@ function AppContent() {
     id: jr.request_id,
     db_id: jr.id,
     role: jr.role,
+    department: jr.department || "",
     vacancies: jr.vacancies,
     vac: jr.vacancies,
     experience: jr.experience,
@@ -150,6 +151,7 @@ function AppContent() {
     qualification: jr.qualification,
     qual: jr.qualification,
     location: jr.location || "",
+    category: jr.category || "",
     description: jr.description || "",
     justification: jr.justification || "",
     educationalQualifications: jr.educational_qualifications || "",
@@ -162,6 +164,7 @@ function AppContent() {
   const toBackendJobRequest = (jr) => ({
     request_id: jr.id,
     role: jr.role,
+    department: jr.department || "",
     vacancies: jr.vacancies || jr.vac || 1,
     experience: jr.experience || jr.exp || "",
     salary_range: jr.salary || jr.sal || "",
@@ -170,6 +173,7 @@ function AppContent() {
     description: jr.description || "",
     justification: jr.justification || jr.just || "",
     location: jr.location || "",
+    category: jr.category || "",
     educational_qualifications: jr.educationalQualifications || "",
     skills_required: jr.skillsRequired || "",
     status: sanitizeRequestStatus(jr.status),
@@ -197,6 +201,7 @@ function AppContent() {
     salary: ap.salary_range || "",
     role: ap.title,
     location: ap.location || "",
+    category: ap.category || "",
     description: ap.description || "",
     educationalQualifications: ap.educational_qualifications || "",
     skillsRequired: ap.skills_required || "",
@@ -281,6 +286,7 @@ function AppContent() {
     referredBy: ja.referred_by || "None",
     admin_note: ja.admin_note || "",
     dept: ja.department || "",
+    resume: ja.resume || "",
   });
 
   const fromBackendGeneralApp = (ga) => ({
@@ -296,42 +302,116 @@ function AppContent() {
     applied: ga.applied_date,
     status: ga.status,
     admin_note: ga.admin_note || "",
+    resume: ga.resume || "",
   });
 
-  const fromBackendInterview = (i) => ({
-    id: i.interview_id,
-    db_id: i.id,
-    candidate: i.candidate_name,
-    role: i.role,
-    date: i.date,
-    time: i.time,
-    // panel_details has full objects {id, name, email}; panel has IDs only
-    panel: (i.panel_details || i.panel || []).map(p => typeof p === 'object' ? p.name : p),
-    panel_ids: (i.panel || []).map(p => typeof p === 'object' ? p.id : p),
-    score: i.score || "",
-    rec: i.recommendation || "",
-    feedback: i.feedback || "",
-    status: i.status,
-    mode: i.mode,
-    meetingLink: i.meeting_link,
-    round: i.round,
-  });
+  const mapTimeToBackend = (timeStr) => {
+    if (!timeStr) return "09:00:00";
+    if (/^\d{2}:\d{2}(:\d{2})?$/.test(timeStr)) return timeStr;
+    const match = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const minutes = match[2];
+      const ampm = match[3].toUpperCase();
+      if (ampm === "PM" && hours < 12) hours += 12;
+      if (ampm === "AM" && hours === 12) hours = 0;
+      return `${String(hours).padStart(2, '0')}:${minutes}:00`;
+    }
+    return timeStr;
+  };
 
-  const toBackendInterview = (i, panelIds) => ({
-    interview_id: i.id,
-    candidate_name: i.candidate,
-    role: i.role,
-    date: i.date,
-    time: i.time,
-    panel: panelIds || [],
-    status: i.status,
-    mode: i.mode,
-    meeting_link: i.meetingLink || "",
-    round: i.round || 1,
-    score: i.score ? parseInt(i.score) : null,
-    recommendation: i.rec || "",
-    feedback: i.feedback || "",
-  });
+  const mapTimeFromBackend = (timeStr) => {
+    if (!timeStr) return "";
+    const match = timeStr.match(/^(\d{2}):(\d{2})/);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const minutes = match[2];
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${minutes} ${ampm}`;
+    }
+    return timeStr;
+  };
+
+  const fromBackendInterview = (i) => {
+    // 1. Map status: "Scheduled" -> "Pending"
+    let frontendStatus = i.status;
+    if (frontendStatus === "Scheduled") {
+      frontendStatus = "Pending";
+    }
+
+    // 2. Map recommendation: "" -> "—", "On Hold" -> "Hold"
+    let frontendRec = i.recommendation || "—";
+    if (!frontendRec) {
+      frontendRec = "—";
+    } else if (frontendRec === "On Hold") {
+      frontendRec = "Hold";
+    }
+
+    // 3. Map time format: "09:00:00" -> "9:00 AM"
+    const frontendTime = mapTimeFromBackend(i.time);
+
+    // 4. Map mode: "Offline" -> "In-Person"
+    let frontendMode = i.mode === "Offline" ? "In-Person" : (i.mode || "Online");
+
+    return {
+      id: i.interview_id,
+      db_id: i.id,
+      candidate: i.candidate_name,
+      role: i.role,
+      date: i.date,
+      time: frontendTime,
+      // panel_details has full objects {id, name, email}; panel has IDs only
+      panel: (i.panel_details || i.panel || []).map(p => typeof p === 'object' ? p.name : p),
+      panel_ids: (i.panel || []).map(p => typeof p === 'object' ? p.id : p),
+      score: i.score || "",
+      rec: frontendRec,
+      feedback: i.feedback || "",
+      status: frontendStatus,
+      mode: frontendMode,
+      meetingLink: i.meeting_link,
+      round: i.round,
+    };
+  };
+
+  const toBackendInterview = (i, panelIds) => {
+    // 1. Map status: "Pending" -> "Scheduled"
+    let backendStatus = i.status || "Scheduled";
+    if (backendStatus === "Pending") {
+      backendStatus = "Scheduled";
+    }
+
+    // 2. Map recommendation: "—" -> "", "Hold" -> "On Hold"
+    let backendRec = i.rec || "";
+    if (backendRec === "—") {
+      backendRec = "";
+    } else if (backendRec === "Hold") {
+      backendRec = "On Hold";
+    }
+
+    // 3. Map time format: "9:00 AM" -> "09:00:00"
+    const backendTime = mapTimeToBackend(i.time);
+
+    // 4. Map mode: "In-Person" -> "Offline"
+    let backendMode = i.mode === "In-Person" ? "Offline" : (i.mode || "Online");
+
+    return {
+      interview_id: i.id,
+      candidate_name: i.candidate,
+      role: i.role,
+      date: i.date,
+      time: backendTime,
+      panel: panelIds || [],
+      status: backendStatus,
+      mode: backendMode,
+      meeting_link: i.meetingLink || "",
+      round: i.round || 1,
+      score: (i.score !== null && i.score !== undefined && i.score !== "") ? parseInt(i.score) : null,
+      recommendation: backendRec,
+      feedback: i.feedback || "",
+    };
+  };
 
   const fromBackendOffer = (o) => ({
     id: o.offer_id || `OFR-${o.id}`,
@@ -590,6 +670,19 @@ function AppContent() {
                 payload.role = n.role || "";
                 payload.salary_range = n.salary ? n.salary.replace(/^₹/, "") : "";
                 payload.experience = n.experience || "";
+              } else if (n.type === "Job Request") {
+                payload.department = n.dept || "";
+                payload.role = n.role || "";
+                payload.salary_range = n.salary || "";
+                payload.experience = n.experience || "";
+                payload.location = n.location || "";
+                payload.category = n.category || "";
+                payload.vacancies = n.vacancies || 1;
+                payload.qualification = n.qual || "";
+                payload.employment_type = n.empType || "";
+                payload.description = n.description || "";
+                payload.educational_qualifications = n.educationalQualifications || "";
+                payload.skills_required = n.skillsRequired || "";
               }
               await api.post(`/approvals/${c.db_id}/action/`, payload);
               // Perform side effects on successful approval

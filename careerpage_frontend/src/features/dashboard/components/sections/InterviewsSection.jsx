@@ -2,10 +2,9 @@ import React from "react";
 import { motion } from "motion/react";
 import { Video, Calendar, User, Link as LinkIcon } from "lucide-react";
 import { MAROON } from "../../../../lib/constants";
-import { interviews } from "../../../../mockData/dashboardMockData";
 import "../css/sections/InterviewsSection.css";
 
-export function InterviewsSection() {
+export function InterviewsSection({ interviews = [] }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}

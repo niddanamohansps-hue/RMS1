@@ -134,6 +134,41 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
                 role_req.experience = serializer.validated_data["experience"]
             role_req.save()
 
+        # Update JobRequest if type is Job Request
+        if approval.type == "Job Request" and approval.job_request:
+            job_req = approval.job_request
+            if "role" in serializer.validated_data:
+                job_req.role = serializer.validated_data["role"]
+                approval.title = serializer.validated_data["role"]
+            if "department" in serializer.validated_data:
+                job_req.department = serializer.validated_data["department"]
+                approval.department = serializer.validated_data["department"]
+            if "salary_range" in serializer.validated_data:
+                job_req.salary_range = serializer.validated_data["salary_range"]
+            if "experience" in serializer.validated_data:
+                job_req.experience = serializer.validated_data["experience"]
+            if "location" in serializer.validated_data:
+                job_req.location = serializer.validated_data["location"]
+            if "category" in serializer.validated_data:
+                from .models import JobCategory
+                cat_name = serializer.validated_data["category"]
+                cat_obj = JobCategory.objects.filter(name=cat_name).first()
+                if cat_obj:
+                    job_req.category = cat_obj
+            if "vacancies" in serializer.validated_data:
+                job_req.vacancies = serializer.validated_data["vacancies"]
+            if "qualification" in serializer.validated_data:
+                job_req.qualification = serializer.validated_data["qualification"]
+            if "employment_type" in serializer.validated_data:
+                job_req.type = serializer.validated_data["employment_type"]
+            if "description" in serializer.validated_data:
+                job_req.description = serializer.validated_data["description"]
+            if "educational_qualifications" in serializer.validated_data:
+                job_req.educational_qualifications = serializer.validated_data["educational_qualifications"]
+            if "skills_required" in serializer.validated_data:
+                job_req.skills_required = serializer.validated_data["skills_required"]
+            job_req.save()
+
         approval.status = new_status
         approval.save()
 

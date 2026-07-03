@@ -8,6 +8,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     candidate_email = serializers.SerializerMethodField(read_only=True)
     candidate_phone = serializers.SerializerMethodField(read_only=True)
     posting_title   = serializers.SerializerMethodField(read_only=True)
+    resume          = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model  = JobApplication
@@ -35,6 +36,16 @@ class JobApplicationSerializer(serializers.ModelSerializer):
 
     def get_posting_title(self, obj):
         return obj.posting.role if obj.posting else obj.role
+
+    def get_resume(self, obj):
+        request = self.context.get("request")
+        profile = getattr(obj.candidate, "profile", None)
+        if profile and profile.resume:
+            url = profile.resume.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -81,6 +92,7 @@ class GeneralApplicationSerializer(serializers.ModelSerializer):
     candidate_name  = serializers.SerializerMethodField(read_only=True)
     candidate_email = serializers.SerializerMethodField(read_only=True)
     candidate_phone = serializers.SerializerMethodField(read_only=True)
+    resume          = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model  = GeneralApplication
@@ -105,6 +117,16 @@ class GeneralApplicationSerializer(serializers.ModelSerializer):
 
     def get_candidate_phone(self, obj):
         return obj.candidate.phone
+
+    def get_resume(self, obj):
+        request = self.context.get("request")
+        profile = getattr(obj.candidate, "profile", None)
+        if profile and profile.resume:
+            url = profile.resume.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None
 
     def create(self, validated_data):
         validated_data["app_id"] = auto_id("GAPP", GeneralApplication)

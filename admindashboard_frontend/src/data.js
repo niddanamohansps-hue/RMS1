@@ -151,5 +151,34 @@ export const SALARY_OPTIONS = [
   { value: "₹50K–₹70K", label: "₹50,000 – ₹70,000" },
   { value: "₹60K–₹80K", label: "₹60,000 – ₹80,000" },
   { value: "₹80K–₹1L", label: "₹80,000 – ₹1,00,000" },
-  { value: "₹1L+", label: "₹1,00,000+" },
+  { value: "₹1L+", label: "1,00,000+" },
+];
+
+export const CATEGORY_OPTIONS = [
+  { value: "Academic Positions", label: "Academic Positions" },
+  { value: "Administrative Positions", label: "Administrative Positions" },
+  { value: "Operations & Support Positions", label: "Operations & Support Positions" },
+];
+
+export const SKILLS_LIST = [
+  "Curriculum Development",
+  "Classroom Management",
+  "Student Assessment",
+  "Communication",
+  "Leadership",
+  "Team Collaboration",
+  "Microsoft Office",
+  "Data Analysis",
+  "Project Management",
+  "Problem Solving",
+  "CBSE Curriculum",
+  "Digital Literacy",
+  "Research & Development",
+  "Counselling",
+  "Event Management",
+  "Administration",
+  "IT Support",
+  "Sports Coaching",
+  "Content Creation",
+  "Public Speaking",
 ];

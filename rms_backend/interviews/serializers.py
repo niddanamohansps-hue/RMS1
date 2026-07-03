@@ -33,6 +33,11 @@ class InterviewSerializer(serializers.ModelSerializer):
         validated_data["interview_id"] = auto_id("INT", Interview)
         interview = Interview.objects.create(**validated_data)
         interview.panel.set(panel_data)
+
+        # Trigger email notification task
+        from notifications.tasks import send_interview_email_task
+        send_interview_email_task.delay(interview.id)
+
         return interview
 
     def update(self, instance, validated_data):
@@ -42,6 +47,11 @@ class InterviewSerializer(serializers.ModelSerializer):
         instance.save()
         if panel_data is not None:
             instance.panel.set(panel_data)
+
+        # Trigger email notification task
+        from notifications.tasks import send_interview_email_task
+        send_interview_email_task.delay(instance.id)
+
         return instance
 
 

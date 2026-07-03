@@ -45,6 +45,7 @@ function AppContent() {
   const [applicationsData, setApplicationsData] = useState({});
   const [selectedJob, setSelectedJob] = useState(null);
   const [dashboardInitialTab, setDashboardInitialTab] = useState("dashboard");
+  const [candidateInterviews, setCandidateInterviews] = useState([]);
 
   const mapExperienceToBackend = (exp) => {
     if (!exp) return "0-1";
@@ -84,6 +85,44 @@ function AppContent() {
     linkedin_profile: pd.linkedin || "",
     portfolio_link: pd.portfolio || "",
   });
+
+  const mapInterviewFromBackend = (i) => {
+    let formattedDate = i.date;
+    try {
+      const d = new Date(i.date);
+      if (!isNaN(d.getTime())) {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        formattedDate = d.toLocaleDateString('en-US', options);
+      }
+    } catch {}
+
+    let formattedTime = i.time;
+    try {
+      const match = i.time.match(/^(\d{2}):(\d{2})/);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = match[2];
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        if (hours === 0) hours = 12;
+        formattedTime = `${hours}:${minutes} ${ampm}`;
+      }
+    } catch {}
+
+    const interviewerNames = (i.panel_details || []).map(p => p.name).join(", ") || "TBD";
+
+    return {
+      id: i.interview_id || i.id,
+      role: i.role,
+      date: formattedDate,
+      time: formattedTime,
+      interviewer: interviewerNames,
+      mode: i.mode === "Offline" ? "In-Person" : (i.mode || "Online"),
+      platform: i.mode === "Offline" ? "" : "Google Meet",
+      link: i.meeting_link || "",
+      status: i.status === "Scheduled" ? "Confirmed" : i.status,
+    };
+  };
 
   const loadCandidateData = async () => {
     try {
@@ -135,6 +174,15 @@ function AppContent() {
           resumeUrl: profile.profile.resume || "",
           resumeFile: profile.profile.resume ? profile.profile.resume.split("/").pop() : "",
         });
+      }
+
+      // Fetch candidate interviews
+      try {
+        const ints = await api.get("/interviews/");
+        const mappedInts = (ints.results ? ints.results : ints).map(mapInterviewFromBackend);
+        setCandidateInterviews(mappedInts);
+      } catch (err) {
+        console.warn("Failed to load candidate interviews", err);
       }
     } catch (err) {
       console.warn("Failed to load candidate auth session", err);
@@ -189,6 +237,7 @@ function AppContent() {
     setSavedProfileData(null);
     setAppliedJobIds([]);
     setApplicationsData({});
+    setCandidateInterviews([]);
     setCameFromApply(false);
     setCameFromSection(undefined);
     setInitialLoading(true);
@@ -293,12 +342,17 @@ function AppContent() {
             onClose={() => { setSelectedJob(null); navigate("/"); }}
             onSubmitData={async (data) => {
               try {
-                await api.put("/auth/me/", {
-                  first_name: data.fullName.split(" ")[0] || "",
-                  last_name: data.fullName.split(" ").slice(1).join(" ") || "",
-                  phone: data.phone || "",
-                  profile: mapToBackendProfile(data)
-                });
+                const formData = new FormData();
+                formData.append("first_name", data.fullName.split(" ")[0] || "");
+                formData.append("last_name", data.fullName.split(" ").slice(1).join(" ") || "");
+                formData.append("phone", data.phone || "");
+                formData.append("profile", JSON.stringify(mapToBackendProfile(data)));
+                
+                if (data.actualResumeFile) {
+                  formData.append("profile.resume", data.actualResumeFile);
+                }
+
+                await api.put("/auth/me/", formData, true);
 
                 await api.post("/general-applications/", {
                   candidate_name: data.fullName,
@@ -415,6 +469,7 @@ function AppContent() {
               }}
               applicationsData={applicationsData}
               cameFromApply={cameFromApply}
+              interviews={candidateInterviews}
             />
           ) : <Navigate to="/login" replace />
         } />

@@ -71,6 +71,12 @@ class RoleRequestStatusSerializer(serializers.ModelSerializer):
 
 class JobRequestSerializer(serializers.ModelSerializer):
     history = serializers.SerializerMethodField(read_only=True)
+    category = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=JobCategory.objects.all(),
+        allow_null=True,
+        required=False
+    )
 
     class Meta:
         model  = JobRequest
@@ -112,6 +118,7 @@ class ApprovalHistorySerializer(serializers.ModelSerializer):
 
 class ApprovalRequestSerializer(serializers.ModelSerializer):
     history = ApprovalHistorySerializer(many=True, read_only=True)
+    department = serializers.SerializerMethodField(read_only=True)
     justification = serializers.SerializerMethodField(read_only=True)
     vacancies = serializers.SerializerMethodField(read_only=True)
     experience = serializers.SerializerMethodField(read_only=True)
@@ -122,6 +129,7 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
     source_db_id = serializers.SerializerMethodField(read_only=True)
     description = serializers.SerializerMethodField(read_only=True)
     location = serializers.SerializerMethodField(read_only=True)
+    category = serializers.SerializerMethodField(read_only=True)
     educational_qualifications = serializers.SerializerMethodField(read_only=True)
     skills_required = serializers.SerializerMethodField(read_only=True)
 
@@ -129,6 +137,15 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
         model  = ApprovalRequest
         fields = "__all__"
         read_only_fields = ["date"]
+
+    def get_department(self, obj):
+        if obj.department:
+            return obj.department
+        if obj.job_request:
+            return obj.job_request.department or ""
+        if obj.role_request:
+            return obj.role_request.department or ""
+        return ""
 
     def get_source_request_id(self, obj):
         """The request_id of the linked RoleRequest or JobRequest."""
@@ -202,15 +219,28 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
             return obj.job_request.skills_required
         return ""
 
+    def get_category(self, obj):
+        if obj.job_request and obj.job_request.category:
+            return obj.job_request.category.name
+        return ""
+
 
 class ApprovalActionSerializer(serializers.Serializer):
-    action       = serializers.ChoiceField(choices=["Approve", "Reject", "Send Back"])
-    note         = serializers.CharField(required=False, allow_blank=True)
-    acted_by     = serializers.CharField(required=False)
-    department   = serializers.CharField(required=False, allow_blank=True)
-    role         = serializers.CharField(required=False, allow_blank=True)
-    salary_range = serializers.CharField(required=False, allow_blank=True)
-    experience   = serializers.CharField(required=False, allow_blank=True)
+    action                     = serializers.ChoiceField(choices=["Approve", "Reject", "Send Back"])
+    note                       = serializers.CharField(required=False, allow_blank=True)
+    acted_by                   = serializers.CharField(required=False)
+    department                 = serializers.CharField(required=False, allow_blank=True)
+    role                       = serializers.CharField(required=False, allow_blank=True)
+    salary_range               = serializers.CharField(required=False, allow_blank=True)
+    experience                 = serializers.CharField(required=False, allow_blank=True)
+    location                   = serializers.CharField(required=False, allow_blank=True)
+    category                   = serializers.CharField(required=False, allow_blank=True)
+    vacancies                  = serializers.IntegerField(required=False)
+    qualification              = serializers.CharField(required=False, allow_blank=True)
+    employment_type            = serializers.CharField(required=False, allow_blank=True)
+    description                = serializers.CharField(required=False, allow_blank=True)
+    educational_qualifications = serializers.CharField(required=False, allow_blank=True)
+    skills_required            = serializers.CharField(required=False, allow_blank=True)
 
 
 class JobPostingSerializer(serializers.ModelSerializer):

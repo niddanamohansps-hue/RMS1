@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Btn, Input, Select, Badge, FormField } from "../components/ui";
-import { VACANCY_OPTIONS, QUAL_OPTIONS, TYPE_OPTIONS } from "../data";
+import { VACANCY_OPTIONS, QUAL_OPTIONS, TYPE_OPTIONS, CATEGORY_OPTIONS, SKILLS_LIST } from "../data";
 
 const getStatusStyle = (status) => {
   switch (status) {
@@ -17,6 +17,7 @@ const getStatusStyle = (status) => {
 
 const emptyForm = () => ({
   id: Date.now() + Math.random(),
+  department: "",
   role: "",
   vacancies: "",
   exp: "",
@@ -24,6 +25,7 @@ const emptyForm = () => ({
   type: "",
   salary: "",
   location: "",
+  category: "",
   description: "",
   justification: "",
   educationalQualifications: "",
@@ -31,6 +33,126 @@ const emptyForm = () => ({
   status: "Pending",
   comment: "",
 });
+
+function SkillsMultiSelect({ selected = "", onChange }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  const selectedArray = selected ? selected.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const toggle = (opt) => {
+    const next = selectedArray.includes(opt)
+      ? selectedArray.filter(s => s !== opt)
+      : [...selectedArray, opt];
+    onChange(next.join(", "));
+  };
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative", width: "100%", fontFamily: "inherit" }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{
+          border: `1.5px solid ${T.border}`,
+          borderRadius: 8,
+          padding: "9px 13px",
+          fontSize: 13,
+          background: "#fff",
+          minHeight: 38,
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 6,
+          cursor: "pointer",
+          boxSizing: "border-box",
+          paddingRight: 32,
+          position: "relative",
+        }}
+      >
+        {selectedArray.length === 0 && (
+          <span style={{ color: T.inkFaint }}>Select required skills...</span>
+        )}
+        {selectedArray.map(s => (
+          <span
+            key={s}
+            onClick={(e) => { e.stopPropagation(); toggle(s); }}
+            style={{
+              background: T.primaryLight,
+              color: T.primary,
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "2px 8px",
+              borderRadius: 6,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {s} <span style={{ fontSize: 13, lineHeight: 1 }}>&times;</span>
+          </span>
+        ))}
+        <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: T.inkFaint }}>
+          ▼
+        </span>
+      </div>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            background: "#fff",
+            border: `1px solid ${T.border}`,
+            borderRadius: 8,
+            marginTop: 4,
+            maxHeight: 200,
+            overflowY: "auto",
+            zIndex: 100,
+            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+          }}
+        >
+          {SKILLS_LIST.map((opt) => {
+            const isSel = selectedArray.includes(opt);
+            return (
+              <div
+                key={opt}
+                onClick={() => toggle(opt)}
+                style={{
+                  padding: "8px 12px",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  background: isSel ? T.primaryLight : "transparent",
+                  color: isSel ? T.primary : T.ink,
+                  fontWeight: isSel ? 700 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => { if (!isSel) e.currentTarget.style.background = T.canvas; }}
+                onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
+              >
+                {opt}
+                {isSel && <span style={{ color: T.primary, fontWeight: "bold" }}>✓</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function JobRequests({ jobRequests, setJobRequests, setApprovalRequests, setJobPostings, existingRoles, onNavigateToApplications }) {
   const bp = useBreakpoint();
@@ -67,19 +189,44 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
     return acc;
   }, {});
 
-  const roleOptions = (existingRoles || []).map((r) => ({ value: r.role, label: r.role }));
+  const deptOptions = [...new Set((existingRoles || []).map((r) => r.dept))].filter(Boolean).map((d) => ({ value: d, label: d }));
+
+  const getFilteredRoleOptions = (selectedDept) => {
+    const roles = existingRoles || [];
+    const filtered = selectedDept ? roles.filter((r) => r.dept === selectedDept) : roles;
+    return filtered.map((r) => ({ value: r.role, label: r.role }));
+  };
 
   const updateForm = (index, key, value) => {
     setJobForms((prev) => prev.map((f, i) => i === index ? { ...f, [key]: value } : f));
+  };
+
+  const handleDepartmentChange = (index, selectedDept) => {
+    updateForm(index, "department", selectedDept);
+    const matchingRole = (existingRoles || []).find((r) => r.role === jobForms[index].role);
+    if (matchingRole && matchingRole.dept !== selectedDept) {
+      updateForm(index, "role", "");
+    }
   };
 
   const handleRoleChange = (index, selectedRole) => {
     updateForm(index, "role", selectedRole);
     const matchingRole = (existingRoles || []).find((r) => r.role === selectedRole);
     if (matchingRole) {
+      updateForm(index, "department", matchingRole.dept || "");
       updateForm(index, "exp", matchingRole.experience || "");
       updateForm(index, "salary", matchingRole.salaryRange || "");
     }
+  };
+
+  const handleDepartmentChangeInModal = (selectedDept) => {
+    if (!selectedRequest) return;
+    const matchingRole = (existingRoles || []).find((r) => r.role === selectedRequest.role);
+    setSelectedRequest({
+      ...selectedRequest,
+      department: selectedDept,
+      role: (matchingRole && matchingRole.dept !== selectedDept) ? "" : selectedRequest.role
+    });
   };
 
   const handleRoleChangeInModal = (selectedRole) => {
@@ -88,6 +235,7 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
     setSelectedRequest({
       ...selectedRequest,
       role: selectedRole,
+      department: matchingRole ? (matchingRole.dept || "") : selectedRequest.department,
       exp: matchingRole ? (matchingRole.experience || "") : selectedRequest.exp,
       salary: matchingRole ? (matchingRole.salaryRange || "") : selectedRequest.salary,
     });
@@ -111,12 +259,14 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
     if (!selectedRequest || !originalRequest) return false;
     return (
       selectedRequest.role !== originalRequest.role ||
+      selectedRequest.department !== originalRequest.department ||
       selectedRequest.location !== originalRequest.location ||
       selectedRequest.vacancies !== originalRequest.vacancies ||
       selectedRequest.exp !== originalRequest.exp ||
       selectedRequest.qual !== originalRequest.qual ||
       selectedRequest.type !== originalRequest.type ||
       selectedRequest.salary !== originalRequest.salary ||
+      selectedRequest.category !== originalRequest.category ||
       selectedRequest.description !== originalRequest.description ||
       selectedRequest.justification !== originalRequest.justification ||
       selectedRequest.educationalQualifications !== originalRequest.educationalQualifications ||
@@ -309,29 +459,48 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+                {/* Row 1 */}
+                <FormField label="Department" required>
+                  <Select value={form.department} onChange={(e) => handleDepartmentChange(index, e.target.value)} options={deptOptions} placeholder="Select department…" />
+                </FormField>
                 <FormField label="Role" required>
-                  <Select value={form.role} onChange={(e) => handleRoleChange(index, e.target.value)} options={roleOptions} placeholder="Select role…" />
+                  <Select value={form.role} onChange={(e) => handleRoleChange(index, e.target.value)} options={getFilteredRoleOptions(form.department)} placeholder="Select role…" />
                 </FormField>
                 <FormField label="Experience" required>
                   <Input placeholder="Enter experience" value={form.exp} onChange={(e) => updateForm(index, "exp", e.target.value)} />
                 </FormField>
+
+                {/* Row 2 */}
                 <FormField label="Salary Range" required>
                   <Input placeholder="Enter salary range" value={form.salary} onChange={(e) => updateForm(index, "salary", e.target.value)} />
                 </FormField>
-                <FormField label="Qualification" required>
+                <FormField label="Educational Qualification" required>
                   <Select value={form.qual} onChange={(e) => updateForm(index, "qual", e.target.value)} options={QUAL_OPTIONS} placeholder="Select qualification…" />
                 </FormField>
                 <FormField label="Vacancies" required>
                   <Select value={form.vacancies} onChange={(e) => updateForm(index, "vacancies", e.target.value)} options={VACANCY_OPTIONS} placeholder="Select count…" />
                 </FormField>
+
+                {/* Row 3 */}
                 <FormField label="Employment Type" required>
                   <Select value={form.type} onChange={(e) => updateForm(index, "type", e.target.value)} options={TYPE_OPTIONS} placeholder="Select type…" />
                 </FormField>
                 <FormField label="Location" required>
                   <Input placeholder="Enter job location" value={form.location} onChange={(e) => updateForm(index, "location", e.target.value)} />
                 </FormField>
+                <FormField label="Category" required>
+                  <Select value={form.category} onChange={(e) => updateForm(index, "category", e.target.value)} options={CATEGORY_OPTIONS} placeholder="Select category…" />
+                </FormField>
               </div>
 
+              {/* Row 4 */}
+              <div style={{ marginBottom: 14 }}>
+                <FormField label="Required Skills" required>
+                  <SkillsMultiSelect selected={form.skillsRequired} onChange={(val) => updateForm(index, "skillsRequired", val)} />
+                </FormField>
+              </div>
+
+              {/* Row 5 */}
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
                 <FormField label="Job Description" required>
                   <textarea
@@ -346,22 +515,6 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                     value={form.justification}
                     onChange={(e) => updateForm(index, "justification", e.target.value)}
                     placeholder="Why is this job needed?"
-                    style={{ width: "100%", minHeight: 100, border: `1.5px solid ${T.border}`, borderRadius: 8, padding: 12, resize: "vertical", outline: "none", fontSize: 13, boxSizing: "border-box" }}
-                  />
-                </FormField>
-                <FormField label="Educational Qualifications" required>
-                  <textarea
-                    value={form.educationalQualifications}
-                    onChange={(e) => updateForm(index, "educationalQualifications", e.target.value)}
-                    placeholder="Enter educational qualifications (e.g. Master's in Education)"
-                    style={{ width: "100%", minHeight: 100, border: `1.5px solid ${T.border}`, borderRadius: 8, padding: 12, resize: "vertical", outline: "none", fontSize: 13, boxSizing: "border-box" }}
-                  />
-                </FormField>
-                <FormField label="Required Skills & Strengths" required>
-                  <textarea
-                    value={form.skillsRequired}
-                    onChange={(e) => updateForm(index, "skillsRequired", e.target.value)}
-                    placeholder="Enter skills and strengths (e.g. Communication, Leadership)"
                     style={{ width: "100%", minHeight: 100, border: `1.5px solid ${T.border}`, borderRadius: 8, padding: 12, resize: "vertical", outline: "none", fontSize: 13, boxSizing: "border-box" }}
                   />
                 </FormField>
@@ -531,18 +684,18 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
               setOriginalRequest(filteredRequests[index]);
               setShowViewModal(true);
             }}
-            cols={["Request ID", "Role", "Location", "Vacancies", "Experience", "Qualification", "Edu Qualifications", "Required Skills", "Type", "Salary", "Status"]}
+            cols={["Request ID", "Department", "Role", "Location", "Vacancies", "Experience", "Educational Qualification", "Required Skills", "Type", "Salary", "Status"]}
             rows={filteredRequests.map((r) => {
               const ss = getStatusStyle(r.status);
               return [
                 <Mono v={typeof r.id === "string" ? r.id.substring(0, 18) : String(r.id)} />,
+                r.department || "—",
                 <strong>{r.role}</strong>,
                 r.location || "—",
                 r.vacancies || "—",
                 r.exp || "—",
                 r.qual || "—",
-                <span style={{ fontSize: 12, color: T.inkLight, maxWidth: 120, display: "inline-block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.educationalQualifications || "—"}</span>,
-                <span style={{ fontSize: 12, color: T.inkLight, maxWidth: 120, display: "inline-block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.skillsRequired || "—"}</span>,
+                <span style={{ fontSize: 12, color: T.inkLight, maxWidth: 150, display: "inline-block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.skillsRequired || "—"}</span>,
                 r.type || "—",
                 r.salary || "—",
                 <span style={{ ...ss, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, display: "inline-block" }}>{r.status}</span>,
@@ -607,26 +760,53 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
               <div style={{ background: T.canvas, borderRadius: 10, padding: 16, border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 12 }}>
                 {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
                   <>
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14 }}>
+                      {/* Row 1 */}
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Department</div>
+                        <Select
+                          value={selectedRequest.department || ""}
+                          onChange={(e) => handleDepartmentChangeInModal(e.target.value)}
+                          options={deptOptions}
+                          placeholder="Select department…"
+                        />
+                      </div>
                       <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Role</div>
                         <Select
                           value={selectedRequest.role || ""}
                           onChange={(e) => handleRoleChangeInModal(e.target.value)}
-                          options={roleOptions}
+                          options={getFilteredRoleOptions(selectedRequest.department)}
                           placeholder="Select role…"
                         />
                       </div>
-
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Location</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Experience</div>
                         <Input
-                          placeholder="Enter job location"
-                          value={selectedRequest.location || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, location: e.target.value })}
+                          placeholder="Enter experience"
+                          value={selectedRequest.exp || ""}
+                          onChange={(e) => setSelectedRequest({ ...selectedRequest, exp: e.target.value })}
                         />
                       </div>
 
+                      {/* Row 2 */}
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range</div>
+                        <Input
+                          placeholder="Enter salary range"
+                          value={selectedRequest.salary || ""}
+                          onChange={(e) => setSelectedRequest({ ...selectedRequest, salary: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Educational Qualification</div>
+                        <Select
+                          value={selectedRequest.qual || ""}
+                          onChange={(e) => setSelectedRequest({ ...selectedRequest, qual: e.target.value })}
+                          options={QUAL_OPTIONS}
+                          placeholder="Select qualification…"
+                        />
+                      </div>
                       <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Vacancies</div>
                         <Select
@@ -637,25 +817,7 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                         />
                       </div>
 
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Experience</div>
-                        <Input
-                          placeholder="Enter experience"
-                          value={selectedRequest.exp || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, exp: e.target.value })}
-                        />
-                      </div>
-
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Qualification</div>
-                        <Select
-                          value={selectedRequest.qual || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, qual: e.target.value })}
-                          options={QUAL_OPTIONS}
-                          placeholder="Select qualification…"
-                        />
-                      </div>
-
+                      {/* Row 3 */}
                       <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Employment Type</div>
                         <Select
@@ -665,18 +827,31 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                           placeholder="Select type…"
                         />
                       </div>
-
-                      <div style={{ gridColumn: isMobile ? "auto" : "span 2" }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range</div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Location</div>
                         <Input
-                          placeholder="Enter salary range"
-                          value={selectedRequest.salary || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, salary: e.target.value })}
+                          placeholder="Enter job location"
+                          value={selectedRequest.location || ""}
+                          onChange={(e) => setSelectedRequest({ ...selectedRequest, location: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Category</div>
+                        <Select
+                          value={selectedRequest.category || ""}
+                          onChange={(e) => setSelectedRequest({ ...selectedRequest, category: e.target.value })}
+                          options={CATEGORY_OPTIONS}
+                          placeholder="Select category…"
                         />
                       </div>
                     </div>
 
-                    <div>
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Required Skills</div>
+                      <SkillsMultiSelect selected={selectedRequest.skillsRequired} onChange={(val) => setSelectedRequest({ ...selectedRequest, skillsRequired: val })} />
+                    </div>
+
+                    <div style={{ marginTop: 12 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Job Description</div>
                       <textarea
                         value={selectedRequest.description || ""}
@@ -686,7 +861,7 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                       />
                     </div>
 
-                    <div>
+                    <div style={{ marginTop: 12 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Justification</div>
                       <textarea
                         value={selectedRequest.justification || ""}
@@ -695,74 +870,60 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                         style={{ width: "100%", minHeight: 80, padding: 10, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", background: T.surface, color: T.ink }}
                       />
                     </div>
-
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Educational Qualifications</div>
-                      <textarea
-                        value={selectedRequest.educationalQualifications || ""}
-                        onChange={(e) => setSelectedRequest({ ...selectedRequest, educationalQualifications: e.target.value })}
-                        placeholder="Enter educational qualifications"
-                        style={{ width: "100%", minHeight: 80, padding: 10, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", background: T.surface, color: T.ink }}
-                      />
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Required Skills & Strengths</div>
-                      <textarea
-                        value={selectedRequest.skillsRequired || ""}
-                        onChange={(e) => setSelectedRequest({ ...selectedRequest, skillsRequired: e.target.value })}
-                        placeholder="Enter required skills & strengths"
-                        style={{ width: "100%", minHeight: 80, padding: 10, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", background: T.surface, color: T.ink }}
-                      />
-                    </div>
                   </>
                 ) : (
                   <>
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14 }}>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Department</div>
+                        <div style={{ fontSize: 13, color: T.ink }}>{selectedRequest.department || "—"}</div>
+                      </div>
                       <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Role</div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{selectedRequest.role || "—"}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Experience</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{selectedRequest.exp || "—"}</div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{selectedRequest.salary || "—"}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Educational Qualification</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{selectedRequest.qual || "—"}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Vacancies</div>
+                        <div style={{ fontSize: 13, color: T.ink }}>{selectedRequest.vacancies || "—"}</div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Employment Type</div>
+                        <div style={{ fontSize: 13, color: T.ink }}>{selectedRequest.type || "—"}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Location</div>
                         <div style={{ fontSize: 13, color: T.ink }}>{selectedRequest.location || "—"}</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Vacancies</div>
-                        <div style={{ fontSize: 13, color: T.ink }}>{selectedRequest.vacancies || "—"}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Experience</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{selectedRequest.exp || "—"}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Qualification</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{selectedRequest.qual || "—"}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Employment Type</div>
-                        <div style={{ fontSize: 13, color: T.ink }}>{selectedRequest.type || "—"}</div>
-                      </div>
-                      <div style={{ gridColumn: isMobile ? "auto" : "span 2" }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{selectedRequest.salary || "—"}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Category</div>
+                        <div style={{ fontSize: 13, color: T.ink }}>{selectedRequest.category || "—"}</div>
                       </div>
                     </div>
-                    <div>
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Required Skills</div>
+                      <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6 }}>{selectedRequest.skillsRequired || "—"}</div>
+                    </div>
+                    <div style={{ marginTop: 12 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Job Description</div>
                       <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6 }}>{selectedRequest.description || "—"}</div>
                     </div>
-                    <div>
+                    <div style={{ marginTop: 12 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Justification</div>
                       <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6 }}>{selectedRequest.justification || "—"}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Educational Qualifications</div>
-                      <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6 }}>{selectedRequest.educationalQualifications || "—"}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Required Skills & Strengths</div>
-                      <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.6 }}>{selectedRequest.skillsRequired || "—"}</div>
                     </div>
                   </>
                 )}

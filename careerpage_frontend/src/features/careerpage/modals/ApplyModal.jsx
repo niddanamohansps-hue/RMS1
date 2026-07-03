@@ -95,6 +95,7 @@ export function ApplyModal({ onClose, signupData, onSubmitData }) {
   const fileRef = useRef(null);
   const [submitted, setSubmitted] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [actualResumeFile, setActualResumeFile] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
 
@@ -152,7 +153,9 @@ export function ApplyModal({ onClose, signupData, onSubmitData }) {
       professionalQualificationOther: form.professionalQualificationOther,
       experience: form.experience, salary: form.salary,
       extracurricular: form.extracurricular, extracurricularOther: form.extracurricularOther,
-      selectedRoles, selectedSkills, linkedin: form.linkedin, portfolio: form.portfolio, resumeFile: fileName,
+      selectedRoles, selectedSkills, linkedin: form.linkedin, portfolio: form.portfolio,
+      resumeFile: fileName,
+      actualResumeFile: actualResumeFile,
     };
     onSubmitData?.(data);
     setSubmitted(true);
@@ -359,6 +362,7 @@ export function ApplyModal({ onClose, signupData, onSubmitData }) {
                     if (f) {
                       if (f.size > 5 * 1024 * 1024) { toast.error("File exceeds 5 MB limit."); return; }
                       setFileName(f.name);
+                      setActualResumeFile(f);
                     }
                   }} />
                 </div>

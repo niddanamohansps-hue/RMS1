@@ -86,12 +86,18 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
             request_id=instance.request_id,
             type="Job Request",
             title=instance.role,
-            department="",
+            department=instance.department or "",
             submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
             status="Pending",
             job_request=instance,
         )
     else:
+        # Sync title and department of all approvals linked to this job request
+        ApprovalRequest.objects.filter(job_request=instance).update(
+            title=instance.role,
+            department=instance.department or ""
+        )
+
         if instance.status == "Cancelled":
             ApprovalRequest.objects.filter(job_request=instance, status="Pending").update(status="Cancelled")
         elif instance.status == "Pending":
@@ -102,7 +108,7 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
                     request_id=instance.request_id,
                     type="Job Request",
                     title=instance.role,
-                    department="",
+                    department=instance.department or "",
                     submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
                     status="Pending",
                     job_request=instance,

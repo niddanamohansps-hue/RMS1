@@ -103,6 +103,7 @@ class JobRequest(models.Model):
     ]
 
     request_id    = models.CharField(max_length=30, unique=True)
+    department    = models.CharField(max_length=100, blank=True)
     role          = models.CharField(max_length=200)
     vacancies     = models.PositiveIntegerField(default=1)
     experience    = models.CharField(max_length=50, blank=True)
@@ -112,6 +113,10 @@ class JobRequest(models.Model):
     description   = models.TextField(blank=True)
     justification = models.TextField(blank=True)
     location      = models.CharField(max_length=200, blank=True)
+    category      = models.ForeignKey(
+        JobCategory, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="job_requests"
+    )
     educational_qualifications = models.TextField(blank=True)
     skills_required            = models.TextField(blank=True)
     status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")

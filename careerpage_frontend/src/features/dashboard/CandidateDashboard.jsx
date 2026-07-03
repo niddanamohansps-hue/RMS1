@@ -44,6 +44,7 @@ export function CandidateDashboard({
   onProfileUpdate,
   applicationsData = {},
   cameFromApply = false,
+  interviews = [],
 }) {
   // Navigation & UI state
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -1177,7 +1178,7 @@ export function CandidateDashboard({
               )}
 
               {/* Upcoming Interviews Tab */}
-              {activeTab === "interviews" && <InterviewsSection />}
+              {activeTab === "interviews" && <InterviewsSection interviews={interviews} />}
 
               {/* Onboarding Tab */}
               {activeTab === "onboarding" && (
