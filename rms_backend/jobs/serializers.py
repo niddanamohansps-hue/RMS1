@@ -237,8 +237,8 @@ class ApprovalActionSerializer(serializers.Serializer):
 
 
 class JobPostingSerializer(serializers.ModelSerializer):
-    application_count = serializers.SerializerMethodField()
-    category          = serializers.SlugRelatedField(
+    application_count          = serializers.SerializerMethodField()
+    category                   = serializers.SlugRelatedField(
         slug_field="name",
         queryset=JobCategory.objects.all(),
         allow_null=True,
@@ -252,6 +252,14 @@ class JobPostingSerializer(serializers.ModelSerializer):
 
     def get_application_count(self, obj):
         return getattr(obj, "annotated_application_count", obj.job_applications.count())
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if not ret.get("educational_qualifications") and instance.job_request:
+            ret["educational_qualifications"] = instance.job_request.educational_qualifications or ""
+        if not ret.get("skills_required") and instance.job_request:
+            ret["skills_required"] = instance.job_request.skills_required or ""
+        return ret
 
     def create(self, validated_data):
         validated_data["posting_id"] = auto_id("JP", JobPosting)
@@ -274,3 +282,11 @@ class JobPostingPublicSerializer(serializers.ModelSerializer):
             "salary_range", "deadline", "expiry_date", "status",
             "educational_qualifications", "skills_required",
         ]
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if not ret.get("educational_qualifications") and instance.job_request:
+            ret["educational_qualifications"] = instance.job_request.educational_qualifications or ""
+        if not ret.get("skills_required") and instance.job_request:
+            ret["skills_required"] = instance.job_request.skills_required or ""
+        return ret

@@ -300,10 +300,13 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
           location: selectedRequest.location || "",
           salary: selectedRequest.salary || "",
           vacancies: selectedRequest.vacancies || "",
-          exp: selectedRequest.exp || "",
-          qual: selectedRequest.qual || "",
+          exp: selectedRequest.experience || selectedRequest.exp || "",
+          qual: selectedRequest.educationalQualifications || "",
           type: selectedRequest.type || "",
           description: selectedRequest.description || "",
+          educationalQualifications: selectedRequest.educationalQualifications || "",
+          skillsRequired: selectedRequest.skillsRequired || "",
+          job_request: selectedRequest.db_id,
         },
       ];
     });

@@ -19,13 +19,15 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
     const er = (existingRoles || []).find((r) => r.role === posting.role);
     return {
       vacancies: posting.vacancies || jr?.vacancies || "—",
-      exp: posting.exp || jr?.exp || er?.experience || "—",
-      qual: posting.qual || jr?.qual || "—",
+      exp: posting.exp || jr?.experience || jr?.exp || er?.experience || "—",
+      qual: posting.educationalQualifications || posting.qual || jr?.educationalQualifications || jr?.qual || "—",
       type: posting.type || jr?.type || er?.type || "—",
       salary: posting.salary || jr?.salary || er?.salaryRange || "—",
       location: posting.location || jr?.location || "—",
+      category: posting.category || jr?.category || "—",
       description: posting.description || jr?.description || "—",
       justification: posting.justification || jr?.justification || "—",
+      skillsRequired: posting.skillsRequired || jr?.skillsRequired || "—",
     };
   };
 
@@ -575,6 +577,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
 
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
               {[
+                { label: "Category", value: details.category },
                 { label: "Vacancies", value: details.vacancies },
                 { label: "Experience", value: details.exp },
                 { label: "Qualification", value: details.qual },
@@ -597,6 +600,13 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                 </div>
               ))}
             </div>
+
+            {details.skillsRequired && details.skillsRequired !== "—" && (
+              <div style={{ marginBottom: 14, background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Required Skills</div>
+                <div style={{ fontSize: 12.5, color: T.ink, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{details.skillsRequired}</div>
+              </div>
+            )}
 
             {details.description && details.description !== "—" && (
               <div style={{ marginBottom: 14, background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, padding: 12 }}>

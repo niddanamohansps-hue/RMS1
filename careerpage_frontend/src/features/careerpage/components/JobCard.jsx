@@ -53,10 +53,10 @@ export function JobCard({ job, applied, onApply, showOverlay, onSeeMore }) {
           <div className="jc-qual-heading mb-2">Educational Qualifications:</div>
           <ul className="flex flex-col gap-1">
             {(job.educationalQualifications
-              ? job.educationalQualifications.split("\n").filter(q => q.trim() !== "")
+              ? job.educationalQualifications.split(/[\n,]/).map(q => q.trim()).filter(q => q !== "")
               : (Array.isArray(job.qualifications) ? job.qualifications : [job.qualifications || "Degree in relevant field"])
-            ).map((q) => (
-              <li key={q} className="flex items-start gap-2">
+            ).map((q, i) => (
+              <li key={i} className="flex items-start gap-2">
                 <span className="jc-qual-bullet">•</span>
                 <span className="jc-qual-text">{q}</span>
               </li>
@@ -68,10 +68,10 @@ export function JobCard({ job, applied, onApply, showOverlay, onSeeMore }) {
           <div className="jc-qual-heading mb-2">Required Skills & Strengths:</div>
           <ul className="flex flex-col gap-1">
             {(job.skillsRequired
-              ? job.skillsRequired.split("\n").filter(s => s.trim() !== "")
+              ? job.skillsRequired.split(/[\n,]/).map(s => s.trim()).filter(s => s !== "")
               : (job.skills || ["Strong Communication", "Classroom Management", "Team Collaboration"])
-            ).map((s) => (
-              <li key={s} className="flex items-start gap-2">
+            ).map((s, i) => (
+              <li key={i} className="flex items-start gap-2">
                 <span className="jc-qual-bullet">•</span>
                 <span className="jc-qual-text">{s}</span>
               </li>

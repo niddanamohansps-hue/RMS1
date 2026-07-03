@@ -148,6 +148,7 @@ function AppContent() {
     salary: jr.salary_range,
     sal: jr.salary_range,
     type: jr.type,
+    qual: jr.educational_qualifications || "",
     location: jr.location || "",
     category: jr.category || "",
     description: jr.description || "",
@@ -171,7 +172,7 @@ function AppContent() {
     justification: jr.justification || jr.just || "",
     location: jr.location || "",
     category: jr.category || "",
-    educational_qualifications: jr.educationalQualifications || "",
+    educational_qualifications: jr.educationalQualifications || jr.qual || "",
     skills_required: jr.skillsRequired || "",
     status: sanitizeRequestStatus(jr.status),
     submitted_by: currentUser?.name || "HR Admin",
@@ -225,9 +226,11 @@ function AppContent() {
     exp: jp.experience,
     qual: jp.qualification,
     type: jp.type,
+    category: jp.category || "",
     description: jp.description,
     educationalQualifications: jp.educational_qualifications || "",
     skillsRequired: jp.skills_required || "",
+    job_request: jp.job_request || null,
   });
 
   const toBackendPosting = (jp) => {
@@ -263,6 +266,7 @@ function AppContent() {
       description: jp.description || "",
       educational_qualifications: jp.educationalQualifications || "",
       skills_required: jp.skillsRequired || "",
+      job_request: jp.job_request || null,
     };
   };
 
@@ -712,6 +716,7 @@ function AppContent() {
                       description: n.description || "",
                       educationalQualifications: n.educationalQualifications || "",
                       skillsRequired: n.skillsRequired || "",
+                      job_request: n.source_db_id,
                     }];
                   });
                   setTimeout(() => { navigate("/dashboard/applications"); }, 300);
