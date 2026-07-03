@@ -5,9 +5,7 @@ import { toast } from "sonner";
 import logoImg from "../../assets/logo.png";
 
 import { MAROON, GOLD } from "../../lib/constants";
-
-// Mock data & configurations
-import { notifications } from "../../mockData/dashboardMockData";
+import { api } from "../../lib/api";
 
 // Layout
 import { DashboardSidebar } from "./components/layout/DashboardSidebar";
@@ -241,9 +239,51 @@ export function CandidateDashboard({
       type: j.type,
     }));
 
-  const [dashboardNotifications, setDashboardNotifications] = useState(() =>
-    notifications.map((n) => ({ ...n, isNew: !n.read }))
-  );
+  const [dashboardNotifications, setDashboardNotifications] = useState([]);
+
+  const formatTime = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const data = await api.get("/notifications/");
+        const list = Array.isArray(data) ? data : (data.results || []);
+        const mapped = list.map((n) => ({
+          id: n.id,
+          text: n.message || n.title,
+          time: formatTime(n.created_at),
+          read: n.is_read,
+          isNew: !n.is_read,
+        }));
+        setDashboardNotifications(mapped);
+      } catch (err) {
+        console.error("Failed to load notifications from API", err);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const unreadCount = dashboardNotifications.filter((n) => !n.read).length;
 
@@ -261,6 +301,9 @@ export function CandidateDashboard({
       setDashboardNotifications((prev) =>
         prev.map((n) => (n.read ? n : { ...n, read: true }))
       );
+      api.patch("/notifications/mark_all_read/").catch((err) => {
+        console.error("Failed to mark notifications read", err);
+      });
     }
   }, [activeTab]);
 

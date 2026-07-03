@@ -1611,7 +1611,7 @@ export default function InterviewPanel({
 
                       {/* Actions */}
                       <td style={{ padding: "12px 10px", textAlign: "center", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: "grid", gridTemplateColumns: "105px 75px 90px 80px 65px", gap: 6, justifyContent: "center", alignItems: "center" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "105px 75px 90px 65px", gap: 6, justifyContent: "center", alignItems: "center" }}>
                           {!i.date ? (
                             <button
                               onClick={() => handleOpenSchedule(c)}
@@ -1652,36 +1652,6 @@ export default function InterviewPanel({
                           ) : (
                             <div style={{ width: 90 }} />
                           )}
-                          <button
-                            onClick={() => {
-                              const key = candidateKey(c);
-                              if (inlineEvalKey === key) {
-                                setInlineEvalKey(null);
-                                setScores({});
-                                setRecommendation("");
-                                setRemarks("");
-                              } else {
-                                setInlineEvalKey(key);
-                                setScores({});
-                                setRecommendation("");
-                                setRemarks("");
-                              }
-                            }}
-                            disabled={isPreviousRound}
-                            style={{
-                              ...actionBtnStyle(
-                                inlineEvalKey === candidateKey(c) ? "primary" : "secondary",
-                                isPreviousRound
-                              ),
-                              width: "100%",
-                              textAlign: "center",
-                              background: inlineEvalKey === candidateKey(c) ? T.primary : actionBtnStyle("secondary", isPreviousRound).background,
-                              color: inlineEvalKey === candidateKey(c) ? "#fff" : actionBtnStyle("secondary", isPreviousRound).color,
-                            }}
-                            className={isPreviousRound ? "" : "btn-action-hover"}
-                          >
-                            {inlineEvalKey === candidateKey(c) ? "✕ Close" : "📝 Evaluate"}
-                          </button>
                           <button
                             onClick={() => handleGiveOffer(c)}
                             disabled={isPreviousRound}

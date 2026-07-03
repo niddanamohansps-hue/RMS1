@@ -109,11 +109,18 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
   const isPending = sel?.status === "Pending";
 
   const deptOptions = [...new Set((existingRoles || []).map((r) => r.dept))].filter(Boolean).map((d) => ({ value: d, label: d }));
+  if (sel?.dept && !deptOptions.some(o => o.value === sel.dept)) {
+    deptOptions.push({ value: sel.dept, label: sel.dept });
+  }
 
   const getFilteredRoleOptions = (selectedDept) => {
     const roles = existingRoles || [];
     const filtered = selectedDept ? roles.filter((r) => r.dept === selectedDept) : roles;
-    return filtered.map((r) => ({ value: r.role, label: r.role }));
+    const opts = filtered.map((r) => ({ value: r.role, label: r.role }));
+    if (sel?.role && !opts.some(o => o.value === sel.role)) {
+      opts.push({ value: sel.role, label: sel.role });
+    }
+    return opts;
   };
 
   const handleDepartmentChangeInModal = (selectedDept) => {
@@ -201,11 +208,10 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
                     <div>
                       <div style={labelCss}>Department</div>
                       {isPending ? (
-                        <Select
+                        <Input
                           value={sel.dept || ""}
-                          onChange={(e) => handleDepartmentChangeInModal(e.target.value)}
-                          options={deptOptions}
-                          placeholder="Select department…"
+                          onChange={(e) => setSel({ ...sel, dept: e.target.value })}
+                          placeholder="Enter department…"
                         />
                       ) : (
                         <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{sel.dept || "—"}</div>
@@ -215,11 +221,10 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
                     <div>
                       <div style={labelCss}>Role Name</div>
                       {isPending ? (
-                        <Select
+                        <Input
                           value={sel.role || ""}
-                          onChange={(e) => handleRoleChangeInModal(e.target.value)}
-                          options={getFilteredRoleOptions(sel.dept)}
-                          placeholder="Select role…"
+                          onChange={(e) => setSel({ ...sel, role: e.target.value })}
+                          placeholder="Enter role name…"
                         />
                       ) : (
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{sel.role || "—"}</div>

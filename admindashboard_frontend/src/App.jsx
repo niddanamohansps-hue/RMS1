@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { T, font, radius, shadow, transition } from "./theme";
 import { useBreakpoint } from "./hooks";
 import { NAV } from "./data";
@@ -63,6 +63,18 @@ function AppContent() {
   const [interviews, _setInterviews] = useState([]);
   const [panelists, _setPanelists] = useState([]);
   const [selectedPanelists] = useState(["Dr. Roy", "Mr. Patel", "Ms. Nisha"]);
+
+  const loadedOnce = useRef({
+    roles: false,
+    roleRequests: false,
+    jobRequests: false,
+    approvals: false,
+    jobPostings: false,
+    applications: false,
+    offers: false,
+    interviews: false,
+    panelists: false,
+  });
   
   const [currentUser, setCurrentUser] = useState(() =>
     loadSession("currentUser", null)
@@ -342,12 +354,16 @@ function AppContent() {
       frontendStatus = "Pending";
     }
 
-    // 2. Map recommendation: "" -> "—", "On Hold" -> "Hold"
+    // 2. Map recommendation: "" -> "—", "On Hold" -> "Hold", "Selected" -> "Hire", "Rejected" -> "Reject"
     let frontendRec = i.recommendation || "—";
     if (!frontendRec) {
       frontendRec = "—";
     } else if (frontendRec === "On Hold") {
       frontendRec = "Hold";
+    } else if (frontendRec === "Selected") {
+      frontendRec = "Hire";
+    } else if (frontendRec === "Rejected") {
+      frontendRec = "Reject";
     }
 
     // 3. Map time format: "09:00:00" -> "9:00 AM"
@@ -383,12 +399,16 @@ function AppContent() {
       backendStatus = "Scheduled";
     }
 
-    // 2. Map recommendation: "—" -> "", "Hold" -> "On Hold"
+    // 2. Map recommendation: "—" -> "", "Hold" -> "On Hold", "Hire"/"Strong Hire" -> "Selected", "Reject" -> "Rejected"
     let backendRec = i.rec || "";
     if (backendRec === "—") {
       backendRec = "";
     } else if (backendRec === "Hold") {
       backendRec = "On Hold";
+    } else if (backendRec === "Hire" || backendRec === "Strong Hire") {
+      backendRec = "Selected";
+    } else if (backendRec === "Reject") {
+      backendRec = "Rejected";
     }
 
     // 3. Map time format: "9:00 AM" -> "09:00:00"
@@ -428,12 +448,13 @@ function AppContent() {
 
   const toBackendOffer = (o, candidateId) => ({
     offer_id: o.id,
-    candidate: candidateId || 1,
+    candidate: candidateId || null,
     candidate_name: o.candidate,
     role: o.role,
     ctc: o.ctc,
-    issued_date: o.issued,
-    expiry_date: o.expiry,
+    issued_date: o.issued || null,
+    expiry_date: o.expiry || null,
+    joining_date: o.joining || null,
     status: o.status,
   });
 
@@ -441,22 +462,27 @@ function AppContent() {
   const loadRoles = async () => {
     const d = await api.get("/roles/");
     _setExistingRoles(d.results ? d.results.map(fromBackendRole) : (Array.isArray(d) ? d.map(fromBackendRole) : []));
+    loadedOnce.current.roles = true;
   };
   const loadRoleRequests = async () => {
     const d = await api.get("/role-requests/");
     _setRoleRequests(d.results ? d.results.map(fromBackendRoleRequest) : (Array.isArray(d) ? d.map(fromBackendRoleRequest) : []));
+    loadedOnce.current.roleRequests = true;
   };
   const loadJobRequests = async () => {
     const d = await api.get("/job-requests/");
     _setJobRequests(d.results ? d.results.map(fromBackendJobRequest) : (Array.isArray(d) ? d.map(fromBackendJobRequest) : []));
+    loadedOnce.current.jobRequests = true;
   };
   const loadApprovals = async () => {
     const d = await api.get("/approvals/");
     _setApprovalRequests(d.results ? d.results.map(fromBackendApproval) : (Array.isArray(d) ? d.map(fromBackendApproval) : []));
+    loadedOnce.current.approvals = true;
   };
   const loadJobPostings = async () => {
     const d = await api.get("/job-postings/");
     _setJobPostings(d.results ? d.results.map(fromBackendPosting) : (Array.isArray(d) ? d.map(fromBackendPosting) : []));
+    loadedOnce.current.jobPostings = true;
   };
   const loadApplications = async () => {
     const [appsData, genAppsData] = await Promise.all([
@@ -465,48 +491,104 @@ function AppContent() {
     ]);
     _setJobApplications(appsData.results ? appsData.results.map(fromBackendJobApp) : (Array.isArray(appsData) ? appsData.map(fromBackendJobApp) : []));
     _setGeneralApplications(genAppsData.results ? genAppsData.results.map(fromBackendGeneralApp) : (Array.isArray(genAppsData) ? genAppsData.map(fromBackendGeneralApp) : []));
+    loadedOnce.current.applications = true;
   };
   const loadOffers = async () => {
     const d = await api.get("/offers/");
     _setOffers(d.results ? d.results.map(fromBackendOffer) : (Array.isArray(d) ? d.map(fromBackendOffer) : []));
+    loadedOnce.current.offers = true;
   };
   const loadInterviews = async () => {
     const d = await api.get("/interviews/");
-    _setInterviews(d.results ? d.results.map(fromBackendInterview) : (Array.isArray(d) ? d.map(fromBackendInterview) : []));
+    const backendItems = d.results ? d.results.map(fromBackendInterview) : (Array.isArray(d) ? d.map(fromBackendInterview) : []);
+    _setInterviews((prev) => {
+      return backendItems.map((item) => {
+        const existing = prev.find((p) => p.id === item.id);
+        return existing ? { ...item, attendance: existing.attendance } : item;
+      });
+    });
+    loadedOnce.current.interviews = true;
   };
   const loadPanelists = async () => {
     const d = await api.get("/panelists/");
     _setPanelists(d.results ? d.results : (Array.isArray(d) ? d : []));
+    loadedOnce.current.panelists = true;
   };
 
-  // Full refresh (initial load only) — runs all in parallel where possible
-  const loadAllData = async () => {
-    setIsLoading(true);
-    try {
-      await Promise.all([
-        loadRoles(),
-        loadRoleRequests(),
-        loadJobRequests(),
-        loadApprovals(),
-        loadJobPostings(),
-        loadApplications(),
-        loadOffers(),
-        loadInterviews(),
-        loadPanelists(),
-      ]);
-    } catch (err) {
-      console.error("Failed to load initial backend data", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-
+  // Dynamic loader — fetches only the data required for the active screen to optimize dashboard load times
   useEffect(() => {
-    if (currentUser) {
-      loadAllData();
-    }
-  }, [currentUser]);
+    if (!currentUser) return;
+
+    const path = location.pathname;
+    const loadRequiredData = async () => {
+      // Determine if we need to show the spinner (only if any of the required datasets hasn't been loaded once yet)
+      let needsSpinner = !loadedOnce.current.approvals;
+      if (path === "/dashboard/existing-roles") {
+        needsSpinner = needsSpinner || !loadedOnce.current.roles;
+      } else if (path === "/dashboard/role-requests") {
+        needsSpinner = needsSpinner || !loadedOnce.current.roleRequests || !loadedOnce.current.roles;
+      } else if (path === "/dashboard/job-requests") {
+        needsSpinner = needsSpinner || !loadedOnce.current.jobRequests || !loadedOnce.current.jobPostings || !loadedOnce.current.roles;
+      } else if (path === "/dashboard/approval-requests") {
+        needsSpinner = needsSpinner || !loadedOnce.current.roles || !loadedOnce.current.jobPostings;
+      } else if (path === "/dashboard/job-postings") {
+        needsSpinner = needsSpinner || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests || !loadedOnce.current.roles;
+      } else if (path === "/dashboard/applications") {
+        needsSpinner = needsSpinner || !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests;
+      } else if (path === "/dashboard/interview-panel") {
+        needsSpinner = needsSpinner || !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.interviews || !loadedOnce.current.panelists;
+      } else if (path === "/dashboard/offer-management") {
+        needsSpinner = needsSpinner || !loadedOnce.current.offers || !loadedOnce.current.jobPostings;
+      } else if (path === "/dashboard/onboarding") {
+        needsSpinner = needsSpinner || !loadedOnce.current.jobPostings || !loadedOnce.current.offers;
+      } else if (path === "/panelist") {
+        needsSpinner = needsSpinner || !loadedOnce.current.interviews || !loadedOnce.current.jobPostings;
+      }
+
+      if (needsSpinner) {
+        setIsLoading(true);
+      }
+
+      try {
+        const promises = [];
+
+        // Always load approvals to keep the sidebar pending badge updated
+        promises.push(loadApprovals());
+
+        if (path === "/dashboard") {
+          // Dashboard page only needs approvals count
+        } else if (path === "/dashboard/existing-roles") {
+          promises.push(loadRoles());
+        } else if (path === "/dashboard/role-requests") {
+          promises.push(loadRoleRequests(), loadRoles());
+        } else if (path === "/dashboard/job-requests") {
+          promises.push(loadJobRequests(), loadJobPostings(), loadRoles());
+        } else if (path === "/dashboard/approval-requests") {
+          promises.push(loadRoles(), loadJobPostings());
+        } else if (path === "/dashboard/job-postings") {
+          promises.push(loadJobPostings(), loadJobRequests(), loadRoles());
+        } else if (path === "/dashboard/applications") {
+          promises.push(loadApplications(), loadJobPostings(), loadJobRequests());
+        } else if (path === "/dashboard/interview-panel") {
+          promises.push(loadApplications(), loadJobPostings(), loadInterviews(), loadPanelists());
+        } else if (path === "/dashboard/offer-management") {
+          promises.push(loadOffers(), loadJobPostings());
+        } else if (path === "/dashboard/onboarding") {
+          promises.push(loadJobPostings(), loadOffers());
+        } else if (path === "/panelist") {
+          promises.push(loadInterviews(), loadJobPostings());
+        }
+
+        await Promise.all(promises);
+      } catch (err) {
+        console.error("Failed to load screen-specific backend data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRequiredData();
+  }, [location.pathname, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Protected route redirects — only fire when auth state changes, NOT on every navigation
   useEffect(() => {
@@ -830,6 +912,8 @@ function AppContent() {
     try {
       const current = interviews;
       let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
+      _setInterviews(next);
+
       if (next.length > current.length) {
         const added = next.find(n => !current.some(c => c.id === n.id));
         if (added) {
@@ -857,14 +941,18 @@ function AppContent() {
       } else {
         for (const n of next) {
           const c = current.find(x => x.id === n.id);
-          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-            try {
-              const panelIds = (n.panel || []).map(name => {
-                const p = panelists.find(px => px.name === name);
-                return p ? p.id : null;
-              }).filter(id => id !== null);
-              await api.put(`/interviews/${c.db_id}/`, toBackendInterview(n, panelIds));
-            } catch (err) { alert("Update failed: " + err.message); }
+          if (c && c.db_id) {
+            const cClean = { ...c, attendance: undefined };
+            const nClean = { ...n, attendance: undefined };
+            if (JSON.stringify(cClean) !== JSON.stringify(nClean)) {
+              try {
+                const panelIds = (n.panel || []).map(name => {
+                  const p = panelists.find(px => px.name === name);
+                  return p ? p.id : null;
+                }).filter(id => id !== null);
+                await api.put(`/interviews/${c.db_id}/`, toBackendInterview(n, panelIds));
+              } catch (err) { alert("Update failed: " + err.message); }
+            }
           }
         }
       }

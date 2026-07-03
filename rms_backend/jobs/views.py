@@ -208,8 +208,8 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = JobPosting.objects.select_related("category")
         if not user.is_authenticated or user.role == "candidate":
-            return queryset.filter(status="Published")
-        return queryset.annotate(annotated_application_count=Count("job_applications"))
+            return queryset.filter(status="Published").order_by("-created_at")
+        return queryset.annotate(annotated_application_count=Count("job_applications")).order_by("-created_at")
 
     def get_serializer_class(self):
         user = self.request.user
