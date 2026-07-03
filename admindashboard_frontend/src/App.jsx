@@ -148,8 +148,6 @@ function AppContent() {
     salary: jr.salary_range,
     sal: jr.salary_range,
     type: jr.type,
-    qualification: jr.qualification,
-    qual: jr.qualification,
     location: jr.location || "",
     category: jr.category || "",
     description: jr.description || "",
@@ -169,7 +167,6 @@ function AppContent() {
     experience: jr.experience || jr.exp || "",
     salary_range: jr.salary || jr.sal || "",
     type: jr.type || "Full-time",
-    qualification: jr.qualification || jr.qual || "",
     description: jr.description || "",
     justification: jr.justification || jr.just || "",
     location: jr.location || "",
@@ -195,7 +192,7 @@ function AppContent() {
     source_db_id: ap.source_db_id || null,
     just: ap.justification || "",
     vacancies: ap.vacancies || 1,
-    qual: ap.qualification || "",
+    qual: ap.educational_qualifications || "",
     empType: ap.employment_type || "Full-time",
     experience: ap.experience || "",
     salary: ap.salary_range || "",
@@ -678,10 +675,9 @@ function AppContent() {
                 payload.location = n.location || "";
                 payload.category = n.category || "";
                 payload.vacancies = n.vacancies || 1;
-                payload.qualification = n.qual || "";
                 payload.employment_type = n.empType || "";
                 payload.description = n.description || "";
-                payload.educational_qualifications = n.educationalQualifications || "";
+                payload.educational_qualifications = n.qual || n.educationalQualifications || "";
                 payload.skills_required = n.skillsRequired || "";
               }
               await api.post(`/approvals/${c.db_id}/action/`, payload);

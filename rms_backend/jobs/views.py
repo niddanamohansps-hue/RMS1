@@ -157,8 +157,6 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
                     job_req.category = cat_obj
             if "vacancies" in serializer.validated_data:
                 job_req.vacancies = serializer.validated_data["vacancies"]
-            if "qualification" in serializer.validated_data:
-                job_req.qualification = serializer.validated_data["qualification"]
             if "employment_type" in serializer.validated_data:
                 job_req.type = serializer.validated_data["employment_type"]
             if "description" in serializer.validated_data:

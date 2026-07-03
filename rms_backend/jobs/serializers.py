@@ -124,7 +124,6 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
     experience = serializers.SerializerMethodField(read_only=True)
     salary_range = serializers.SerializerMethodField(read_only=True)
     employment_type = serializers.SerializerMethodField(read_only=True)
-    qualification = serializers.SerializerMethodField(read_only=True)
     source_request_id = serializers.SerializerMethodField(read_only=True)
     source_db_id = serializers.SerializerMethodField(read_only=True)
     description = serializers.SerializerMethodField(read_only=True)
@@ -194,11 +193,6 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
             return obj.job_request.type
         return ""
 
-    def get_qualification(self, obj):
-        if obj.job_request:
-            return obj.job_request.qualification
-        return ""
-
     def get_description(self, obj):
         if obj.job_request:
             return obj.job_request.description
@@ -236,7 +230,6 @@ class ApprovalActionSerializer(serializers.Serializer):
     location                   = serializers.CharField(required=False, allow_blank=True)
     category                   = serializers.CharField(required=False, allow_blank=True)
     vacancies                  = serializers.IntegerField(required=False)
-    qualification              = serializers.CharField(required=False, allow_blank=True)
     employment_type            = serializers.CharField(required=False, allow_blank=True)
     description                = serializers.CharField(required=False, allow_blank=True)
     educational_qualifications = serializers.CharField(required=False, allow_blank=True)

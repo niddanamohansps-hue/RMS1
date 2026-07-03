@@ -109,7 +109,6 @@ class JobRequest(models.Model):
     experience    = models.CharField(max_length=50, blank=True)
     salary_range  = models.CharField(max_length=100, blank=True)
     type          = models.CharField(max_length=50, default="Full-time")
-    qualification = models.CharField(max_length=200, blank=True)
     description   = models.TextField(blank=True)
     justification = models.TextField(blank=True)
     location      = models.CharField(max_length=200, blank=True)
@@ -117,7 +116,7 @@ class JobRequest(models.Model):
         JobCategory, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="job_requests"
     )
-    educational_qualifications = models.TextField(blank=True)
+    educational_qualifications = models.CharField(max_length=200, blank=True)
     skills_required            = models.TextField(blank=True)
     status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     submitted_by  = models.CharField(max_length=200, blank=True)
