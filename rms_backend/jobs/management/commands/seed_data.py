@@ -97,8 +97,10 @@ class Command(BaseCommand):
             ("Dr. Ananya", "dr_ananya@school.edu", "9876543215"),
         ]
         for name, email, phone in PANELISTS:
-            Panelist.objects.get_or_create(email=email, defaults={"name": name, "phone": phone})
-        self.stdout.write(f"  [OK] {len(PANELISTS)} panelists seeded")
+            p, created = Panelist.objects.get_or_create(email=email, defaults={"name": name, "phone": phone})
+            if not created:
+                p.save()
+        self.stdout.write(f"  [OK] {len(PANELISTS)} panelists seeded and user accounts synchronized")
 
         # ── Job Categories ─────────────────────────────────────────────────────
         academic_cat, _ = JobCategory.objects.get_or_create(name="Academic Positions")

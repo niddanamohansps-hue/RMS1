@@ -2,12 +2,6 @@ import { useState, useEffect } from "react";
 import { T, font, radius, shadow } from "../theme";
 import { api } from "../lib/api";
 
-const DEFAULT_USERS = [
-  { email: "admin@school.edu", password: "admin123", name: "Principal Admin", role: "admin" },
-  { email: "dr.roy@school.edu", password: "roy123", name: "Dr. Roy", role: "Dr. Roy" },
-  { email: "mr.patel@school.edu", password: "patel123", name: "Mr. Patel", role: "Mr. Patel" },
-  { email: "ms.nisha@school.edu", password: "nisha123", name: "Ms. Nisha", role: "Ms. Nisha" },
-];
 
 function FormLabel({ text }) {
   return (
@@ -102,10 +96,8 @@ function CustomInput({ icon, type = "text", placeholder, value, onChange, showPa
 }
 
 export default function Auth({ onLoginSuccess }) {
-  const [tab, setTab] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -120,15 +112,6 @@ export default function Auth({ onLoginSuccess }) {
       }
     } catch (e) {}
   }, []);
-
-  const getUsers = () => {
-    try {
-      const stored = localStorage.getItem("users");
-      if (stored) return JSON.parse(stored);
-    } catch (e) {}
-    localStorage.setItem("users", JSON.stringify(DEFAULT_USERS));
-    return DEFAULT_USERS;
-  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -202,47 +185,6 @@ export default function Auth({ onLoginSuccess }) {
     }
   };
 
-  const handleSignUp = (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Please fill in all fields.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    const users = getUsers();
-    const exists = users.some((u) => u.email.toLowerCase() === email.toLowerCase().trim());
-    if (exists) {
-      setError("An account with this email already exists.");
-      return;
-    }
-
-    const newUser = {
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      password: password,
-      role: "admin",
-    };
-
-    const updatedUsers = [...users, newUser];
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
-
-    setSuccess("Account created successfully! You can now Log in.");
-    setTimeout(() => {
-      setTab("login");
-      setEmail(newUser.email);
-      setPassword("");
-      setError("");
-      setSuccess("");
-    }, 1500);
-  };
 
   return (
     <div
@@ -372,7 +314,7 @@ export default function Auth({ onLoginSuccess }) {
                   </svg>
                 }
                 type="email"
-                placeholder="e.g. admin@school.edu"
+                placeholder="e.g. hr@southpoint.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -452,6 +394,30 @@ export default function Auth({ onLoginSuccess }) {
               <span>Log in</span>
             </button>
           </form>
+          {/* Collapsible Demo Credentials Guide */}
+          <div style={{ marginTop: 20, borderTop: `1px solid ${T.border || '#e5e7eb'}`, paddingTop: 14 }}>
+            <details style={{ cursor: "pointer" }}>
+              <summary style={{ fontSize: 13, fontWeight: 700, color: T.primary, userSelect: "none", outline: "none" }}>
+                🔑 View Demo Credentials
+              </summary>
+              <div style={{ marginTop: 10, fontSize: 12.5, color: T.inkLight, background: "rgba(114, 16, 42, 0.03)", padding: 12, borderRadius: 10, border: `1px dashed ${T.primary}44` }}>
+                <div style={{ marginBottom: 8 }}>
+                  <strong style={{ color: T.primary }}>HR Admin:</strong>
+                  <br />
+                  Email: <code style={{ background: "#e5e7eb", padding: "1px 4px", borderRadius: 4 }}>hr@southpoint.edu</code>
+                  <br />
+                  Password: <code style={{ background: "#e5e7eb", padding: "1px 4px", borderRadius: 4 }}>Admin@123</code>
+                </div>
+                <div>
+                  <strong style={{ color: T.primary }}>Panelists (Dynamic):</strong>
+                  <br />
+                  Emails: <code style={{ background: "#e5e7eb", padding: "1px 4px", borderRadius: 4 }}>dr_roy@school.edu</code>, <code style={{ background: "#e5e7eb", padding: "1px 4px", borderRadius: 4 }}>mr_patel@school.edu</code>, etc.
+                  <br />
+                  Password: <code style={{ background: "#e5e7eb", padding: "1px 4px", borderRadius: 4 }}>Panel@123</code>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
     </div>

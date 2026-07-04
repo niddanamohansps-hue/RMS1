@@ -62,3 +62,32 @@ class Interview(models.Model):
 
     def __str__(self):
         return f"{self.interview_id} — {self.candidate_name} (Round {self.round})"
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth import get_user_model
+
+@receiver(post_save, sender=Panelist)
+def sync_panelist_user_account(sender, instance, created, **kwargs):
+    User = get_user_model()
+    user, user_created = User.objects.get_or_create(
+        email=instance.email,
+        defaults={
+            "username": instance.email,
+            "first_name": instance.name,
+            "role": "admin",
+            "is_staff": True,
+            "is_active": instance.is_active,
+        }
+    )
+    
+    if user_created:
+        user.set_password("Panel@123")
+        user.save()
+    else:
+        user.first_name = instance.name
+        user.is_active = instance.is_active
+        user.role = "admin"
+        user.save()
+
