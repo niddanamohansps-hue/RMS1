@@ -35,13 +35,61 @@
 
 /* ── Modal panel ─────────────────────────────────────────────────────────── */
 .lm-modal {
+  position        : relative;
+  background      : #fff;
+  border-radius   : 16px;
+  width           : 100%;
+  max-width       : 520px;
+  max-height      : calc(100vh - 32px);
+  overflow-y      : auto;
+  scrollbar-width : none;
+  box-shadow      : 0 24px 60px rgba(0, 0, 0, 0.4);
+  z-index         : 1;
+}
+
+.lm-modal::-webkit-scrollbar {
+  display : none;
+}
+
+/* ── Animated border wrapper ─────────────────────────────────────────────── */
+.lm-modal-border-wrap {
   position      : relative;
-  background    : #fff;
-  border-radius : 16px;
-  width         : 100%;
+  border-radius : 18px;
+  padding       : 3px;
   max-width     : 520px;
+  width         : 100%;
+  max-height    : calc(100vh - 32px);
   overflow      : hidden;
-  box-shadow    : 0 24px 60px rgba(0, 0, 0, 0.4);
+  box-shadow    : 0 0 28px 4px rgba(201, 168, 76, 0.15),
+                  0 0 60px 8px rgba(114, 16, 42, 0.08);
+}
+
+/* Large rotating conic-gradient that peeks through the 3px padding gap */
+.lm-modal-border-wrap::before {
+  content    : "";
+  position   : absolute;
+  top        : 50%;
+  left       : 50%;
+  width      : 150%;
+  height     : 150%;
+  transform  : translate(-50%, -50%);
+  z-index    : 0;
+  background : conic-gradient(
+    from 0deg,
+    var(--lm-maroon),
+    var(--lm-gold),
+    #fff,
+    var(--lm-maroon),
+    var(--lm-gold),
+    #fff,
+    var(--lm-maroon)
+  );
+  animation  : rotateBorder 3s linear infinite;
+}
+
+@keyframes rotateBorder {
+  0%   { transform: translate(-50%, -50%) rotate(0deg);   }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* ── Close button ────────────────────────────────────────────────────────── */
@@ -49,7 +97,7 @@
   position        : absolute;
   top             : 14px;
   right           : 14px;
-  background      : rgba(0, 0, 0, 0.08);
+  background      : rgba(255, 255, 255, 0.15);
   border          : none;
   border-radius   : 50%;
   width           : 30px;
@@ -59,7 +107,15 @@
   align-items     : center;
   justify-content : center;
   z-index         : 10;
-  color           : #555;
+  color           : rgba(255,255,255,0.7);
+  transition      : all 0.3s ease;
+  backdrop-filter : blur(4px);
+}
+
+.lm-close-btn:hover {
+  background : rgba(255, 255, 255, 0.3);
+  color      : #fff;
+  transform  : rotate(90deg) scale(1.1);
 }
 
 /* ── Header banner ───────────────────────────────────────────────────────── */
@@ -67,6 +123,32 @@
   background : linear-gradient(160deg, #72102a 0%, #4a0a1a 100%);
   padding    : 28px 24px 20px;
   text-align : center;
+  position   : relative;
+  overflow   : hidden;
+}
+
+/* Diagonal shimmer sweep across the header */
+.lm-header::after {
+  content    : "";
+  position   : absolute;
+  top        : 0;
+  left       : -100%;
+  width      : 60%;
+  height     : 100%;
+  background : linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(201, 168, 76, 0.08) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(201, 168, 76, 0.08) 55%,
+    transparent 60%
+  );
+  animation  : headerShimmer 4s ease-in-out infinite;
+}
+
+@keyframes headerShimmer {
+  0%   { left: -100%; }
+  100% { left: 200%;  }
 }
 
 .lm-header-logo {
@@ -75,6 +157,13 @@
   object-fit   : contain;
   margin       : 0 auto 10px;
   display      : block;
+  animation    : logoFloat 3s ease-in-out infinite;
+  filter       : drop-shadow(0 2px 8px rgba(201, 168, 76, 0.3));
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0);   }
+  50%      { transform: translateY(-4px); }
 }
 
 .lm-header-school {
@@ -83,6 +172,7 @@
   font-size      : 1.15rem;
   font-weight    : 700;
   letter-spacing : 0.05em;
+  text-shadow    : 0 1px 8px rgba(201, 168, 76, 0.3);
 }
 
 .lm-header-city {
@@ -104,6 +194,7 @@
 .lm-tabs {
   display       : flex;
   border-bottom : 1px solid rgba(0, 0, 0, 0.08);
+  position      : relative;
 }
 
 .lm-tab-btn {
@@ -116,7 +207,12 @@
   border         : none;
   cursor         : pointer;
   background     : transparent;
-  transition     : all 0.2s;
+  transition     : color 0.35s ease, border-color 0.35s ease, background 0.3s ease;
+  border-bottom  : 2.5px solid transparent;
+}
+
+.lm-tab-btn:hover {
+  background : rgba(114, 16, 42, 0.04);
 }
 
 .lm-tab-btn--active {
@@ -131,7 +227,13 @@
 
 /* ── Content padding ─────────────────────────────────────────────────────── */
 .lm-content {
-  padding : 24px;
+  padding   : 24px;
+  animation : contentFadeIn 0.4s ease-out;
+}
+
+@keyframes contentFadeIn {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0);   }
 }
 
 /* ── Section heading ─────────────────────────────────────────────────────── */
@@ -189,11 +291,23 @@
   background    : var(--lm-cream);
   color         : var(--lm-ink);
   box-sizing    : border-box;
-  transition    : border-color 0.2s ease;
+  transition    : border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
 }
 
 .lm-input:focus {
   border-color : var(--lm-maroon);
+  box-shadow   : 0 0 0 3px rgba(114, 16, 42, 0.1), 0 2px 8px rgba(114, 16, 42, 0.08);
+  transform    : translateY(-1px);
+}
+
+.lm-input-wrap {
+  position   : relative;
+  transition : transform 0.2s ease;
+}
+
+.lm-input-wrap:focus-within .lm-input-icon {
+  color      : var(--lm-maroon);
+  transition : color 0.3s ease;
 }
 
 .lm-input--pad-right {
@@ -250,7 +364,7 @@
 
 /* ── Primary CTA buttons ─────────────────────────────────────────────────── */
 .lm-btn-primary {
-  background      : var(--lm-maroon);
+  background      : linear-gradient(135deg, var(--lm-maroon) 0%, #901633 100%);
   color           : #fff;
   font-weight     : 700;
   font-size       : 0.85rem;
@@ -263,11 +377,41 @@
   align-items     : center;
   justify-content : center;
   gap             : 8px;
-  transition      : opacity 0.2s ease;
+  transition      : all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position        : relative;
+  overflow        : hidden;
+  box-shadow      : 0 2px 8px rgba(114, 16, 42, 0.2);
+}
+
+/* Shine sweep on hover */
+.lm-btn-primary::after {
+  content    : "";
+  position   : absolute;
+  top        : 0;
+  left       : -100%;
+  width      : 60%;
+  height     : 100%;
+  background : linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 60%
+  );
+  transition : left 0.5s ease;
 }
 
 .lm-btn-primary:hover {
-  opacity : 0.9;
+  transform  : translateY(-2px);
+  box-shadow : 0 6px 20px rgba(114, 16, 42, 0.35);
+}
+
+.lm-btn-primary:hover::after {
+  left : 150%;
+}
+
+.lm-btn-primary:active {
+  transform  : translateY(0);
+  box-shadow : 0 2px 6px rgba(114, 16, 42, 0.2);
 }
 
 /* ── Outline / secondary buttons ─────────────────────────────────────────── */

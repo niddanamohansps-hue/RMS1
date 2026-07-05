@@ -25,6 +25,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
       salary: posting.salary || jr?.salary || er?.salaryRange || "—",
       location: posting.location || jr?.location || "—",
       category: posting.category || jr?.category || "—",
+      department: posting.department || jr?.department || er?.department || "—",
       description: posting.description || jr?.description || "—",
       justification: posting.justification || jr?.justification || "—",
       skillsRequired: posting.skillsRequired || jr?.skillsRequired || "—",
@@ -46,7 +47,8 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
     (p) =>
       (selectedPostingId === null || p.id === selectedPostingId) &&
       (p.role?.toLowerCase().includes(search.toLowerCase()) ||
-        p.channel?.toLowerCase().includes(search.toLowerCase())),
+        p.channel?.toLowerCase().includes(search.toLowerCase()) ||
+        p.department?.toLowerCase().includes(search.toLowerCase())),
   );
 
   const shareJob = (job) => {
@@ -373,7 +375,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                       <div style={{ paddingRight: 64 }}>
                         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{p.role}</h3>
                         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
-                          {p.channel}
+                          {p.channel} {p.department ? `· ${p.department}` : ""}
                         </div>
                       </div>
                     </div>
@@ -481,13 +483,14 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
           </div>
 
           <Table
-            cols={["Job ID", "Role", "Posted", "Expiry", "Applications", "Status", "Actions"]}
+            cols={["Job ID", "Role", "Department", "Posted", "Expiry", "Applications", "Status", "Actions"]}
             onRowClick={(i) => setSelectedJobForModal(filtered[i])}
             rows={filtered.map((p) => [
               <Mono v={p.id} />,
               <div>
                 <div style={{ fontWeight: 800, color: T.ink }}>{p.role}</div>
               </div>,
+              <span style={{ fontWeight: 600, color: T.inkMid, fontSize: 13 }}>{p.department || "—"}</span>,
               <span style={{ fontSize: 12, color: T.inkMid }}>{p.posted}</span>,
               <span style={{ fontSize: 12, color: T.inkMid }}>{p.expiry}</span>,
               <span style={{ fontWeight: 700, color: T.ink }}>{p.apps ?? 0}</span>,
@@ -577,6 +580,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
 
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
               {[
+                { label: "Department", value: details.department },
                 { label: "Category", value: details.category },
                 { label: "Vacancies", value: details.vacancies },
                 { label: "Experience", value: details.exp },

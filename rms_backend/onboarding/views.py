@@ -14,8 +14,8 @@ class OfferViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == "candidate":
-            return Offer.objects.filter(candidate=user)
-        return Offer.objects.all()
+            return Offer.objects.filter(candidate=user).select_related("candidate")
+        return Offer.objects.all().select_related("candidate")
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "accept", "decline"]:
@@ -62,8 +62,8 @@ class OnboardingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.role == "candidate":
-            return OnboardingRecord.objects.filter(candidate=self.request.user)
-        return OnboardingRecord.objects.all()
+            return OnboardingRecord.objects.filter(candidate=self.request.user).select_related("offer", "candidate")
+        return OnboardingRecord.objects.all().select_related("offer", "candidate")
 
     def get_serializer_class(self):
         if self.action == "tasks":

@@ -26,9 +26,9 @@ export const T = {
   borderMid: "#D4CCC0",
 
   // Text
-  ink: "#1A1A1A",
-  inkMid: "#4A4A4A",
-  inkLight: "#6B6B6B",
+  ink: "#1a0a0a",
+  inkMid: "#4a3a3a",
+  inkLight: "#6b5c5c",
   inkFaint: "#9A9A9A",
 
   // Semantic colors
@@ -70,8 +70,8 @@ export const shadow = {
 
 /* ── Font System ── */
 export const font = {
-  heading: "'Outfit', 'Inter', system-ui, sans-serif",
-  body: "'Inter', system-ui, -apple-system, sans-serif",
+  heading: "'Playfair Display', Georgia, serif",
+  body: "'Inter', system-ui, sans-serif",
   mono: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
   xs: 10,
   sm: 11,

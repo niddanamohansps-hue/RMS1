@@ -234,26 +234,71 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
                     <div>
                       <div style={labelCss}>Salary Range</div>
                       {isPending ? (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                          <div>
-                            <div style={{ fontSize: 10, color: T.inkFaint, marginBottom: 3 }}>Min (₹)</div>
-                            <input
-                              value={sel.minSalary ?? (sel.salary ? sel.salary.replace(/^₹/, "").split("-")[0]?.trim() : "")}
-                              onChange={(e) => { setSel({ ...sel, minSalary: e.target.value }); setFieldErrors((p) => { const n = { ...p }; delete n.minSalary; return n; }); }}
-                              placeholder="e.g. 40,000"
-                              style={{ width: "100%", padding: 9, border: `1.5px solid ${fieldErrors.minSalary ? T.red : T.border}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box", background: T.surface }}
-                            />
-                            {fieldErrors.minSalary && <div style={{ color: T.red, fontSize: 11, marginTop: 3, fontWeight: 600 }}>{fieldErrors.minSalary}</div>}
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ position: "relative", flex: 1 }}>
+                              <span style={{
+                                position: "absolute",
+                                left: 10,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                color: T.inkLight,
+                                fontWeight: 600,
+                                fontSize: 13,
+                                pointerEvents: "none"
+                              }}>₹</span>
+                              <input
+                                value={sel.minSalary ?? (sel.salary ? sel.salary.replace(/^₹/, "").split("-")[0]?.trim() : "")}
+                                onChange={(e) => { setSel({ ...sel, minSalary: e.target.value }); setFieldErrors((p) => { const n = { ...p }; delete n.minSalary; return n; }); }}
+                                placeholder="Min"
+                                style={{
+                                  width: "100%",
+                                  padding: "9px 9px 9px 22px",
+                                  border: `1.5px solid ${fieldErrors.minSalary ? T.red : T.border}`,
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                  outline: "none",
+                                  boxSizing: "border-box",
+                                  background: T.surface,
+                                  color: T.ink
+                                }}
+                              />
+                            </div>
+                            <span style={{ color: T.inkLight, fontSize: 12, fontWeight: 500 }}>to</span>
+                            <div style={{ position: "relative", flex: 1 }}>
+                              <span style={{
+                                position: "absolute",
+                                left: 10,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                color: T.inkLight,
+                                fontWeight: 600,
+                                fontSize: 13,
+                                pointerEvents: "none"
+                              }}>₹</span>
+                              <input
+                                value={sel.maxSalary ?? (sel.salary ? sel.salary.replace(/^₹/, "").split("-")[1]?.trim() : "")}
+                                onChange={(e) => setSel({ ...sel, maxSalary: e.target.value })}
+                                placeholder="Max"
+                                style={{
+                                  width: "100%",
+                                  padding: "9px 9px 9px 22px",
+                                  border: `1.5px solid ${T.border}`,
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                  outline: "none",
+                                  boxSizing: "border-box",
+                                  background: T.surface,
+                                  color: T.ink
+                                }}
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <div style={{ fontSize: 10, color: T.inkFaint, marginBottom: 3 }}>Max (₹)</div>
-                            <input
-                              value={sel.maxSalary ?? (sel.salary ? sel.salary.replace(/^₹/, "").split("-")[1]?.trim() : "")}
-                              onChange={(e) => setSel({ ...sel, maxSalary: e.target.value })}
-                              placeholder="e.g. 60,000"
-                              style={{ width: "100%", padding: 9, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box", background: T.surface }}
-                            />
-                          </div>
+                          {fieldErrors.minSalary && (
+                            <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
+                              {fieldErrors.minSalary}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{sel.salary || "—"}</div>

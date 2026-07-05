@@ -60,7 +60,7 @@ class ExistingRoleViewSet(viewsets.ModelViewSet):
 
 
 class RoleRequestViewSet(viewsets.ModelViewSet):
-    queryset           = RoleRequest.objects.select_related("created_by").all()
+    queryset           = RoleRequest.objects.select_related("created_by").prefetch_related("approvals", "approvals__history").all()
     serializer_class   = RoleRequestSerializer
     permission_classes = [IsHRAdmin]
     search_fields      = ["role", "department", "request_id"]
@@ -77,7 +77,7 @@ class RoleRequestViewSet(viewsets.ModelViewSet):
 
 
 class JobRequestViewSet(viewsets.ModelViewSet):
-    queryset           = JobRequest.objects.all()
+    queryset           = JobRequest.objects.select_related("category", "created_by").prefetch_related("approvals", "approvals__history").all()
     serializer_class   = JobRequestSerializer
     permission_classes = [IsHRAdmin]
     search_fields      = ["role", "request_id"]
@@ -96,7 +96,9 @@ class JobRequestViewSet(viewsets.ModelViewSet):
 
 
 class ApprovalRequestViewSet(viewsets.ModelViewSet):
-    queryset           = ApprovalRequest.objects.prefetch_related("history").all()
+    queryset           = ApprovalRequest.objects.select_related(
+                             "job_request", "job_request__category", "role_request", "role_request__created_by"
+                         ).prefetch_related("history").all()
     serializer_class   = ApprovalRequestSerializer
     permission_classes = [IsHRAdmin]
     search_fields      = ["request_id", "title", "submitted_by"]
@@ -206,7 +208,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = JobPosting.objects.select_related("category")
+        queryset = JobPosting.objects.select_related("category", "job_request")
         if not user.is_authenticated or user.role == "candidate":
             return queryset.filter(status="Published").order_by("-created_at")
         return queryset.annotate(annotated_application_count=Count("job_applications")).order_by("-created_at")
@@ -229,7 +231,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         cache_key = f"public_jobs_{category}_{q}"
         data = cache.get(cache_key)
         if not data:
-            qs = JobPosting.objects.select_related("category").filter(status="Published")
+            qs = JobPosting.objects.select_related("category", "job_request").filter(status="Published")
             if category and category != "All Positions":
                 qs = qs.filter(category__name=category)
             if q:

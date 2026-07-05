@@ -46,7 +46,7 @@ class RoleRequestSerializer(serializers.ModelSerializer):
             "note": ""
         })
         for apr in obj.approvals.all():
-            for h in apr.history.all().order_by("date"):
+            for h in apr.history.all():
                 history_list.append({
                     "act": h.action,
                     "by": h.acted_by,
@@ -99,7 +99,7 @@ class JobRequestSerializer(serializers.ModelSerializer):
             "note": ""
         })
         for apr in obj.approvals.all():
-            for h in apr.history.all().order_by("date"):
+            for h in apr.history.all():
                 history_list.append({
                     "act": h.action,
                     "by": h.acted_by,
@@ -251,7 +251,10 @@ class JobPostingSerializer(serializers.ModelSerializer):
         read_only_fields = ["posting_id", "created_at", "updated_at"]
 
     def get_application_count(self, obj):
-        return getattr(obj, "annotated_application_count", obj.job_applications.count())
+        count = getattr(obj, "annotated_application_count", None)
+        if count is not None:
+            return count
+        return obj.job_applications.count()
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)

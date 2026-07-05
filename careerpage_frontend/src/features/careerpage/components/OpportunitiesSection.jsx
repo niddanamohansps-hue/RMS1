@@ -48,7 +48,13 @@ export function OpportunitiesSection({ onApplyJob, appliedJobIds }) {
         </motion.div>
 
         {/* ── Search & Filters ────────────────────────────────────────────── */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="flex flex-col md:flex-row gap-4 mb-8"
+        >
           <div className="relative flex-1">
             <Search size={16} className="os-search-icon" />
             <input
@@ -73,7 +79,7 @@ export function OpportunitiesSection({ onApplyJob, appliedJobIds }) {
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* ── Job listings ────────────────────────────────────────────────── */}
         <div className="grid sm:grid-cols-2 gap-4">
@@ -82,10 +88,11 @@ export function OpportunitiesSection({ onApplyJob, appliedJobIds }) {
               visibleJobs.map((job, i) => (
                 <motion.div
                   key={job.id}
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
                   exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                  transition={{ duration: 0.5, delay: (i % 2) * 0.1 }}
                 >
                   <JobCard
                     job={job}

@@ -30,10 +30,10 @@ export function BenefitsSection() {
             <motion.div
               key={title}
               className="benefit-card"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 32 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.6, delay: (i % 3) * 0.1, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ boxShadow: "0 8px 32px rgba(107,26,26,0.12)", y: -3 }}
             >
               <div className="benefit-icon-wrapper">

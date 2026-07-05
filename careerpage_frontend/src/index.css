@@ -32,3 +32,37 @@ body {
   border-radius: 4px;
   display: block;
 }
+
+/* ═══════════════════════════════════════════════════
+   PREMIUM LOADER ANIMATIONS
+   ═══════════════════════════════════════════════════ */
+
+@keyframes spinClockwise {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(0.94);
+    box-shadow: 0 0 15px rgba(114, 16, 42, 0.15);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 25px rgba(201, 168, 76, 0.35);
+  }
+}
+
+.loader-glow-ring {
+  border: 3px solid rgba(114, 16, 42, 0.06);
+  border-top: 3px solid #72102a;
+  border-right: 3px solid #c9a84c;
+  border-radius: 50%;
+  width: 76px;
+  height: 76px;
+  animation: spinClockwise 1.1s cubic-bezier(0.5, 0.12, 0.5, 0.88) infinite;
+}
+
+.loader-logo-pulse {
+  animation: pulseGlow 1.8s ease-in-out infinite;
+}

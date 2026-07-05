@@ -67,10 +67,10 @@ export function FeedbackForm() {
 
           /* ── Form card ───────────────────────────────────────────────── */
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
             className="ff-form-card"
           >
             {/* Name + Email row */}

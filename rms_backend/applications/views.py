@@ -21,8 +21,8 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == "candidate":
-            return JobApplication.objects.filter(candidate=user).select_related("posting", "candidate")
-        return JobApplication.objects.all().select_related("posting", "candidate")
+            return JobApplication.objects.filter(candidate=user).select_related("posting", "candidate", "candidate__profile")
+        return JobApplication.objects.all().select_related("posting", "candidate", "candidate__profile")
 
     def get_permissions(self):
         if self.action == "create":
@@ -33,9 +33,10 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def mine(self, request):
-        apps = JobApplication.objects.filter(candidate=request.user).select_related("posting", "candidate")
+        apps = JobApplication.objects.filter(candidate=request.user).select_related("posting", "candidate", "candidate__profile")
         serializer = JobApplicationSerializer(apps, many=True, context={"request": request})
         return Response(serializer.data)
+
 
     @action(detail=True, methods=["patch"], permission_classes=[IsHRAdmin])
     def update_status(self, request, pk=None):
@@ -50,8 +51,8 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
                 notification_type="application_status",
                 title=f"Application Update: {instance.role}",
                 message=(
-                    f"Your application for {instance.role} has been updated to "
-                    f"'{instance.status}'."
+                     f"Your application for {instance.role} has been updated to "
+                     f"'{instance.status}'."
                 ),
             )
         return Response(JobApplicationSerializer(instance, context={"request": request}).data)
@@ -67,8 +68,8 @@ class GeneralApplicationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == "candidate":
-            return GeneralApplication.objects.filter(candidate=user)
-        return GeneralApplication.objects.all().select_related("candidate")
+            return GeneralApplication.objects.filter(candidate=user).select_related("candidate", "candidate__profile")
+        return GeneralApplication.objects.all().select_related("candidate", "candidate__profile")
 
     def get_permissions(self):
         if self.action == "create":
@@ -79,5 +80,5 @@ class GeneralApplicationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def mine(self, request):
-        apps = GeneralApplication.objects.filter(candidate=request.user).select_related("candidate")
+        apps = GeneralApplication.objects.filter(candidate=request.user).select_related("candidate", "candidate__profile")
         return Response(GeneralApplicationSerializer(apps, many=True, context={"request": request}).data)

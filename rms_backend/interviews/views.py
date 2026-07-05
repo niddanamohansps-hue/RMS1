@@ -28,8 +28,8 @@ class InterviewViewSet(viewsets.ModelViewSet):
         if user.role == "candidate":
             return Interview.objects.filter(
                 application__candidate=user
-            ).prefetch_related("panel")
-        return Interview.objects.all().prefetch_related("panel")
+            ).select_related("application", "application__candidate").prefetch_related("panel")
+        return Interview.objects.all().select_related("application", "application__candidate").prefetch_related("panel")
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "score", "upcoming"]:
@@ -60,9 +60,9 @@ class InterviewViewSet(viewsets.ModelViewSet):
                 application__candidate=request.user,
                 status="Scheduled",
                 date__gte=today,
-            ).prefetch_related("panel")
+            ).select_related("application", "application__candidate").prefetch_related("panel")
         else:
             qs = Interview.objects.filter(
                 status="Scheduled", date__gte=today
-            ).prefetch_related("panel")
+            ).select_related("application", "application__candidate").prefetch_related("panel")
         return Response(InterviewSerializer(qs, many=True).data)

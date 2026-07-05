@@ -239,6 +239,7 @@ function AppContent() {
     qual: jp.qualification,
     type: jp.type,
     category: jp.category || "",
+    department: jp.department || "",
     description: jp.description,
     educationalQualifications: jp.educational_qualifications || "",
     skillsRequired: jp.skills_required || "",
@@ -279,6 +280,8 @@ function AppContent() {
       educational_qualifications: jp.educationalQualifications || "",
       skills_required: jp.skillsRequired || "",
       job_request: jp.job_request || null,
+      category: jp.category || "",
+      department: jp.department || "",
     };
   };
 
@@ -521,65 +524,84 @@ function AppContent() {
 
     const path = location.pathname;
     const loadRequiredData = async () => {
-      // Determine if we need to show the spinner (only if any of the required datasets hasn't been loaded once yet)
-      let needsSpinner = !loadedOnce.current.approvals;
-      if (path === "/dashboard/existing-roles") {
-        needsSpinner = needsSpinner || !loadedOnce.current.roles;
+      // Determine if we need to show the spinner — only when THIS SCREEN's datasets haven't been loaded once yet.
+      // Approvals are always loaded in the background and never block the spinner.
+      let needsSpinner = false;
+      if (path === "/dashboard") {
+        // Dashboard uses approvals count — but we'll load it non-blocking
+      } else if (path === "/dashboard/existing-roles") {
+        needsSpinner = !loadedOnce.current.roles;
       } else if (path === "/dashboard/role-requests") {
-        needsSpinner = needsSpinner || !loadedOnce.current.roleRequests || !loadedOnce.current.roles;
+        needsSpinner = !loadedOnce.current.roleRequests || !loadedOnce.current.roles;
       } else if (path === "/dashboard/job-requests") {
-        needsSpinner = needsSpinner || !loadedOnce.current.jobRequests || !loadedOnce.current.jobPostings || !loadedOnce.current.roles;
+        needsSpinner = !loadedOnce.current.jobRequests || !loadedOnce.current.jobPostings || !loadedOnce.current.roles;
       } else if (path === "/dashboard/approval-requests") {
-        needsSpinner = needsSpinner || !loadedOnce.current.roles || !loadedOnce.current.jobPostings;
+        needsSpinner = !loadedOnce.current.roles || !loadedOnce.current.jobPostings;
       } else if (path === "/dashboard/job-postings") {
-        needsSpinner = needsSpinner || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests || !loadedOnce.current.roles;
+        needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests || !loadedOnce.current.roles;
       } else if (path === "/dashboard/applications") {
-        needsSpinner = needsSpinner || !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests;
+        needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests;
       } else if (path === "/dashboard/interview-panel") {
-        needsSpinner = needsSpinner || !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.interviews || !loadedOnce.current.panelists;
+        needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.interviews || !loadedOnce.current.panelists;
       } else if (path === "/dashboard/offer-management") {
-        needsSpinner = needsSpinner || !loadedOnce.current.offers || !loadedOnce.current.jobPostings;
+        needsSpinner = !loadedOnce.current.offers || !loadedOnce.current.jobPostings;
       } else if (path === "/dashboard/onboarding") {
-        needsSpinner = needsSpinner || !loadedOnce.current.jobPostings || !loadedOnce.current.offers;
+        needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.offers;
       } else if (path === "/panelist") {
-        needsSpinner = needsSpinner || !loadedOnce.current.interviews || !loadedOnce.current.jobPostings;
+        needsSpinner = !loadedOnce.current.interviews || !loadedOnce.current.jobPostings;
       }
 
       if (needsSpinner) {
         setIsLoading(true);
       }
 
+      // Always refresh approvals in the background (never blocks the UI)
+      loadApprovals().catch(() => {});
+
       try {
         const promises = [];
 
-        // Always load approvals to keep the sidebar pending badge updated
-        promises.push(loadApprovals());
-
         if (path === "/dashboard") {
-          // Dashboard page only needs approvals count
+          // Dashboard — approvals already loading above
         } else if (path === "/dashboard/existing-roles") {
-          promises.push(loadRoles());
+          if (!loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/role-requests") {
-          promises.push(loadRoleRequests(), loadRoles());
+          if (!loadedOnce.current.roleRequests) promises.push(loadRoleRequests());
+          if (!loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/job-requests") {
-          promises.push(loadJobRequests(), loadJobPostings(), loadRoles());
+          if (!loadedOnce.current.jobRequests) promises.push(loadJobRequests());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (!loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/approval-requests") {
-          promises.push(loadRoles(), loadJobPostings());
+          if (!loadedOnce.current.roles) promises.push(loadRoles());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
         } else if (path === "/dashboard/job-postings") {
-          promises.push(loadJobPostings(), loadJobRequests(), loadRoles());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (!loadedOnce.current.jobRequests) promises.push(loadJobRequests());
+          if (!loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/applications") {
-          promises.push(loadApplications(), loadJobPostings(), loadJobRequests());
+          if (!loadedOnce.current.applications) promises.push(loadApplications());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (!loadedOnce.current.jobRequests) promises.push(loadJobRequests());
         } else if (path === "/dashboard/interview-panel") {
-          promises.push(loadApplications(), loadJobPostings(), loadInterviews(), loadPanelists());
+          if (!loadedOnce.current.applications) promises.push(loadApplications());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (!loadedOnce.current.interviews) promises.push(loadInterviews());
+          if (!loadedOnce.current.panelists) promises.push(loadPanelists());
         } else if (path === "/dashboard/offer-management") {
-          promises.push(loadOffers(), loadJobPostings());
+          if (!loadedOnce.current.offers) promises.push(loadOffers());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
         } else if (path === "/dashboard/onboarding") {
-          promises.push(loadJobPostings(), loadOffers());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (!loadedOnce.current.offers) promises.push(loadOffers());
         } else if (path === "/panelist") {
-          promises.push(loadInterviews(), loadJobPostings());
+          if (!loadedOnce.current.interviews) promises.push(loadInterviews());
+          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
         }
 
-        await Promise.all(promises);
+        if (promises.length > 0) {
+          await Promise.all(promises);
+        }
       } catch (err) {
         console.error("Failed to load screen-specific backend data", err);
       } finally {
@@ -799,6 +821,8 @@ function AppContent() {
                       educationalQualifications: n.educationalQualifications || "",
                       skillsRequired: n.skillsRequired || "",
                       job_request: n.source_db_id,
+                      category: n.category || "",
+                      department: n.dept || "",
                     }];
                   });
                   setTimeout(() => { navigate("/dashboard/applications"); }, 300);
@@ -1088,29 +1112,8 @@ function AppContent() {
 
   const SidebarContent = () => (
     <>
-      {/* Logo & brand */}
-      <div style={{ padding: "22px 20px 18px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              width: 38, height: 38, borderRadius: radius.lg - 2,
-              background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 17, fontWeight: font.black, color: "#fff",
-              boxShadow: shadow.accent,
-            }}
-          >
-            S
-          </div>
-          <div>
-            <div style={{ fontSize: font.base, fontWeight: font.extrabold, fontFamily: font.heading, color: "#fff", letterSpacing: "-0.01em" }}>South Point</div>
-            <div style={{ fontSize: font.xs, fontFamily: font.body, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.1em" }}>School · HR Portal</div>
-          </div>
-        </div>
-      </div>
-
       {/* Navigation */}
-      <nav style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
+      <nav style={{ flex: 1, overflowY: "auto", padding: "12px 10px", paddingTop: "20px" }}>
         {NAV.filter((item) => {
           if (currentUser?.role !== "admin") {
             return item.id === "panelist";
@@ -1272,177 +1275,234 @@ function AppContent() {
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: T.canvas, fontFamily: font.body }}>
-      {/* Desktop sidebar */}
-      {!isCompact && (
-        <div style={{
-          width: 240,
-          background: `linear-gradient(180deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
-          display: "flex", flexDirection: "column", flexShrink: 0,
-          boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
-        }}>
-          <SidebarContent />
-        </div>
-      )}
-
-      {/* Mobile sidebar overlay */}
-      {isCompact && sidebarOpen && (
-        <>
-          <div
-            className="modal-backdrop"
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200 }}
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div
-            className="sidebar-slide-in"
-            style={{
-              position: "fixed", top: 0, left: 0, bottom: 0, width: 270,
-              background: `linear-gradient(180deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
-              display: "flex", flexDirection: "column", zIndex: 201,
-              boxShadow: "8px 0 32px rgba(0,0,0,0.25)",
-            }}
-          >
-            <SidebarContent />
-          </div>
-        </>
-      )}
-
-      {/* Main content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Top bar */}
-        <div
-          style={{
-            background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryMid} 100%)`,
-            borderBottom: `2px solid ${T.accent}`,
-            padding: "0 24px", height: 60, display: "flex", alignItems: "center",
-            justifyContent: "space-between", flexShrink: 0,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-          }}
-        >
-          {/* Left: hamburger (mobile) + school branding */}
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16 }}>
-            {isCompact && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="btn-hover"
-                style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  borderRadius: radius.md,
-                  cursor: "pointer", padding: "6px 8px",
-                  color: T.canvas, fontSize: 18, lineHeight: 1,
-                  transition: transition.fast,
-                }}
-              >
-                ☰
-              </button>
-            )}
-            <img
-              src="/images-removebg-preview.png"
-              alt="South Point School Logo"
-              style={{ height: isMobile ? 36 : 44, width: "auto", objectFit: "contain", flexShrink: 0 }}
-            />
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{
-                fontSize: isMobile ? font.base : font.lg,
-                fontWeight: font.extrabold,
-                fontFamily: font.heading,
-                color: T.accent,
-                letterSpacing: "-0.01em", lineHeight: 1.2,
-              }}>
-                South Point School
-              </div>
-              <div style={{
-                fontSize: isMobile ? 9 : font.xs,
-                fontWeight: font.semibold,
-                fontFamily: font.body,
-                color: "rgba(255,255,255,0.7)",
-                textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.3, marginTop: 1,
-              }}>
-                Guwahati, Assam
-              </div>
-            </div>
-          </div>
-
-          {/* Right: page label + pending */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {!isMobile && (
-              <span style={{
-                fontSize: font.base, fontWeight: font.semibold, fontFamily: font.body,
-                color: "rgba(255,255,255,0.75)", letterSpacing: "-0.01em",
-              }}>
-                {pageLabel}
-              </span>
-            )}
-            {pendingCount > 0 && (
-              <button
-                onClick={() => handleNav("approval-requests")}
-                className="btn-hover badge-pulse"
-                style={{
-                  background: "rgba(201,168,76,0.15)",
-                  border: `1px solid rgba(201,168,76,0.4)`,
-                  borderRadius: radius.full, padding: "5px 14px",
-                  fontSize: font.sm, fontWeight: font.bold,
-                  fontFamily: font.body,
-                  color: T.accent,
-                  cursor: "pointer",
-                  transition: transition.fast,
-                }}
-              >
-                {pendingCount} Pending
-              </button>
-            )}
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: T.canvas, fontFamily: font.body, overflow: "hidden" }}>
+      {/* Top bar (Header) - Full Width at very top */}
+      <div
+        style={{
+          background: "rgba(114, 16, 42, 0.85)",
+          backdropFilter: "blur(16px) saturate(180%)",
+          WebkitBackdropFilter: "blur(16px) saturate(180%)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          padding: "0 24px",
+          height: 60,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0,
+          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+          position: "relative",
+          zIndex: 10,
+        }}
+      >
+        {/* Left Section: hamburger + school branding */}
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16 }}>
+          {isCompact && (
             <button
-              onClick={() => {
-                setSelectedModule(null);
-                navigate("/modules");
-              }}
+              onClick={() => setSidebarOpen(true)}
               className="btn-hover"
               style={{
                 background: "rgba(255,255,255,0.08)",
-                border: "1.5px solid rgba(255,255,255,0.25)",
+                border: "1.5px solid rgba(250, 248, 245, 0.35)",
                 borderRadius: radius.md,
-                padding: "6px 14px",
-                cursor: "pointer",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 12,
+                cursor: "pointer", padding: "6px 10px",
+                color: "#fff", fontSize: 16, lineHeight: 1,
                 transition: transition.fast,
-                fontFamily: font.body,
               }}
             >
-              Back to Modules
+              ☰
             </button>
+          )}
+          <img
+            src="/images-removebg-preview.png"
+            alt="South Point School Logo"
+            style={{ height: isMobile ? 36 : 44, width: "auto", objectFit: "contain", flexShrink: 0 }}
+          />
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div style={{
+              fontSize: isMobile ? font.base : font.lg,
+              fontWeight: font.extrabold,
+              fontFamily: font.heading,
+              color: T.accent,
+              letterSpacing: "-0.01em", lineHeight: 1.2,
+            }}>
+              South Point School
+            </div>
+            <div style={{
+              fontSize: isMobile ? 9 : font.xs,
+              fontWeight: font.semibold,
+              fontFamily: font.body,
+              color: "rgba(250, 248, 245, 0.7)",
+              textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.3, marginTop: 1,
+            }}>
+              Guwahati, Assam
+            </div>
           </div>
         </div>
 
+        {/* Right Section: page label + buttons */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {!isMobile && (
+            <span style={{
+              fontSize: font.base + 1, fontWeight: font.bold, fontFamily: font.body,
+              color: "rgba(250, 248, 245, 0.9)", letterSpacing: "-0.01em", marginRight: 8,
+            }}>
+              {pageLabel}
+            </span>
+          )}
+          {pendingCount > 0 && (
+            <button
+              onClick={() => handleNav("approval-requests")}
+              className="btn-hover badge-pulse"
+              style={{
+                background: T.accent,
+                border: "none",
+                borderRadius: radius.full, padding: "5px 14px",
+                fontSize: font.sm, fontWeight: font.bold,
+                fontFamily: font.body,
+                color: "#1a0a0a",
+                cursor: "pointer",
+                transition: transition.fast,
+              }}
+            >
+              {pendingCount} Pending
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setSelectedModule(null);
+              navigate("/modules");
+            }}
+            className="btn-hover"
+            style={{
+              background: "transparent",
+              border: "1.5px solid rgba(250, 248, 245, 0.4)",
+              borderRadius: radius.md,
+              padding: "6px 14px",
+              cursor: "pointer",
+              color: "#faf8f5",
+              fontWeight: 700,
+              fontSize: 12,
+              transition: transition.fast,
+              fontFamily: font.body,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#fff";
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "rgba(250, 248, 245, 0.4)";
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            Back to Modules
+          </button>
+        </div>
+      </div>
+
+      {/* Main Body container below the header */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
+        {/* Desktop sidebar */}
+        {!isCompact && (
+          <div style={{
+            width: 240,
+            background: `linear-gradient(180deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+            display: "flex", flexDirection: "column", flexShrink: 0,
+            boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
+          }}>
+            <SidebarContent />
+          </div>
+        )}
+
+        {/* Mobile sidebar overlay */}
+        {isCompact && sidebarOpen && (
+          <>
+            <div
+              className="modal-backdrop"
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200 }}
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div
+              className="sidebar-slide-in"
+              style={{
+                position: "fixed", top: 0, left: 0, bottom: 0, width: 270,
+                background: `linear-gradient(180deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+                display: "flex", flexDirection: "column", zIndex: 201,
+                boxShadow: "8px 0 32px rgba(0,0,0,0.25)",
+              }}
+            >
+              <SidebarContent />
+            </div>
+          </>
+        )}
+
         {/* Page content */}
         <div
+          key={`${location.pathname}_${isLoading}`}
+          className="dashboard-content-fade"
           style={{ flex: 1, overflowY: "auto", padding: isMobile ? "18px 14px" : "28px 32px", position: "relative" }}
         >
           {/* Loading overlay */}
           {isLoading && (
             <div style={{
-              position: "absolute", inset: 0, zIndex: 50,
-              background: "rgba(255,255,255,0.65)",
-              backdropFilter: "blur(3px)",
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              gap: 14,
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              background: "rgba(250, 248, 245, 0.85)",
+              backdropFilter: "blur(18px)",
+              WebkitBackdropFilter: "blur(18px)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 24,
             }}>
-              <div style={{
-                width: 44, height: 44,
-                border: `4px solid ${T.border}`,
-                borderTop: `4px solid ${T.primary}`,
-                borderRadius: "50%",
-                animation: "spin 0.75s linear infinite",
-              }} />
-              <div style={{
-                fontSize: 13, fontWeight: 700,
-                fontFamily: font.body,
-                color: T.inkMid,
-                letterSpacing: "-0.01em",
-              }}>Loading data…</div>
+              {/* Spinning Ring and Pulsing Logo Container */}
+              <div style={{ position: "relative", width: 84, height: 84, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {/* Outer gradient spinning ring */}
+                <div className="loader-glow-ring" style={{ position: "absolute" }} />
+                
+                {/* Inner pulsing logo */}
+                <div className="loader-logo-pulse" style={{
+                  width: 46, height: 46,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  zIndex: 2,
+                  overflow: "hidden",
+                }}>
+                  <img
+                    src="/images-removebg-preview.png"
+                    alt="South Point School Logo"
+                    style={{ width: "72%", height: "72%", objectFit: "contain" }}
+                  />
+                </div>
+              </div>
+              
+              {/* Text indicator */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div style={{
+                  fontSize: 14,
+                  fontWeight: 800,
+                  fontFamily: font.heading,
+                  color: T.primary,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}>
+                  South Point School
+                </div>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  fontFamily: font.body,
+                  color: T.inkLight,
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  opacity: 0.8,
+                }}>
+                  Initializing Portal...
+                </div>
+              </div>
             </div>
           )}
           <Routes>

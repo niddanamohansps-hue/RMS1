@@ -404,58 +404,82 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 <FormField label="Role Name" required>
                   <Input placeholder="Enter role" value={form.role} onChange={(e) => updateForm(index, "role", e.target.value)} />
                 </FormField>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <FormField label="Min Experience (Yrs)" required>
-                    <Input
-                      placeholder="e.g. 2"
-                      value={form.minExperience}
-                      onChange={(e) => updateForm(index, "minExperience", e.target.value)}
-                      style={formErrors[index]?.minExperience ? { borderColor: T.red } : {}}
-                    />
-                    {formErrors[index]?.minExperience && (
-                      <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
-                        {formErrors[index].minExperience}
+                <FormField label="Min Experience (Yrs)" required>
+                  <Input
+                    placeholder="e.g. 2"
+                    value={form.minExperience}
+                    onChange={(e) => updateForm(index, "minExperience", e.target.value)}
+                    style={formErrors[index]?.minExperience ? { borderColor: T.red } : {}}
+                  />
+                  {formErrors[index]?.minExperience && (
+                    <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
+                      {formErrors[index].minExperience}
+                    </div>
+                  )}
+                </FormField>
+                <FormField label="Max Experience (Yrs)" required>
+                  <Input
+                    placeholder="e.g. 5"
+                    value={form.maxExperience}
+                    onChange={(e) => updateForm(index, "maxExperience", e.target.value)}
+                    style={formErrors[index]?.maxExperience ? { borderColor: T.red } : {}}
+                  />
+                  {formErrors[index]?.maxExperience && (
+                    <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
+                      {formErrors[index].maxExperience}
+                    </div>
+                  )}
+                </FormField>
+                <div style={{ gridColumn: isMobile ? "span 1" : "span 2" }}>
+                  <FormField label="Salary Range (₹ / Month)" required>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ position: "relative", flex: 1 }}>
+                        <span style={{
+                          position: "absolute",
+                          left: 12,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          color: T.inkLight,
+                          fontWeight: 600,
+                          fontSize: 14,
+                          pointerEvents: "none"
+                        }}>₹</span>
+                        <Input
+                          placeholder="Min (e.g. 40,000)"
+                          value={form.minSalary}
+                          onChange={(e) => updateForm(index, "minSalary", e.target.value)}
+                          style={{
+                            paddingLeft: 24,
+                            ...(formErrors[index]?.minSalary ? { borderColor: T.red } : {})
+                          }}
+                        />
                       </div>
-                    )}
-                  </FormField>
-                  <FormField label="Max Experience (Yrs)" required>
-                    <Input
-                      placeholder="e.g. 5"
-                      value={form.maxExperience}
-                      onChange={(e) => updateForm(index, "maxExperience", e.target.value)}
-                      style={formErrors[index]?.maxExperience ? { borderColor: T.red } : {}}
-                    />
-                    {formErrors[index]?.maxExperience && (
-                      <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
-                        {formErrors[index].maxExperience}
+                      <span style={{ color: T.inkLight, fontWeight: 500, fontSize: 13 }}>to</span>
+                      <div style={{ position: "relative", flex: 1 }}>
+                        <span style={{
+                          position: "absolute",
+                          left: 12,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          color: T.inkLight,
+                          fontWeight: 600,
+                          fontSize: 14,
+                          pointerEvents: "none"
+                        }}>₹</span>
+                        <Input
+                          placeholder="Max (e.g. 60,000)"
+                          value={form.maxSalary}
+                          onChange={(e) => updateForm(index, "maxSalary", e.target.value)}
+                          style={{
+                            paddingLeft: 24,
+                            ...(formErrors[index]?.maxSalary ? { borderColor: T.red } : {})
+                          }}
+                        />
                       </div>
-                    )}
-                  </FormField>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <FormField label="Min Salary (₹)" required>
-                    <Input
-                      placeholder="e.g. 40,000"
-                      value={form.minSalary}
-                      onChange={(e) => updateForm(index, "minSalary", e.target.value)}
-                      style={formErrors[index]?.minSalary ? { borderColor: T.red } : {}}
-                    />
-                    {formErrors[index]?.minSalary && (
-                      <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
-                        {formErrors[index].minSalary}
-                      </div>
-                    )}
-                  </FormField>
-                  <FormField label="Max Salary (₹)" required>
-                    <Input
-                      placeholder="e.g. 60,000"
-                      value={form.maxSalary}
-                      onChange={(e) => updateForm(index, "maxSalary", e.target.value)}
-                      style={formErrors[index]?.maxSalary ? { borderColor: T.red } : {}}
-                    />
-                    {formErrors[index]?.maxSalary && (
-                      <div style={{ color: T.red, fontSize: 11, marginTop: 4, fontWeight: 600 }}>
-                        {formErrors[index].maxSalary}
+                    </div>
+                    {(formErrors[index]?.minSalary || formErrors[index]?.maxSalary) && (
+                      <div style={{ color: T.red, fontSize: 11, marginTop: 6, fontWeight: 600 }}>
+                        {formErrors[index].minSalary || formErrors[index].maxSalary}
                       </div>
                     )}
                   </FormField>
@@ -741,23 +765,62 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range</div>
                   {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      <div>
-                        <div style={{ fontSize: 10, color: T.inkFaint, marginBottom: 3 }}>Min (₹)</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ position: "relative", flex: 1 }}>
+                        <span style={{
+                          position: "absolute",
+                          left: 10,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          color: T.inkLight,
+                          fontWeight: 600,
+                          fontSize: 13,
+                          pointerEvents: "none"
+                        }}>₹</span>
                         <input
                           value={selectedRequest.minSalary ?? selectedRequest.salaryRange?.split("-")[0] ?? ""}
                           onChange={(e) => setSelectedRequest({ ...selectedRequest, minSalary: e.target.value })}
-                          placeholder="e.g. 40,000"
-                          style={{ width: "100%", padding: 9, border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box", background: T.surface, color: T.ink }}
+                          placeholder="Min"
+                          style={{
+                            width: "100%",
+                            padding: "9px 9px 9px 22px",
+                            border: `1.5px solid ${T.border}`,
+                            borderRadius: 8,
+                            fontSize: 13,
+                            outline: "none",
+                            boxSizing: "border-box",
+                            background: T.surface,
+                            color: T.ink
+                          }}
                         />
                       </div>
-                      <div>
-                        <div style={{ fontSize: 10, color: T.inkFaint, marginBottom: 3 }}>Max (₹)</div>
+                      <span style={{ color: T.inkLight, fontSize: 12, fontWeight: 500 }}>to</span>
+                      <div style={{ position: "relative", flex: 1 }}>
+                        <span style={{
+                          position: "absolute",
+                          left: 10,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          color: T.inkLight,
+                          fontWeight: 600,
+                          fontSize: 13,
+                          pointerEvents: "none"
+                        }}>₹</span>
                         <input
                           value={selectedRequest.maxSalary ?? selectedRequest.salaryRange?.split("-")[1] ?? ""}
                           onChange={(e) => setSelectedRequest({ ...selectedRequest, maxSalary: e.target.value })}
-                          placeholder="e.g. 60,000"
-                          style={{ width: "100%", padding: 9, border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box", background: T.surface, color: T.ink }}
+                          placeholder="Max"
+                          style={{
+                            width: "100%",
+                            padding: "9px 9px 9px 22px",
+                            border: `1.5px solid ${T.border}`,
+                            borderRadius: 8,
+                            fontSize: 13,
+                            outline: "none",
+                            boxSizing: "border-box",
+                            background: T.surface,
+                            color: T.ink
+                          }}
                         />
                       </div>
                     </div>
