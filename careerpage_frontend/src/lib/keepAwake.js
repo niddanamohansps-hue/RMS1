@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 // Pings the Render-hosted backend periodically so the free instance
 // does not spin down between visits.
-const KEEP_AWAKE_URL = "https://career-page-ksip.onrender.com";
+const KEEP_AWAKE_URL = "https://rms1-1-suhq.onrender.com";
 
 export function useKeepAwake(intervalMs = 10000) {
   useEffect(() => {

@@ -19,7 +19,7 @@ export default function ExistingRoles({ roles, setRoles }) {
   const handleStatusChange = (roleId, newStatus) => {
     setRoles((prev) =>
       prev.map((role) =>
-        role.id === roleId ? { ...role, currentStatus: newStatus } : role,
+        role.id === roleId ? { ...role, currentStatus: newStatus, status: newStatus } : role,
       ),
     );
   };
@@ -98,10 +98,11 @@ export default function ExistingRoles({ roles, setRoles }) {
         </div>
 
         <RolesTable
-          cols={["Role ID", "Department", "Role Name", "Experience", "Salary Range", "Type", "Status", "Action"]}
+          cols={["Role ID", "Department", "Role Name", "Experience", "Salary Range", "Status", "Action"]}
           rows={filtered}
           onStatusChange={handleStatusChange}
           onDelete={handleDeleteRole}
+          setRoles={setRoles}
         />
       </Card>
 
@@ -137,6 +138,7 @@ function RolesTable({
   rows,
   onStatusChange,
   onDelete,
+  setRoles,
 }) {
   const [sel, setSel] = useState(null);
   const bp = useBreakpoint();
@@ -188,7 +190,7 @@ function RolesTable({
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-              {sel.dept} · {sel.type}
+              {sel.dept}
             </div>
             <h3 style={{ margin: 0, fontSize: font.lg + 1, fontWeight: font.black, fontFamily: font.heading, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {sel.role}
@@ -209,9 +211,8 @@ function RolesTable({
           {[
             { label: "Role ID", value: <span style={{ fontFamily: font.mono, fontWeight: 700 }}>{sel.id}</span> },
             { label: "Department", value: sel.dept },
-            { label: "Employment Type", value: sel.type },
             { label: "Work Experience Required", value: sel.experience ? `${sel.experience} years` : "No experience required" },
-            { label: "Salary Budget (Annual)", value: <strong style={{ color: T.tealDark }}>{sel.salaryRange || "—"}</strong> },
+            { label: "Salary Budget (Monthly)", value: <strong style={{ color: T.tealDark }}>{sel.salaryRange ? (sel.salaryRange.startsWith("₹") ? sel.salaryRange : `₹${sel.salaryRange}`) : "—"}</strong> },
             {
               label: "Status Toggle",
               value: (
@@ -273,13 +274,12 @@ function RolesTable({
       <strong style={{ color: T.ink }}>{r.role}</strong>,
       <span style={{ fontSize: 13, color: T.ink }}>{r.experience ? `${r.experience} yrs` : "—"}</span>,
       <span style={{ fontSize: 13, color: T.ink, fontWeight: 600 }}>{r.salaryRange ? `₹${r.salaryRange}` : "—"}</span>,
-      <Badge label={r.type} variant={r.type === "Full-time" ? "blue" : "teal"} />,
       <select
         value={r.currentStatus}
         onChange={(e) => onStatusChange(r.id, e.target.value)}
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
+          backgroundColor: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
           borderRadius: 99, padding: "3px 24px 3px 10px", fontSize: 11, fontWeight: 700,
           cursor: "pointer", outline: "none", appearance: "none",
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='${encodeURIComponent(sc.color)}' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
@@ -404,7 +404,6 @@ function RolesTable({
                     { icon: "🆔", label: "Role ID", value: r.id },
                     { icon: "⏳", label: "Experience", value: r.experience ? `${r.experience} yrs` : "—" },
                     { icon: "💰", label: "Salary Range", value: r.salaryRange ? `₹${r.salaryRange}` : "—" },
-                    { icon: "💼", label: "Type", value: r.type },
                   ].map((item, index) => (
                     <div key={index} style={{ display: "flex", gap: 12, alignItems: "center" }}>
                       <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
@@ -437,7 +436,7 @@ function RolesTable({
                       value={r.currentStatus}
                       onChange={(e) => onStatusChange(r.id, e.target.value)}
                       style={{
-                        background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
+                        backgroundColor: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
                         borderRadius: 99, padding: "3px 24px 3px 10px", fontSize: 11, fontWeight: 700,
                         cursor: "pointer", outline: "none", appearance: "none",
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='${encodeURIComponent(sc.color)}' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,

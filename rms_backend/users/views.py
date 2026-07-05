@@ -108,3 +108,24 @@ class ChangePasswordView(APIView):
         request.user.set_password(serializer.validated_data["new_password"])
         request.user.save()
         return Response({"message": "Password changed successfully."})
+
+
+from django.http import HttpResponse, Http404
+
+def serve_resume_from_db(request, year, month, filename):
+    from users.models import ResumeFile
+    try:
+        resume_file = ResumeFile.objects.get(filename=filename)
+        response = HttpResponse(resume_file.data, content_type=resume_file.content_type)
+        response["Content-Disposition"] = f'inline; filename="{resume_file.filename}"'
+        return response
+    except ResumeFile.DoesNotExist:
+        import os
+        from django.conf import settings
+        from django.views.static import serve
+        
+        path = f"resumes/{year}/{month}/{filename}"
+        try:
+            return serve(request, path, document_root=settings.MEDIA_ROOT)
+        except Http404:
+            raise Http404("Resume not found in database or local disk")

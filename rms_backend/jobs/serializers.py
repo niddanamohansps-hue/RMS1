@@ -262,6 +262,14 @@ class JobPostingSerializer(serializers.ModelSerializer):
             ret["educational_qualifications"] = instance.job_request.educational_qualifications or ""
         if not ret.get("skills_required") and instance.job_request:
             ret["skills_required"] = instance.job_request.skills_required or ""
+        if not ret.get("experience"):
+            if instance.job_request and instance.job_request.experience:
+                ret["experience"] = instance.job_request.experience
+            else:
+                from jobs.models import ExistingRole
+                matching_role = ExistingRole.objects.filter(role=instance.role).first()
+                if matching_role and matching_role.experience:
+                    ret["experience"] = matching_role.experience
         return ret
 
     def create(self, validated_data):
@@ -292,4 +300,12 @@ class JobPostingPublicSerializer(serializers.ModelSerializer):
             ret["educational_qualifications"] = instance.job_request.educational_qualifications or ""
         if not ret.get("skills_required") and instance.job_request:
             ret["skills_required"] = instance.job_request.skills_required or ""
+        if not ret.get("experience"):
+            if instance.job_request and instance.job_request.experience:
+                ret["experience"] = instance.job_request.experience
+            else:
+                from jobs.models import ExistingRole
+                matching_role = ExistingRole.objects.filter(role=instance.role).first()
+                if matching_role and matching_role.experience:
+                    ret["experience"] = matching_role.experience
         return ret

@@ -62,6 +62,51 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
     setPostings((prev) => prev.map((item) => item.id === id ? { ...item, status: newStatus } : item));
   };
 
+  const tableRows = filtered.map((p) => {
+    const details = getJobDetails(p);
+    return [
+      <Mono v={p.id} />,
+      <div>
+        <div style={{ fontWeight: 800, color: T.ink }}>{p.role}</div>
+      </div>,
+      <span style={{ fontWeight: 600, color: T.inkMid, fontSize: 13 }}>{details.department}</span>,
+      <span style={{ fontSize: 12, color: T.inkMid }}>{p.posted}</span>,
+      <span style={{ fontSize: 12, color: T.inkMid }}>{p.expiry}</span>,
+      <span style={{ fontWeight: 700, color: T.ink }}>{p.apps ?? 0}</span>,
+      <span
+        style={{
+          borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, display: "inline-block",
+          ...(p.status === "Published"
+            ? { background: T.greenLight, color: T.green, border: `1px solid ${T.green}` }
+            : { background: T.amberLight, color: T.amber, border: `1px solid ${T.amber}` }),
+        }}
+      >
+        {p.status || "Unpublished"}
+      </span>,
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
+        {p.status === "Published" && (
+          <button
+            onClick={() => shareJob(p)}
+            style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+          >
+            Share
+          </button>
+        )}
+        <button
+          onClick={() => toggleStatus(p.id, p.status)}
+          style={{
+            border: "none",
+            background: p.status === "Published" ? "#FEE2E2" : T.greenLight,
+            color: p.status === "Published" ? "#DC2626" : T.green,
+            borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12,
+          }}
+        >
+          {p.status === "Published" ? "Unpublish" : "Publish"}
+        </button>
+      </div>
+    ];
+  });
+
   const stats = [
     { label: "Published", value: postings.filter((p) => p.status === "Published").length, color: T.green },
     { label: "Unpublished", value: postings.filter((p) => p.status !== "Published").length, color: T.amber },
@@ -336,6 +381,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
           >
             {filtered.map((p, idx) => {
               const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
+              const details = getJobDetails(p);
               return (
                 <div
                   key={p.id}
@@ -375,7 +421,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
                       <div style={{ paddingRight: 64 }}>
                         <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>{p.role}</h3>
                         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
-                          {p.channel} {p.department ? `· ${p.department}` : ""}
+                          {p.channel} {details.department && details.department !== "—" ? `· ${details.department}` : ""}
                         </div>
                       </div>
                     </div>
@@ -485,47 +531,7 @@ export default function JobPostings({ postings, setPostings, jobRequests, existi
           <Table
             cols={["Job ID", "Role", "Department", "Posted", "Expiry", "Applications", "Status", "Actions"]}
             onRowClick={(i) => setSelectedJobForModal(filtered[i])}
-            rows={filtered.map((p) => [
-              <Mono v={p.id} />,
-              <div>
-                <div style={{ fontWeight: 800, color: T.ink }}>{p.role}</div>
-              </div>,
-              <span style={{ fontWeight: 600, color: T.inkMid, fontSize: 13 }}>{p.department || "—"}</span>,
-              <span style={{ fontSize: 12, color: T.inkMid }}>{p.posted}</span>,
-              <span style={{ fontSize: 12, color: T.inkMid }}>{p.expiry}</span>,
-              <span style={{ fontWeight: 700, color: T.ink }}>{p.apps ?? 0}</span>,
-              <span
-                style={{
-                  borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, display: "inline-block",
-                  ...(p.status === "Published"
-                    ? { background: T.greenLight, color: T.green, border: `1px solid ${T.green}` }
-                    : { background: T.amberLight, color: T.amber, border: `1px solid ${T.amber}` }),
-                }}
-              >
-                {p.status || "Unpublished"}
-              </span>,
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
-                {p.status === "Published" && (
-                  <button
-                    onClick={() => shareJob(p)}
-                    style={{ border: "none", background: T.blueLight, color: T.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12 }}
-                  >
-                    Share
-                  </button>
-                )}
-                <button
-                  onClick={() => toggleStatus(p.id, p.status)}
-                  style={{
-                    border: "none",
-                    background: p.status === "Published" ? "#FEE2E2" : T.greenLight,
-                    color: p.status === "Published" ? "#DC2626" : T.green,
-                    borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 12,
-                  }}
-                >
-                  {p.status === "Published" ? "Unpublish" : "Publish"}
-                </button>
-              </div>,
-            ])}
+            rows={tableRows}
           />
         </Card>
       )}

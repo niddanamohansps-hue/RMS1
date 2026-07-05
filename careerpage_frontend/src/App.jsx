@@ -60,13 +60,13 @@ function AppContent() {
 
   const mapExperienceFromBackend = (code) => {
     switch (code) {
-      case "0-1": return "0-1 years (Fresher)";
-      case "1-2": return "1-3 years";
-      case "2-4": return "3-5 years";
-      case "3-5": return "3-5 years";
-      case "5-8": return "5-8 years";
+      case "0-1": return "0–1 years (Fresher)";
+      case "1-2": return "1–3 years";
+      case "2-4": return "3–5 years";
+      case "3-5": return "3–5 years";
+      case "5-8": return "5–8 years";
       case "8+": return "8+ years";
-      default: return "0-1 years (Fresher)";
+      default: return "0–1 years (Fresher)";
     }
   };
 
@@ -206,7 +206,12 @@ function AppContent() {
         qualifications: Array.isArray(jp.qualifications) ? jp.qualifications : (jp.qualification ? [jp.qualification] : ["Degree in relevant field"]),
         description: jp.description || "",
       }));
-      setJobsList(translated);
+      setJobsList(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(translated)) {
+          return translated;
+        }
+        return prev;
+      });
     } catch (err) {
       console.error("Failed to fetch public job postings", err);
     }
@@ -214,10 +219,12 @@ function AppContent() {
 
   useEffect(() => {
     fetchPublicJobs();
+    const interval = setInterval(fetchPublicJobs, 3000);
     const token = localStorage.getItem("access_token");
     if (token) {
       loadCandidateData();
     }
+    return () => clearInterval(interval);
   }, []);
 
   const handleApplyJob = (job) => {

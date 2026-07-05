@@ -263,7 +263,7 @@ const JobApplicationModal = ({ job, onClose, onSubmit, onEditProfile, profileDat
                       <option value="">Select qualification</option><option>B.Ed (Bachelor of Education)</option><option>M.Ed (Master of Education)</option><option>CTET / STET Certified</option><option>NET / SET Qualified</option><option>NTT (Nursery Teacher Training)</option><option>D.El.Ed (Diploma in Elementary Education)</option><option>PG Diploma in Education</option><option>Other</option>
                     </select>
                   </div>
-                  <div><label className="jm-label">Degree Name</label><input className="jm-input jm-input--readonly" placeholder="e.g. B.Ed, CTET, NET" value={professionalQualOther} readOnly /></div>
+                  <div><label className="jm-label">Detail / Certificate</label><input className="jm-input jm-input--readonly" placeholder="e.g. B.Ed, CTET, NET" value={professionalQualOther} readOnly /></div>
                   <div>
                     <label className="jm-label">Years of Experience <span className="jm-required">*</span></label>
                     <select required className="jm-select jm-select--readonly" value={experience} disabled>
@@ -276,7 +276,7 @@ const JobApplicationModal = ({ job, onClose, onSubmit, onEditProfile, profileDat
                       <option value="">Select qualification</option><option>Sports Coaching</option><option>Music / Performing Arts</option><option>Drama / Theatre</option><option>Visual Arts / Craft</option><option>Debate / Public Speaking</option><option>Yoga / Physical Education</option><option>Scouting / NCC</option><option>Community Service / Social Work</option><option>STEM / Robotics Club</option><option>Environmental Activities</option><option>Other</option>
                     </select>
                   </div>
-                  <div><label className="jm-label">Degree Name</label><input className="jm-input jm-input--readonly" placeholder="e.g. Sports Coach, Music Diploma" value={extracurricularOther} readOnly /></div>
+                  <div><label className="jm-label">Detail / Certificate</label><input className="jm-input jm-input--readonly" placeholder="e.g. Sports Coach, Music Diploma" value={extracurricularOther} readOnly /></div>
                 </div>
                 <div className="jm-field-mt"><label className="jm-label">Roles Interested In</label><SkillsMultiSelect options={ALL_ROLES} selected={selectedRoles} onChange={setSelectedRoles} placeholder="Select one or more roles…" readOnly /></div>
                 <div className="jm-field-mt"><label className="jm-label">Skills &amp; Strengths</label><SkillsMultiSelect options={ALL_SKILLS} selected={selectedSkills} onChange={setSelectedSkills} placeholder="Select your skills…" readOnly /></div>

@@ -28,12 +28,19 @@ export function useJobFilters() {
           educationalQualifications: jp.educational_qualifications || "",
           skillsRequired: jp.skills_required || "",
         }));
-        setJobsList(translated);
+        setJobsList(prev => {
+          if (JSON.stringify(prev) !== JSON.stringify(translated)) {
+            return translated;
+          }
+          return prev;
+        });
       } catch (err) {
         console.error("Failed to load public jobs", err);
       }
     };
     fetchJobs();
+    const interval = setInterval(fetchJobs, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const filteredJobs = useMemo(() => {

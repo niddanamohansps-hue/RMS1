@@ -116,3 +116,43 @@ class CandidateProfile(models.Model):
 
     def __str__(self):
         return f"Profile: {self.user.get_full_name()}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.resume:
+            try:
+                import os
+                filename = os.path.basename(self.resume.name)
+                self.resume.open("rb")
+                file_content = self.resume.read()
+                self.resume.close()
+
+                ext = filename.split(".")[-1].lower()
+                content_type = "application/pdf"
+                if ext in ["doc", "docx"]:
+                    content_type = "application/msword"
+                if ext == "docx":
+                    content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+                ResumeFile.objects.update_or_create(
+                    filename=filename,
+                    defaults={
+                        "content_type": content_type,
+                        "data": file_content,
+                    }
+                )
+            except Exception as e:
+                print("Error saving resume binary to database:", e)
+
+
+class ResumeFile(models.Model):
+    filename     = models.CharField(max_length=255, unique=True)
+    content_type = models.CharField(max_length=100)
+    data         = models.BinaryField()
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "resume_files"
+
+    def __str__(self):
+        return self.filename

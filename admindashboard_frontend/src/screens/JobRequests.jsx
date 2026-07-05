@@ -154,6 +154,127 @@ function SkillsMultiSelect({ selected = "", onChange }) {
   );
 }
 
+function QualificationsMultiSelect({ selected = "", onChange }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  const selectedArray = selected ? selected.split(",").map(s => s.trim()).filter(Boolean) : [];
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const toggle = (opt) => {
+    const next = selectedArray.includes(opt)
+      ? selectedArray.filter(s => s !== opt)
+      : [...selectedArray, opt];
+    onChange(next.join(", "));
+  };
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative", width: "100%", fontFamily: "inherit" }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{
+          border: `1.5px solid ${T.border}`,
+          borderRadius: 8,
+          padding: "9px 13px",
+          fontSize: 13,
+          background: "#fff",
+          minHeight: 38,
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 6,
+          cursor: "pointer",
+          boxSizing: "border-box",
+          paddingRight: 32,
+          position: "relative",
+        }}
+      >
+        {selectedArray.length === 0 && (
+          <span style={{ color: T.inkFaint }}>Select qualification...</span>
+        )}
+        {selectedArray.map(s => (
+          <span
+            key={s}
+            onClick={(e) => { e.stopPropagation(); toggle(s); }}
+            style={{
+              background: "rgba(59, 130, 246, 0.1)",
+              color: "#2563EB",
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "2px 8px",
+              borderRadius: 6,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {s} <span style={{ fontSize: 13, lineHeight: 1 }}>&times;</span>
+          </span>
+        ))}
+        <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: T.inkFaint }}>
+          ▼
+        </span>
+      </div>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            background: "#fff",
+            border: `1px solid ${T.border}`,
+            borderRadius: 8,
+            marginTop: 4,
+            maxHeight: 200,
+            overflowY: "auto",
+            zIndex: 100,
+            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+          }}
+        >
+          {QUAL_OPTIONS.map((optObj) => {
+            const opt = optObj.value;
+            const isSel = selectedArray.includes(opt);
+            return (
+              <div
+                key={opt}
+                onClick={() => toggle(opt)}
+                style={{
+                  padding: "8px 12px",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  background: isSel ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                  color: isSel ? "#2563EB" : T.ink,
+                  fontWeight: isSel ? 700 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => { if (!isSel) e.currentTarget.style.background = T.canvas; }}
+                onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
+              >
+                <span>{opt}</span>
+                {isSel && <span style={{ color: "#2563EB", fontWeight: "bold" }}>✓</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function JobRequests({ jobRequests, setJobRequests, setApprovalRequests, setJobPostings, existingRoles, onNavigateToApplications }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
@@ -469,16 +590,16 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                 <FormField label="Role" required>
                   <Select value={form.role} onChange={(e) => handleRoleChange(index, e.target.value)} options={getFilteredRoleOptions(form.department)} placeholder="Select role…" />
                 </FormField>
-                <FormField label="Experience" required>
-                  <Input placeholder="Enter experience" value={form.exp} onChange={(e) => updateForm(index, "exp", e.target.value)} />
+                <FormField label="Experience (Auto-populated)" required>
+                  <Input placeholder="Select role first" value={form.exp} disabled style={{ background: T.canvas, cursor: "not-allowed" }} />
                 </FormField>
 
                 {/* Row 2 */}
-                <FormField label="Salary Range" required>
-                  <Input placeholder="Enter salary range" value={form.salary} onChange={(e) => updateForm(index, "salary", e.target.value)} />
+                <FormField label="Salary Range (Auto-populated)" required>
+                  <Input placeholder="Select role first" value={form.salary} disabled style={{ background: T.canvas, cursor: "not-allowed" }} />
                 </FormField>
                 <FormField label="Educational Qualification" required>
-                  <Select value={form.qual} onChange={(e) => updateForm(index, "qual", e.target.value)} options={QUAL_OPTIONS} placeholder="Select qualification…" />
+                  <QualificationsMultiSelect selected={form.qual} onChange={(val) => updateForm(index, "qual", val)} />
                 </FormField>
                 <FormField label="Vacancies" required>
                   <Select value={form.vacancies} onChange={(e) => updateForm(index, "vacancies", e.target.value)} options={VACANCY_OPTIONS} placeholder="Select count…" />
@@ -784,30 +905,30 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                         />
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Experience</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Experience (Auto-populated)</div>
                         <Input
-                          placeholder="Enter experience"
+                          placeholder="Select role first"
                           value={selectedRequest.exp || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, exp: e.target.value })}
+                          disabled
+                          style={{ background: T.canvas, cursor: "not-allowed" }}
                         />
                       </div>
 
                       {/* Row 2 */}
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Salary Range (Auto-populated)</div>
                         <Input
-                          placeholder="Enter salary range"
+                          placeholder="Select role first"
                           value={selectedRequest.salary || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, salary: e.target.value })}
+                          disabled
+                          style={{ background: T.canvas, cursor: "not-allowed" }}
                         />
                       </div>
                       <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Educational Qualification</div>
-                        <Select
-                          value={selectedRequest.qual || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, qual: e.target.value })}
-                          options={QUAL_OPTIONS}
-                          placeholder="Select qualification…"
+                        <QualificationsMultiSelect
+                          selected={selectedRequest.qual || ""}
+                          onChange={(val) => setSelectedRequest({ ...selectedRequest, qual: val })}
                         />
                       </div>
                       <div>
@@ -966,12 +1087,14 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                 background: T.canvas, borderRadius: "0 0 16px 16px",
               }}>
                 <Btn label="Cancel Request" variant="danger" small onClick={() => cancelJobRequest(selectedRequest.id)} />
-                <Btn
-                  label={hasChanges() ? "Resubmit as New Request" : "Accept"}
-                  variant="success"
-                  small
-                  onClick={handleAccept}
-                />
+                {!(selectedRequest.status === "Pending" && !hasChanges()) && (
+                  <Btn
+                    label={hasChanges() ? "Resubmit as New Request" : "Accept"}
+                    variant="success"
+                    small
+                    onClick={handleAccept}
+                  />
+                )}
               </div>
             )}
           </div>

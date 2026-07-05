@@ -112,7 +112,7 @@ function AppContent() {
     type: r.type,
     headcount: r.headcount,
     filled: r.filled,
-    status: r.status,
+    status: r.currentStatus || r.status,
     experience: r.experience !== "—" ? r.experience : "",
     salary_range: r.salaryRange !== "—" ? r.salaryRange : "",
   });
@@ -281,7 +281,7 @@ function AppContent() {
       skills_required: jp.skillsRequired || "",
       job_request: jp.job_request || null,
       category: jp.category || "",
-      department: jp.department || "",
+      department: jp.department || jp.dept || "",
     };
   };
 
@@ -523,32 +523,34 @@ function AppContent() {
     if (!currentUser) return;
 
     const path = location.pathname;
-    const loadRequiredData = async () => {
+    const loadRequiredData = async (isBackground = false) => {
       // Determine if we need to show the spinner — only when THIS SCREEN's datasets haven't been loaded once yet.
       // Approvals are always loaded in the background and never block the spinner.
       let needsSpinner = false;
-      if (path === "/dashboard") {
-        // Dashboard uses approvals count — but we'll load it non-blocking
-      } else if (path === "/dashboard/existing-roles") {
-        needsSpinner = !loadedOnce.current.roles;
-      } else if (path === "/dashboard/role-requests") {
-        needsSpinner = !loadedOnce.current.roleRequests || !loadedOnce.current.roles;
-      } else if (path === "/dashboard/job-requests") {
-        needsSpinner = !loadedOnce.current.jobRequests || !loadedOnce.current.jobPostings || !loadedOnce.current.roles;
-      } else if (path === "/dashboard/approval-requests") {
-        needsSpinner = !loadedOnce.current.roles || !loadedOnce.current.jobPostings;
-      } else if (path === "/dashboard/job-postings") {
-        needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests || !loadedOnce.current.roles;
-      } else if (path === "/dashboard/applications") {
-        needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests;
-      } else if (path === "/dashboard/interview-panel") {
-        needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.interviews || !loadedOnce.current.panelists;
-      } else if (path === "/dashboard/offer-management") {
-        needsSpinner = !loadedOnce.current.offers || !loadedOnce.current.jobPostings;
-      } else if (path === "/dashboard/onboarding") {
-        needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.offers;
-      } else if (path === "/panelist") {
-        needsSpinner = !loadedOnce.current.interviews || !loadedOnce.current.jobPostings;
+      if (!isBackground) {
+        if (path === "/dashboard") {
+          // Dashboard uses approvals count — but we'll load it non-blocking
+        } else if (path === "/dashboard/existing-roles") {
+          needsSpinner = !loadedOnce.current.roles;
+        } else if (path === "/dashboard/role-requests") {
+          needsSpinner = !loadedOnce.current.roleRequests || !loadedOnce.current.roles;
+        } else if (path === "/dashboard/job-requests") {
+          needsSpinner = !loadedOnce.current.jobRequests || !loadedOnce.current.jobPostings || !loadedOnce.current.roles;
+        } else if (path === "/dashboard/approval-requests") {
+          needsSpinner = !loadedOnce.current.roles || !loadedOnce.current.jobPostings;
+        } else if (path === "/dashboard/job-postings") {
+          needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests || !loadedOnce.current.roles;
+        } else if (path === "/dashboard/applications") {
+          needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests;
+        } else if (path === "/dashboard/interview-panel") {
+          needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.interviews || !loadedOnce.current.panelists;
+        } else if (path === "/dashboard/offer-management") {
+          needsSpinner = !loadedOnce.current.offers || !loadedOnce.current.jobPostings;
+        } else if (path === "/dashboard/onboarding") {
+          needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.offers;
+        } else if (path === "/panelist") {
+          needsSpinner = !loadedOnce.current.interviews || !loadedOnce.current.jobPostings;
+        }
       }
 
       if (needsSpinner) {
@@ -564,39 +566,39 @@ function AppContent() {
         if (path === "/dashboard") {
           // Dashboard — approvals already loading above
         } else if (path === "/dashboard/existing-roles") {
-          if (!loadedOnce.current.roles) promises.push(loadRoles());
+          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/role-requests") {
-          if (!loadedOnce.current.roleRequests) promises.push(loadRoleRequests());
-          if (!loadedOnce.current.roles) promises.push(loadRoles());
+          if (isBackground || !loadedOnce.current.roleRequests) promises.push(loadRoleRequests());
+          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/job-requests") {
-          if (!loadedOnce.current.jobRequests) promises.push(loadJobRequests());
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (!loadedOnce.current.roles) promises.push(loadRoles());
+          if (isBackground || !loadedOnce.current.jobRequests) promises.push(loadJobRequests());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/approval-requests") {
-          if (!loadedOnce.current.roles) promises.push(loadRoles());
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
         } else if (path === "/dashboard/job-postings") {
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (!loadedOnce.current.jobRequests) promises.push(loadJobRequests());
-          if (!loadedOnce.current.roles) promises.push(loadRoles());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.jobRequests) promises.push(loadJobRequests());
+          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
         } else if (path === "/dashboard/applications") {
-          if (!loadedOnce.current.applications) promises.push(loadApplications());
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (!loadedOnce.current.jobRequests) promises.push(loadJobRequests());
+          if (isBackground || !loadedOnce.current.applications) promises.push(loadApplications());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.jobRequests) promises.push(loadJobRequests());
         } else if (path === "/dashboard/interview-panel") {
-          if (!loadedOnce.current.applications) promises.push(loadApplications());
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (!loadedOnce.current.interviews) promises.push(loadInterviews());
-          if (!loadedOnce.current.panelists) promises.push(loadPanelists());
+          if (isBackground || !loadedOnce.current.applications) promises.push(loadApplications());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.interviews) promises.push(loadInterviews());
+          if (isBackground || !loadedOnce.current.panelists) promises.push(loadPanelists());
         } else if (path === "/dashboard/offer-management") {
-          if (!loadedOnce.current.offers) promises.push(loadOffers());
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.offers) promises.push(loadOffers());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
         } else if (path === "/dashboard/onboarding") {
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (!loadedOnce.current.offers) promises.push(loadOffers());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.offers) promises.push(loadOffers());
         } else if (path === "/panelist") {
-          if (!loadedOnce.current.interviews) promises.push(loadInterviews());
-          if (!loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.interviews) promises.push(loadInterviews());
+          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
         }
 
         if (promises.length > 0) {
@@ -605,11 +607,19 @@ function AppContent() {
       } catch (err) {
         console.error("Failed to load screen-specific backend data", err);
       } finally {
-        setIsLoading(false);
+        if (!isBackground) {
+          setIsLoading(false);
+        }
       }
     };
 
-    loadRequiredData();
+    loadRequiredData(false);
+
+    const interval = setInterval(() => {
+      loadRequiredData(true);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [location.pathname, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Protected route redirects — only fire when auth state changes, NOT on every navigation
@@ -1177,39 +1187,51 @@ function AppContent() {
       {/* User profile & logout footer */}
       <div
         style={{
-          padding: "16px 20px",
-          borderTop: "1px solid rgba(255,255,255,0.1)",
-          background: "rgba(0,0,0,0.15)",
+          padding: "16px",
+          borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "rgba(0, 0, 0, 0.12)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: radius.full,
-              background: `linear-gradient(135deg, ${T.accentMid}, ${T.accent})`,
-              color: T.primaryDark,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: font.bold,
-              fontSize: font.base,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-            }}
-          >
-            {currentUser?.name ? currentUser.name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2) : "HR"}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: font.base, fontWeight: font.bold, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {currentUser?.name || "HR Admin"}
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: radius.lg,
+            padding: "12px",
+            boxShadow: shadow.sm,
+          }}
+        >
+          {/* User Details */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: radius.full,
+                background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark || T.accent})`,
+                color: T.primaryDark,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: font.bold,
+                fontSize: font.base,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                flexShrink: 0,
+              }}
+            >
+              {currentUser?.name ? currentUser.name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2) : "HR"}
             </div>
-            <div style={{ fontSize: font.xs, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {currentUser?.email || "hr@southpoint.edu"}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: font.base, fontWeight: font.bold, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {currentUser?.name || "HR Admin"}
+              </div>
+              <div style={{ fontSize: font.xs, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {currentUser?.email || "hr@southpoint.edu"}
+              </div>
             </div>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
+
+          {/* Log Out Button */}
           <button
             onClick={() => {
               setCurrentUser(null);
@@ -1224,19 +1246,48 @@ function AppContent() {
             }}
             title="Log Out"
             style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.2)",
+              width: "100%",
+              background: "rgba(255, 255, 255, 0.06)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
               borderRadius: radius.md,
-              padding: "4px 8px",
+              padding: "8px 12px",
               cursor: "pointer",
-              color: "#fff",
-              fontSize: 10,
-              fontWeight: 700,
+              color: "#ff9e9e",
+              fontSize: font.xs + 1,
+              fontWeight: font.semibold,
               fontFamily: font.body,
-              transition: "background 0.2s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: transition.fast,
             }}
-            className="btn-hover"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(220, 38, 38, 0.18)";
+              e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.35)";
+              e.currentTarget.style.color = "#ffb3b3";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
+              e.currentTarget.style.color = "#ff9e9e";
+            }}
           >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
             Log Out
           </button>
         </div>
@@ -1575,10 +1626,15 @@ function AppContent() {
               />
             } />
             <Route path="/dashboard/offer-management" element={
-              <OfferManagement offers={offers} setOffers={setOffers} jobPostings={jobPostings} />
+              <OfferManagement offers={offers} setOffers={setOffers} jobPostings={jobPostings} existingRoles={existingRoles} interviews={interviews} />
             } />
             <Route path="/dashboard/onboarding" element={
-              <Onboarding jobPostings={jobPostings} offers={offers} />
+              <Onboarding
+                jobPostings={jobPostings}
+                offers={offers}
+                jobApplications={jobApplications}
+                generalApplications={generalApplications}
+              />
             } />
             <Route path="/panelist" element={
               <Panelist

@@ -3,7 +3,6 @@ import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Mono, Badge, Btn, Modal, ModalHeader } from "../components/ui";
-import { ONBOARDING, JOB_APPLICATIONS, GENERAL_APPLICATIONS, OFFERS } from "../data";
 
 const TASK_KEYS = ["profile", "offer", "docsUpload", "docsVerify", "bgc", "checkin"];
 const TASK_LABELS = [
@@ -15,7 +14,7 @@ const TASK_LABELS = [
   "Check In"
 ];
 
-export default function Onboarding({ jobPostings = [], offers = [] }) {
+export default function Onboarding({ jobPostings = [], offers = [], jobApplications = [], generalApplications = [] }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
   const hScroll = useHorizontalScroll();
@@ -47,18 +46,7 @@ export default function Onboarding({ jobPostings = [], offers = [] }) {
         return { ...r, tasks: migratedTasks };
       });
     }
-    return ONBOARDING.map((o) => ({
-      ...o,
-      tasks: {
-        profile: "Verified",
-        offer: "Verified",
-        docsUpload: "Verified",
-        docsVerify: "Pending",
-        bgc: "Pending",
-        checkin: o.tasks?.checkin || false,
-      },
-      status: o.status === "Completed" ? "Completed" : "Documents Pending",
-    }));
+    return [];
   });
 
   useEffect(() => {
@@ -101,11 +89,11 @@ export default function Onboarding({ jobPostings = [], offers = [] }) {
     });
   }, [offers]);
 
-  const ALL_APPS = [...JOB_APPLICATIONS, ...GENERAL_APPLICATIONS.map((a) => ({ ...a, role: a.preferredRole }))];
+  const ALL_APPS = [...jobApplications, ...generalApplications.map((a) => ({ ...a, role: a.preferredRole }))];
 
   const getCandidateDetails = (name) => {
     const app = ALL_APPS.find((a) => a.name && a.name.toLowerCase() === name.toLowerCase());
-    const offer = OFFERS.find((o) => o.candidate && o.candidate.toLowerCase() === name.toLowerCase());
+    const offer = offers.find((o) => o.candidate && o.candidate.toLowerCase() === name.toLowerCase());
     return {
       email: app?.email || "—",
       phone: app?.phone || "—",

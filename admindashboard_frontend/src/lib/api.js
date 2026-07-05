@@ -1,4 +1,4 @@
-const BASE_URL = `http://${window.location.hostname}:8000/api`;
+const BASE_URL = `https://rms1-1-suhq.onrender.com/api`;
 
 const getHeaders = () => {
   const headers = { "Content-Type": "application/json" };

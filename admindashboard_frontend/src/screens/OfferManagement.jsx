@@ -3,9 +3,7 @@ import { T, font } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
 import { Card, SectionTitle, Table, Mono, Badge, Btn, Modal, ModalHeader, FormField, Input } from "../components/ui";
-import { EXISTING_ROLES, INTERVIEWS } from "../data";
-
-export default function OfferManagement({ offers, setOffers, jobPostings = [] }) {
+export default function OfferManagement({ offers, setOffers, jobPostings = [], existingRoles = [], interviews = [] }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
   const [viewOffer, setViewOffer] = useState(null);
@@ -54,7 +52,7 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [] })
   };
 
   const getRoleRange = (role) => {
-    const roleDef = EXISTING_ROLES.find((r) => r.role === role || (r.role && r.role.toLowerCase() === role.toLowerCase()));
+    const roleDef = existingRoles.find((r) => r.role === role || (r.role && r.role.toLowerCase() === role.toLowerCase()));
     return roleDef?.salaryRange ? parseSalaryRange(roleDef.salaryRange) : null;
   };
 
@@ -274,7 +272,7 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [] })
             cols={["Offer ID", "Candidate", "Role", "Score", "Status", "Generate", "Actions"]}
             onRowClick={(i) => setSelectedOfferForModal(filteredOffers[i])}
             rows={filteredOffers.map((o) => {
-              const interview = INTERVIEWS.find(inv => inv.candidate === o.candidate && inv.role === o.role);
+              const interview = interviews.find(inv => inv.candidate === o.candidate && inv.role === o.role);
               const score = interview && interview.score !== null ? (
                 <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: "50%", background: "#E6F6ED", color: "#00796B", fontWeight: 800, fontSize: 13 }}>{interview.score}</div>
               ) : "—";

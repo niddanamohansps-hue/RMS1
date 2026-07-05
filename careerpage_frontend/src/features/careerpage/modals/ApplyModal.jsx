@@ -285,7 +285,7 @@ export function ApplyModal({ onClose, signupData, onSubmitData }) {
                     </select>
                   </div>
                   <div>
-                    <label className="am-label">Degree Name</label>
+                    <label className="am-label">Detail / Certificate</label>
                     <input className="am-input" placeholder="e.g. B.Ed, CTET, NET" value={form.professionalQualificationOther} onChange={(e) => set("professionalQualificationOther", e.target.value)} />
                   </div>
                   <div>
@@ -308,7 +308,7 @@ export function ApplyModal({ onClose, signupData, onSubmitData }) {
                     </select>
                   </div>
                   <div>
-                    <label className="am-label">Degree Name</label>
+                    <label className="am-label">Detail / Certificate</label>
                     <input className="am-input" placeholder="e.g. Sports Coach, Music Diploma" value={form.extracurricularOther} onChange={(e) => set("extracurricularOther", e.target.value)} />
                   </div>
                 </div>

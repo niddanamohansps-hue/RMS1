@@ -913,12 +913,14 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                     cancelRoleRequest(selectedRequest.id);
                   }}
                 />
-                <Btn
-                  label={hasChanges() ? "Resubmit as New Request" : "Accept"}
-                  variant="success"
-                  small
-                  onClick={handleAccept}
-                />
+                {!(selectedRequest.status === "Pending" && !hasChanges()) && (
+                  <Btn
+                    label={hasChanges() ? "Resubmit as New Request" : "Accept"}
+                    variant="success"
+                    small
+                    onClick={handleAccept}
+                  />
+                )}
               </div>
             )}
           </div>
