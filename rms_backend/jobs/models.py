@@ -197,6 +197,7 @@ class JobPosting(models.Model):
     CHANNEL_CHOICES = [
         ("External", "External"),
         ("Internal", "Internal"),
+        ("Career Page", "Career Page"),
     ]
 
     posting_id     = models.CharField(max_length=30, unique=True)

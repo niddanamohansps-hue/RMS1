@@ -1,4 +1,7 @@
-const BASE_URL = `https://rms1-1-suhq.onrender.com/api`;
+const BASE_URL =
+  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:8000/api"
+    : "https://rms1-1-suhq.onrender.com/api";
 
 const getHeaders = () => {
   const headers = { "Content-Type": "application/json" };
@@ -80,11 +83,16 @@ const handleResponse = async (res, retryFn) => {
 const handleResponseRaw = async (res) => {
   if (!res.ok) {
     let errMsg = "";
+    const clone = res.clone();
     try {
       const data = await res.json();
       errMsg = data.detail || JSON.stringify(data);
     } catch {
-      errMsg = await res.text() || res.statusText;
+      try {
+        errMsg = await clone.text() || res.statusText;
+      } catch {
+        errMsg = res.statusText;
+      }
     }
     throw new Error(errMsg);
   }

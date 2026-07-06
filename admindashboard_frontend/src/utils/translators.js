@@ -182,9 +182,8 @@ export const toBackendPosting = (jp) => {
     return new Date().toISOString().split("T")[0];
   };
   const sanitizeChannel = (channelStr) => {
-    const valid = ["External", "Internal"];
-    if (channelStr === "Career Page") return "External";
-    return valid.includes(channelStr) ? channelStr : "External";
+    const valid = ["External", "Internal", "Career Page"];
+    return valid.includes(channelStr) ? channelStr : "Career Page";
   };
   return {
     posting_id: jp.id,

@@ -1,4 +1,7 @@
-const BASE_URL = `https://rms1-1-suhq.onrender.com/api`;
+const BASE_URL =
+  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:8000/api"
+    : "https://rms1-1-suhq.onrender.com/api";
 
 const getHeaders = () => {
   const headers = {

@@ -108,6 +108,11 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def action(self, request, pk=None):
         approval = self.get_object()
+        if approval.status != "Pending":
+            return Response(
+                {"error": "This approval request has already been processed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         serializer = ApprovalActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -180,11 +185,62 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
         )
 
         if new_status == "Approved" and approval.type == "Job Request" and approval.job_request:
-            approval.job_request.status = "Approved"
-            approval.job_request.save()
+            job_req = approval.job_request
+            job_req.status = "Approved"
+            job_req.save()
+
+            # Auto-create a JobPosting from the approved JobRequest
+            from jobs.models import JobPosting
+            from users.utils import auto_id
+
+            # Only create if no posting already exists for this job request
+            if not JobPosting.objects.filter(job_request=job_req).exists():
+                JobPosting.objects.create(
+                    posting_id=auto_id("JP", JobPosting),
+                    role=job_req.role,
+                    department=job_req.department,
+                    type=job_req.type or "Full-time",
+                    category=job_req.category,
+                    location=job_req.location or "Guwahati, Assam",
+                    description=job_req.description,
+                    experience=job_req.experience,
+                    salary_range=job_req.salary_range,
+                    educational_qualifications=job_req.educational_qualifications,
+                    skills_required=job_req.skills_required,
+                    channel="Career Page",
+                    status="Unpublished",
+                    job_request=job_req,
+                )
         if new_status == "Approved" and approval.type == "Role Request" and approval.role_request:
-            approval.role_request.status = "Approved"
-            approval.role_request.save()
+            role_req = approval.role_request
+            role_req.status = "Approved"
+            role_req.save()
+            
+            from jobs.models import ExistingRole
+            from users.utils import auto_id
+            
+            existing = ExistingRole.objects.filter(
+                role__iexact=role_req.role,
+                department__iexact=role_req.department
+            ).first()
+            
+            if existing:
+                existing.headcount += 1
+                if existing.status == "Inactive":
+                    existing.status = "Active"
+                existing.save()
+            else:
+                ExistingRole.objects.create(
+                    role_id=auto_id("ROL", ExistingRole),
+                    role=role_req.role,
+                    department=role_req.department,
+                    salary_range=role_req.salary_range,
+                    experience=role_req.experience,
+                    type="Full-time",
+                    headcount=1,
+                    filled=0,
+                    status="Active"
+                )
         if new_status == "Sent Back" and approval.type == "Role Request" and approval.role_request:
             approval.role_request.status = "Sent Back"
             approval.role_request.save()

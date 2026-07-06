@@ -19,6 +19,33 @@ class ExistingRoleSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["role_id", "created_at", "updated_at"]
 
+    def validate(self, attrs):
+        role = attrs.get("role")
+        department = attrs.get("department")
+        if role:
+            attrs["role"] = role.strip()
+        if department:
+            attrs["department"] = department.strip()
+            
+        role_val = attrs.get("role")
+        dept_val = attrs.get("department")
+        exp_val = attrs.get("experience", "")
+        sal_val = attrs.get("salary_range", "")
+        if role_val and dept_val:
+            qs = ExistingRole.objects.filter(
+                role__iexact=role_val,
+                department__iexact=dept_val,
+                experience__iexact=exp_val or "",
+                salary_range__iexact=sal_val or "",
+            )
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    {"role": "A role with this name, department, experience, and salary range already exists."}
+                )
+        return attrs
+
     def create(self, validated_data):
         if not validated_data.get("role_id"):
             validated_data["role_id"] = auto_id("ROL", ExistingRole)
@@ -55,6 +82,15 @@ class RoleRequestSerializer(serializers.ModelSerializer):
                 })
         return history_list
 
+    def validate(self, attrs):
+        role = attrs.get("role")
+        department = attrs.get("department")
+        if role:
+            attrs["role"] = role.strip()
+        if department:
+            attrs["department"] = department.strip()
+        return attrs
+
     def create(self, validated_data):
         validated_data["request_id"] = auto_id("RR", RoleRequest)
         request = self.context.get("request")
@@ -82,6 +118,15 @@ class JobRequestSerializer(serializers.ModelSerializer):
         model  = JobRequest
         fields = "__all__"
         read_only_fields = ["request_id", "created_at", "updated_at", "created_by"]
+
+    def validate(self, attrs):
+        role = attrs.get("role")
+        department = attrs.get("department")
+        if role:
+            attrs["role"] = role.strip()
+        if department:
+            attrs["department"] = department.strip()
+        return attrs
 
     def create(self, validated_data):
         validated_data["request_id"] = auto_id("JR", JobRequest)
@@ -264,7 +309,7 @@ class JobPostingSerializer(serializers.ModelSerializer):
             ret["skills_required"] = instance.job_request.skills_required or ""
         
         matching_role = None
-        need_matching_role = not ret.get("experience") or not ret.get("department")
+        need_matching_role = not ret.get("experience") or not ret.get("department") or not ret.get("salary_range")
         if need_matching_role:
             if "matching_roles" not in self.context:
                 from jobs.models import ExistingRole
@@ -282,6 +327,12 @@ class JobPostingSerializer(serializers.ModelSerializer):
                 ret["department"] = instance.job_request.department
             elif matching_role and matching_role.department:
                 ret["department"] = matching_role.department
+
+        if not ret.get("salary_range"):
+            if instance.job_request and instance.job_request.salary_range:
+                ret["salary_range"] = instance.job_request.salary_range
+            elif matching_role and matching_role.salary_range:
+                ret["salary_range"] = matching_role.salary_range
 
         if not ret.get("category") and instance.job_request and instance.job_request.category:
             ret["category"] = instance.job_request.category.name
@@ -317,7 +368,7 @@ class JobPostingPublicSerializer(serializers.ModelSerializer):
             ret["skills_required"] = instance.job_request.skills_required or ""
         
         matching_role = None
-        need_matching_role = not ret.get("experience") or not ret.get("department")
+        need_matching_role = not ret.get("experience") or not ret.get("department") or not ret.get("salary_range")
         if need_matching_role:
             if "matching_roles" not in self.context:
                 from jobs.models import ExistingRole
@@ -335,6 +386,12 @@ class JobPostingPublicSerializer(serializers.ModelSerializer):
                 ret["department"] = instance.job_request.department
             elif matching_role and matching_role.department:
                 ret["department"] = matching_role.department
+
+        if not ret.get("salary_range"):
+            if instance.job_request and instance.job_request.salary_range:
+                ret["salary_range"] = instance.job_request.salary_range
+            elif matching_role and matching_role.salary_range:
+                ret["salary_range"] = matching_role.salary_range
 
         if not ret.get("category") and instance.job_request and instance.job_request.category:
             ret["category"] = instance.job_request.category.name

@@ -1,7 +1,23 @@
 from datetime import date
 
 def auto_id(prefix: str, model, id_field: str = "id") -> str:
-    """Generate a sequential ID like JR-2026-0001."""
+    """Generate a sequential ID like JR-2026-0001, ensuring uniqueness."""
     year = date.today().year
+    
+    # Determine the unique ID field name for this model dynamically
+    field_name = None
+    common_fields = ["role_id", "posting_id", "request_id", "app_id", "interview_id"]
+    for f in common_fields:
+        if f in [field.name for field in model._meta.get_fields()]:
+            field_name = f
+            break
+    if not field_name:
+        field_name = id_field
+        
     count = model.objects.count() + 1
-    return f"{prefix}-{year}-{count:04d}"
+    while True:
+        candidate_id = f"{prefix}-{year}-{count:04d}"
+        kwargs = {field_name: candidate_id}
+        if not model.objects.filter(**kwargs).exists():
+            return candidate_id
+        count += 1

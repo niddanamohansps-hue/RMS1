@@ -71,6 +71,7 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
 
   const takeAction = (action) => {
     if (!sel) return;
+    if (sel.status !== "Pending") return;
     let updatedSel = { ...sel };
     if (sel.type === "Role Request") {
       const minS = sel.minSalary ?? sel.salary?.replace(/^₹/, "").split("-")[0]?.trim() ?? "";
