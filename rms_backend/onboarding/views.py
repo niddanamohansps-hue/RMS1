@@ -22,6 +22,28 @@ class OfferViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsHRAdmin()]
 
+    def perform_create(self, serializer):
+        offer = serializer.save()
+        if offer.status == "Sent":
+            self.send_offer_email(offer)
+
+    def perform_update(self, serializer):
+        old_status = self.get_object().status
+        offer = serializer.save()
+        if offer.status == "Sent" and old_status != "Sent":
+            self.send_offer_email(offer)
+
+    def send_offer_email(self, offer):
+        from notifications.tasks import send_offer_email_task, create_notification_task
+        send_offer_email_task.delay(offer.id)
+        if offer.candidate:
+            create_notification_task.delay(
+                recipient_id=offer.candidate.id,
+                notification_type="offer_received",
+                title="Offer Letter Issued",
+                message=f"You have received an offer letter for the position of {offer.role}. Please review and respond.",
+            )
+
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def accept(self, request, pk=None):
         offer = self.get_object()

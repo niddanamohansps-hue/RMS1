@@ -175,6 +175,9 @@ export default function useDashboardData(currentUser, pathname, navigate) {
         } else if (path === "/dashboard/offer-management") {
           if (isBackground || !loadedOnce.current.offers) promises.push(loadOffers());
           if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
+          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
+          if (isBackground || !loadedOnce.current.interviews) promises.push(loadInterviews());
+          if (isBackground || !loadedOnce.current.applications) promises.push(loadJobApplications());
         } else if (path === "/dashboard/onboarding") {
           if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
           if (isBackground || !loadedOnce.current.offers) promises.push(loadOffers());

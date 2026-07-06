@@ -38,6 +38,33 @@ def send_interview_email_task(interview_id):
 
     # 1. Email to Candidate
     candidate = interview.application.candidate if interview.application else None
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        from applications.models import JobApplication
+        app = JobApplication.objects.annotate(
+            full_name=Concat('candidate__first_name', Value(' '), 'candidate__last_name')
+        ).filter(full_name__iexact=interview.candidate_name, role=interview.role).first()
+        if app:
+            candidate = app.candidate
+
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        from applications.models import GeneralApplication
+        app = GeneralApplication.objects.annotate(
+            full_name=Concat('candidate__first_name', Value(' '), 'candidate__last_name')
+        ).filter(full_name__iexact=interview.candidate_name, preferred_role=interview.role).first()
+        if app:
+            candidate = app.candidate
+
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        candidate = get_user_model().objects.annotate(
+            full_name=Concat('first_name', Value(' '), 'last_name')
+        ).filter(full_name__iexact=interview.candidate_name).first()
+
     if candidate:
         candidate_body = f"""Dear {candidate.get_full_name() or "Candidate"},
 
@@ -106,6 +133,33 @@ def send_interview_reminder_task(interview_id):
 
     # 1. Email to Candidate
     candidate = interview.application.candidate if interview.application else None
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        from applications.models import JobApplication
+        app = JobApplication.objects.annotate(
+            full_name=Concat('candidate__first_name', Value(' '), 'candidate__last_name')
+        ).filter(full_name__iexact=interview.candidate_name, role=interview.role).first()
+        if app:
+            candidate = app.candidate
+
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        from applications.models import GeneralApplication
+        app = GeneralApplication.objects.annotate(
+            full_name=Concat('candidate__first_name', Value(' '), 'candidate__last_name')
+        ).filter(full_name__iexact=interview.candidate_name, preferred_role=interview.role).first()
+        if app:
+            candidate = app.candidate
+
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        candidate = get_user_model().objects.annotate(
+            full_name=Concat('first_name', Value(' '), 'last_name')
+        ).filter(full_name__iexact=interview.candidate_name).first()
+
     if candidate:
         candidate_body = f"""Dear {candidate.get_full_name() or "Candidate"},
 
@@ -157,3 +211,65 @@ South Point School Recruitment Team
         )
 
     return f"Sent interview reminder emails for {interview.interview_id}"
+
+
+@shared_task
+def send_offer_email_task(offer_id):
+    """
+    Sends an offer letter notification email to the candidate.
+    """
+    from onboarding.models import Offer
+    try:
+        offer = Offer.objects.get(id=offer_id)
+    except Offer.DoesNotExist:
+        return f"Offer with id {offer_id} does not exist"
+
+    candidate = offer.candidate
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        candidate = get_user_model().objects.annotate(
+            full_name=Concat('first_name', Value(' '), 'last_name')
+        ).filter(full_name__iexact=offer.candidate_name).first()
+
+    if not candidate:
+        from applications.models import JobApplication, GeneralApplication
+        app = JobApplication.objects.filter(candidate__first_name__iexact=offer.candidate_name.split()[0]).first()
+        email = app.candidate.email if app else None
+        if not email:
+            app2 = GeneralApplication.objects.filter(candidate__first_name__iexact=offer.candidate_name.split()[0]).first()
+            email = app2.candidate.email if app2 else None
+        if not email:
+            return f"No candidate email found for {offer.candidate_name}"
+    else:
+        email = candidate.email
+
+    subject = f"Offer Letter Issued: {offer.role} - South Point School"
+    body = f"""Dear {offer.candidate_name},
+
+We are pleased to inform you that an offer letter has been issued to you for the position of '{offer.role}' at South Point School.
+
+Offer Details:
+Offer ID: {offer.offer_id}
+Position: {offer.role}
+CTC: {offer.ctc}
+Expected Joining Date: {offer.joining_date}
+Offer Expiry Date: {offer.expiry_date}
+
+Please log in to your candidate dashboard to view the full offer letter details and submit your response (Accept / Decline).
+
+Candidate Dashboard: http://localhost:5173/dashboard
+
+Best regards,
+South Point School Recruitment Team
+"""
+
+    from django.core.mail import send_mail
+    send_mail(
+        subject=subject,
+        message=body,
+        from_email="no-reply@southpoint.edu",
+        recipient_list=[email],
+        fail_silently=True,
+    )
+    return f"Sent offer letter email to {email} for offer {offer.offer_id}"

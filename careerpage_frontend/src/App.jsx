@@ -46,6 +46,7 @@ function AppContent() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [dashboardInitialTab, setDashboardInitialTab] = useState("dashboard");
   const [candidateInterviews, setCandidateInterviews] = useState([]);
+  const [candidateOffer, setCandidateOffer] = useState(null);
 
   const mapExperienceToBackend = (exp) => {
     if (!exp) return "0-1";
@@ -183,6 +184,34 @@ function AppContent() {
         setCandidateInterviews(mappedInts);
       } catch (err) {
         console.warn("Failed to load candidate interviews", err);
+      }
+
+      // Fetch candidate offers
+      try {
+        const offersRes = await api.get("/offers/");
+        const offersList = offersRes.results ? offersRes.results : offersRes;
+        const sentOffers = offersList.filter(o => o.status !== "Draft");
+        if (sentOffers.length > 0) {
+          const activeOffer = sentOffers[0];
+          setCandidateOffer({
+            id: activeOffer.id,
+            db_id: activeOffer.id,
+            offer_id: activeOffer.offer_id,
+            role: activeOffer.role,
+            department: activeOffer.department || "General",
+            joiningDate: activeOffer.joining_date,
+            salary: activeOffer.ctc,
+            issuedDate: activeOffer.issued_date,
+            expiryDate: activeOffer.expiry_date,
+            status: activeOffer.status === "Sent" ? "Pending" : activeOffer.status,
+            candidateName: activeOffer.candidate_name,
+            letterUrl: activeOffer.offer_letter,
+          });
+        } else {
+          setCandidateOffer(null);
+        }
+      } catch (err) {
+        console.warn("Failed to load candidate offers", err);
       }
     } catch (err) {
       console.warn("Failed to load candidate auth session", err);
@@ -477,6 +506,8 @@ function AppContent() {
               applicationsData={applicationsData}
               cameFromApply={cameFromApply}
               interviews={candidateInterviews}
+              candidateOffer={candidateOffer}
+              onReloadCandidateData={loadCandidateData}
             />
           ) : <Navigate to="/login" replace />
         } />

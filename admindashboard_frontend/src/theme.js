@@ -129,6 +129,7 @@ export const statusVariant = (s) => {
     Selected: "green",
     Completed: "green",
     Accepted: "green",
+    Accept: "green",
     Joined: "green",
     Active: "green",
 
@@ -141,6 +142,7 @@ export const statusVariant = (s) => {
     Inactive: "accent",
 
     Rejected: "red",
+    Decline: "red",
     Unpublished: "red",
     Expired: "red",
     Terminate: "red",

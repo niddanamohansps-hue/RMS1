@@ -20,6 +20,26 @@ const MODE_OPTIONS = [
   { value: "Online", label: "Online" },
 ];
 
+const REC_COLORS = {
+  "Strong Hire": { bg: T.greenLight, color: T.green },
+  "Hire": { bg: "#ECFDF5", color: "#047857" },
+  "Hold": { bg: T.accentLight, color: T.accentDark },
+  "Reject": { bg: T.redLight, color: T.red },
+  "Pending": { bg: "#FEF3C7", color: "#B45309" },
+};
+
+const getEvaluationStatus = (interview) => {
+  const evaluations = interview.evaluations || [];
+  if (evaluations.length > 0) {
+    const latestEval = evaluations[evaluations.length - 1];
+    if (latestEval?.recommendation) return latestEval.recommendation;
+  }
+  if (interview.rec && interview.rec !== "—") {
+    return interview.rec;
+  }
+  return "Pending";
+};
+
 const getRoundOrdinal = (round) => {
   if (round === 1) return "1st Round";
   if (round === 2) return "2nd Round";
@@ -1240,6 +1260,33 @@ export default function InterviewPanel({
                           </span>
                         </div>
 
+                        {/* Evaluation Status */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Evaluation Status</span>
+                          {(() => {
+                            const evalStatus = getEvaluationStatus(i);
+                            const style = REC_COLORS[evalStatus] || { bg: "rgba(255,255,255,0.08)", color: "#fff" };
+                            return (
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  background: style.bg,
+                                  color: style.color,
+                                  borderRadius: 99,
+                                  padding: "3px 10px",
+                                  border: `1px solid ${style.border || `${style.color}44`}`,
+                                }}
+                              >
+                                {evalStatus}
+                              </span>
+                            );
+                          })()}
+                        </div>
+
                         {/* Score / Rec */}
                         {i.score !== null && (
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1436,6 +1483,7 @@ export default function InterviewPanel({
                   <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Schedule</th>
                   <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 100 }}>Mode</th>
                   <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 80 }}>Link</th>
+                  <th style={{ padding: "12px 10px", textAlign: "left", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle", width: 120 }}>Status</th>
                   <th style={{ padding: "12px 10px", textAlign: "center", fontSize: font.xs, fontWeight: font.bold, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", verticalAlign: "middle" }}>Actions</th>
                 </tr>
               </thead>
@@ -1610,6 +1658,32 @@ export default function InterviewPanel({
                         )}
                       </td>
 
+                      {/* Evaluation Status */}
+                      <td style={{ padding: "12px 10px", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
+                        {(() => {
+                          const evalStatus = getEvaluationStatus(i);
+                          const style = REC_COLORS[evalStatus] || { bg: "#FEF3C7", color: "#B45309" };
+                          return (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                background: style.bg,
+                                color: style.color,
+                                borderRadius: 99,
+                                padding: "3px 10px",
+                                border: `1px solid ${style.border || `${style.color}44`}`,
+                              }}
+                            >
+                              {evalStatus}
+                            </span>
+                          );
+                        })()}
+                      </td>
+
                       {/* Actions */}
                       <td style={{ padding: "12px 10px", textAlign: "center", verticalAlign: "middle" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "grid", gridTemplateColumns: "105px 75px 90px 65px", gap: 6, justifyContent: "center", alignItems: "center" }}>
@@ -1668,7 +1742,7 @@ export default function InterviewPanel({
                     {/* Inline Evaluation Form Row */}
                     {inlineEvalKey === candidateKey(c) && (
                       <tr>
-                        <td colSpan={8} style={{ padding: 0, background: T.canvas, borderBottom: `2px solid ${T.primary}22` }}>
+                        <td colSpan={9} style={{ padding: 0, background: T.canvas, borderBottom: `2px solid ${T.primary}22` }}>
                           <div
                             style={{
                               padding: "20px 24px",
@@ -1736,7 +1810,7 @@ export default function InterviewPanel({
                               <div style={{ flex: "0 0 auto" }}>
                                 <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 6 }}>Overall Recommendation</div>
                                 <div style={{ display: "flex", gap: 8 }}>
-                                  {["Selected", "Hold", "Rejected"].map((r) => (
+                                  {["Strong Hire", "Hire", "Hold", "Reject"].map((r) => (
                                     <button
                                       key={r}
                                       onClick={() => setRecommendation(r)}
@@ -1853,7 +1927,7 @@ export default function InterviewPanel({
 
                 {filteredCandidates.length === 0 && (
                   <tr>
-                    <td colSpan={8} style={{ padding: "40px 24px", textAlign: "center", color: T.inkFaint, fontSize: 14 }}>
+                    <td colSpan={9} style={{ padding: "40px 24px", textAlign: "center", color: T.inkFaint, fontSize: 14 }}>
                       No candidates found matching the filters.
                     </td>
                   </tr>
@@ -2238,7 +2312,7 @@ export default function InterviewPanel({
 
             <FormField label="Overall Recommendation">
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4, marginBottom: 12 }}>
-                {["Selected", "Hold", "Rejected"].map((r) => (
+                {["Strong Hire", "Hire", "Hold", "Reject"].map((r) => (
                   <button
                     key={r}
                     onClick={() => setRecommendation(r)}

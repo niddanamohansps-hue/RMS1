@@ -14,6 +14,7 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
   const [selectedOfferForModal, setSelectedOfferForModal] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [filterActiveIndex, setFilterActiveIndex] = useState(0);
+  const [search, setSearch] = useState("");
   const scrollRef = useRef(null);
 
   const hScroll = useHorizontalScroll();
@@ -22,9 +23,9 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
 
   const statusColors = {
     Draft: T.inkFaint,
-    Sent: T.blue,
-    Accepted: T.green,
-    Rejected: T.red,
+    Pending: T.blue,
+    Accept: T.green,
+    Decline: T.red,
     Expired: T.amber,
   };
 
@@ -35,11 +36,25 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
 
   const selectedRole = enrichedPostings.find((p) => p.id === selectedPostingId)?.role ?? null;
 
-  const filteredOffers = selectedPostingId
+  const filteredOffers = (selectedPostingId
     ? offers.filter((o) => o.role === selectedRole)
-    : offers;
+    : offers
+  ).filter((o) => {
+    if (!search) return true;
+    const query = search.toLowerCase();
+    const candidateName = o.candidate ? o.candidate.toLowerCase() : "";
+    const offerId = o.id ? o.id.toLowerCase() : "";
+    const roleName = o.role ? o.role.toLowerCase() : "";
+    const departmentName = getOfferDepartment(o).toLowerCase();
+    return (
+      candidateName.includes(query) ||
+      offerId.includes(query) ||
+      roleName.includes(query) ||
+      departmentName.includes(query)
+    );
+  });
 
-  const counts = ["Draft", "Sent", "Accepted", "Rejected", "Expired"].reduce((acc, s) => {
+  const counts = ["Draft", "Pending", "Accept", "Decline", "Expired"].reduce((acc, s) => {
     acc[s] = filteredOffers.filter((o) => o.status === s).length;
     return acc;
   }, {});
@@ -52,8 +67,25 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
   };
 
   const getRoleRange = (role) => {
+    if (!role) return null;
     const roleDef = existingRoles.find((r) => r.role === role || (r.role && r.role.toLowerCase() === role.toLowerCase()));
-    return roleDef?.salaryRange ? parseSalaryRange(roleDef.salaryRange) : null;
+    if (roleDef?.salaryRange) {
+      return parseSalaryRange(roleDef.salaryRange);
+    }
+    const postingDef = jobPostings.find((p) => p.role === role || (p.role && p.role.toLowerCase() === role.toLowerCase()));
+    if (postingDef?.salary) {
+      return parseSalaryRange(postingDef.salary);
+    }
+    return null;
+  };
+
+  const getOfferDepartment = (o) => {
+    if (!o || !o.role) return "—";
+    const roleDef = existingRoles.find((r) => r.role === o.role || (r.role && r.role.toLowerCase() === o.role.toLowerCase()));
+    if (roleDef?.dept) return roleDef.dept;
+    const postingDef = jobPostings.find((p) => p.role === o.role || (p.role && p.role.toLowerCase() === o.role.toLowerCase()));
+    if (postingDef?.department) return postingDef.department;
+    return "—";
   };
 
   const scrollCarousel = (dir) => {
@@ -193,13 +225,22 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
 
       {isMobile ? (
         <div style={{ marginBottom: 4 }}>
+          <div style={{ padding: "0 16px 12px" }}>
+            <Input
+              placeholder="Search Offer ID, candidate, role..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: "100%" }}
+            />
+          </div>
           <div style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, marginBottom: 8, textAlign: "center" }}>
             {filteredOffers.length} of {offers.length} offers
           </div>
 
           <div ref={scrollRef} onScroll={(e) => { const scrollLeft = e.currentTarget.scrollLeft; const cardWidth = e.currentTarget.clientWidth; const newIndex = Math.round(scrollLeft / cardWidth); setCurrentCardIndex(newIndex); }} style={{ display: "flex", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", gap: 16, padding: "0 16px 20px", margin: "0 -16px" }}>
             {filteredOffers.map((o, idx) => {
-              const interview = INTERVIEWS.find(inv => inv.candidate === o.candidate && inv.role === o.role);
+              const candidateInterviews = interviews.filter(inv => inv.candidate === o.candidate && inv.role === o.role);
+              const interview = candidateInterviews.find(inv => inv.score !== null && inv.score !== undefined && inv.score !== "") || candidateInterviews[candidateInterviews.length - 1];
               const cardBackground = "linear-gradient(135deg, #72102a 0%, #3a0010 100%)";
               return (
                 <div key={o.id} onClick={() => setSelectedOfferForModal(o)} style={{ flexShrink: 0, minWidth: "calc(100% - 32px)", borderRadius: 20, background: cardBackground, color: "#fff", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 24, position: "relative", boxShadow: "0 14px 40px rgba(0,0,0,0.25)", cursor: "pointer", minHeight: 380 }}>
@@ -218,6 +259,10 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
                       <div>
                         <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Offer ID</div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{o.id}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Department</div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{getOfferDepartment(o)}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Interview Score</div>
@@ -265,14 +310,21 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
         </div>
       ) : (
         <Card>
-          <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <Input
+              placeholder="Search Offer ID, candidate name, role..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ maxWidth: 360, flex: 1, minWidth: 0 }}
+            />
             <span style={{ fontSize: 12, color: T.inkFaint, fontWeight: 600, whiteSpace: "nowrap" }}>{filteredOffers.length} of {offers.length} offers</span>
           </div>
           <Table
-            cols={["Offer ID", "Candidate", "Role", "Score", "Status", "Generate", "Actions"]}
+            cols={["Offer ID", "Candidate", "Role", "Department", "Score", "Status", "Generate", "Actions"]}
             onRowClick={(i) => setSelectedOfferForModal(filteredOffers[i])}
             rows={filteredOffers.map((o) => {
-              const interview = interviews.find(inv => inv.candidate === o.candidate && inv.role === o.role);
+              const candidateInterviews = interviews.filter(inv => inv.candidate === o.candidate && inv.role === o.role);
+              const interview = candidateInterviews.find(inv => inv.score !== null && inv.score !== undefined && inv.score !== "") || candidateInterviews[candidateInterviews.length - 1];
               const score = interview && interview.score !== null ? (
                 <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, borderRadius: "50%", background: "#E6F6ED", color: "#00796B", fontWeight: 800, fontSize: 13 }}>{interview.score}</div>
               ) : "—";
@@ -280,6 +332,7 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
                 <Mono v={o.id} />,
                 <strong style={{ color: T.ink }}>{o.candidate}</strong>,
                 o.role,
+                getOfferDepartment(o),
                 score,
                 <Badge label={o.status} variant={statusVariant(o.status)} />,
                 <div onClick={(e) => e.stopPropagation()}>
@@ -309,27 +362,47 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
                 <h3 style={{ margin: 0, fontSize: font.lg + 1, fontWeight: font.black, fontFamily: font.heading, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedOfferForModal.candidate}</h3>
               </div>
               <div style={{ display: "flex", gap: 6, flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "5px 14px", background: selectedOfferForModal.status === "Accepted" ? "rgba(52,211,153,0.2)" : selectedOfferForModal.status === "Rejected" ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.12)", color: selectedOfferForModal.status === "Accepted" ? "#6EE7B7" : selectedOfferForModal.status === "Rejected" ? "#FCA5A5" : "rgba(255,255,255,0.7)", border: `1px solid ${selectedOfferForModal.status === "Accepted" ? "rgba(110,231,183,0.35)" : selectedOfferForModal.status === "Rejected" ? "rgba(252,165,165,0.35)" : "rgba(255,255,255,0.18)"}` }}>{selectedOfferForModal.status}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "5px 14px", background: selectedOfferForModal.status === "Accept" ? "rgba(52,211,153,0.2)" : selectedOfferForModal.status === "Decline" ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.12)", color: selectedOfferForModal.status === "Accept" ? "#6EE7B7" : selectedOfferForModal.status === "Decline" ? "#FCA5A5" : "rgba(255,255,255,0.7)", border: `1px solid ${selectedOfferForModal.status === "Accept" ? "rgba(110,231,183,0.35)" : selectedOfferForModal.status === "Decline" ? "rgba(252,165,165,0.35)" : "rgba(255,255,255,0.18)"}` }}>{selectedOfferForModal.status}</span>
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              {[
+            {(() => {
+              const candidateInterviews = interviews.filter(inv => inv.candidate === selectedOfferForModal.candidate && inv.role === selectedOfferForModal.role);
+              const interview = candidateInterviews.find(inv => inv.score !== null && inv.score !== undefined && inv.score !== "") || candidateInterviews[candidateInterviews.length - 1];
+              const items = [
                 { label: "Offer ID", value: selectedOfferForModal.id },
                 { label: "Candidate", value: selectedOfferForModal.candidate },
                 { label: "Role Name", value: selectedOfferForModal.role },
-                { label: "Interview Score", value: (() => { const int = INTERVIEWS.find(i => i.candidate === selectedOfferForModal.candidate && i.role === selectedOfferForModal.role); return int && int.score !== null ? `${int.score} / 100` : "—"; })() },
+                { label: "Department", value: getOfferDepartment(selectedOfferForModal) },
+                { label: "Interview Score", value: interview && interview.score !== null ? `${interview.score} / 100` : "—" },
+                { label: "Evaluation Status", value: interview && interview.rec && interview.rec !== "—" ? interview.rec : "—" },
                 { label: "CTC (Monthly)", value: selectedOfferForModal.ctc || "—" },
                 { label: "Issued Date", value: selectedOfferForModal.issued || "—" },
                 { label: "Expiry Date", value: selectedOfferForModal.expiry || "—" },
                 { label: "Expected Joining Date", value: selectedOfferForModal.joining || "—" },
-              ].map((item, idx) => (
-                <div key={idx} style={{ padding: "10px 12px", background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, display: "flex", flexDirection: "column", gap: 3 }}>
-                  <span style={{ fontSize: 9.5, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</span>
-                  <div style={{ fontSize: 12.5, color: T.ink, fontWeight: 600 }}>{item.value || "—"}</div>
-                </div>
-              ))}
-            </div>
+              ];
+              
+              return (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                    {items.map((item, idx) => (
+                      <div key={idx} style={{ padding: "10px 12px", background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+                        <span style={{ fontSize: 9.5, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</span>
+                        <div style={{ fontSize: 12.5, color: T.ink, fontWeight: 600 }}>{item.value || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {interview && (interview.feedback || (interview.evaluations?.length > 0 && interview.evaluations[interview.evaluations.length - 1].notes)) && (
+                    <div style={{ padding: "12px 14px", background: T.primaryLight, border: `1px solid ${T.primary}22`, borderRadius: 10, marginBottom: 16 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: T.primary, textTransform: "uppercase", letterSpacing: "0.05em" }}>Panelist Remarks</span>
+                      <div style={{ fontSize: 13, color: T.primaryDark, marginTop: 4, fontStyle: "italic" }}>
+                        "{interview.feedback || interview.evaluations[interview.evaluations.length - 1].notes}"
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: isMobile ? "stretch" : "flex-end", borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
               {selectedOfferForModal.ctc && selectedOfferForModal.issued && selectedOfferForModal.expiry ? (
@@ -408,15 +481,16 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
               const ctcNumber = Number(genForm.ctc);
               if (!ctcNumber || ctcNumber <= 0) { alert("Enter valid CTC amount."); return; }
               if (genRange && (ctcNumber < genRange.min || ctcNumber > genRange.max)) { alert(`CTC must be between ${genRange.label}.`); return; }
+              const existingOffer = offers.find((o) => o.candidate === genForm.candidate && o.role === genForm.role);
               const prepared = {
-                id: `OFR-${Date.now()}`,
+                id: existingOffer ? existingOffer.id : `OFR-${Date.now()}`,
                 candidate: genForm.candidate,
                 role: genForm.role,
                 ctc: `₹${ctcNumber.toLocaleString()}/mo`,
                 issued: new Date().toISOString().split("T")[0],
                 expiry: genForm.expiry,
                 joining: genForm.joining,
-                status: "Sent",
+                status: "Pending",
               };
               setOffers((prev) => {
                 const idx = prev.findIndex((p) => p.candidate === prepared.candidate && p.role === prepared.role);

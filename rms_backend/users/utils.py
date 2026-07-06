@@ -6,7 +6,7 @@ def auto_id(prefix: str, model, id_field: str = "id") -> str:
     
     # Determine the unique ID field name for this model dynamically
     field_name = None
-    common_fields = ["role_id", "posting_id", "request_id", "app_id", "interview_id"]
+    common_fields = ["role_id", "posting_id", "request_id", "app_id", "interview_id", "offer_id", "record_id"]
     for f in common_fields:
         if f in [field.name for field in model._meta.get_fields()]:
             field_name = f

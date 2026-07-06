@@ -32,6 +32,11 @@ class Interview(models.Model):
         ("Rejected",  "Rejected"),
         ("On Hold",   "On Hold"),
         ("Next Round","Next Round"),
+        ("Strong Hire", "Strong Hire"),
+        ("Hire", "Hire"),
+        ("Hold", "Hold"),
+        ("Reject", "Reject"),
+        ("Pending", "Pending"),
     ]
 
     interview_id   = models.CharField(max_length=30, unique=True)

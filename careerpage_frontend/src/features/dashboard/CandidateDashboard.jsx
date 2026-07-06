@@ -43,6 +43,8 @@ export function CandidateDashboard({
   applicationsData = {},
   cameFromApply = false,
   interviews = [],
+  candidateOffer = null,
+  onReloadCandidateData,
 }) {
   // Navigation & UI state
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -196,12 +198,40 @@ export function CandidateDashboard({
   const picRef = useRef(null);
 
   // Onboarding states
-  const [offerAccepted, setOfferAccepted] = useState(false);
-  const [offerRejected, setOfferRejected] = useState(false);
+  const [offerAccepted, setOfferAccepted] = useState(candidateOffer?.status === "Accepted");
+  const [offerRejected, setOfferRejected] = useState(candidateOffer?.status === "Rejected");
+
+  useEffect(() => {
+    setOfferAccepted(candidateOffer?.status === "Accepted");
+    setOfferRejected(candidateOffer?.status === "Rejected");
+  }, [candidateOffer]);
+
   const [showOfferConfirm, setShowOfferConfirm] = useState(null);
   const [docs, setDocs] = useState({});
   const [docUrls, setDocUrls] = useState({});
   const [docsSubmitted, setDocsSubmitted] = useState(false);
+
+  const handleAcceptOffer = async () => {
+    if (!candidateOffer?.id) return;
+    try {
+      await api.post(`/offers/${candidateOffer.id}/accept/`);
+      toast.success("Offer accepted successfully!");
+      if (onReloadCandidateData) await onReloadCandidateData();
+    } catch (err) {
+      toast.error("Failed to accept offer: " + err.message);
+    }
+  };
+
+  const handleDeclineOffer = async () => {
+    if (!candidateOffer?.id) return;
+    try {
+      await api.post(`/offers/${candidateOffer.id}/decline/`);
+      toast.success("Offer declined.");
+      if (onReloadCandidateData) await onReloadCandidateData();
+    } catch (err) {
+      toast.error("Failed to decline offer: " + err.message);
+    }
+  };
 
   // Onboarding identity & bank form states
   const [aadharNumber, setAadharNumber] = useState("");
@@ -1255,6 +1285,9 @@ export function CandidateDashboard({
                   docsSubmitted={docsSubmitted}
                   startDocCamera={startDocCamera}
                   handleSubmitDocs={handleSubmitDocs}
+                  candidateOffer={candidateOffer}
+                  onAccept={handleAcceptOffer}
+                  onDecline={handleDeclineOffer}
                 />
               )}
             </>

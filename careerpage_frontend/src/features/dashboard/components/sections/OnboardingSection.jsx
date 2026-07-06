@@ -12,6 +12,9 @@ export function OnboardingSection({
   setOfferRejected,
   showOfferConfirm,
   setShowOfferConfirm,
+  candidateOffer = null,
+  onAccept,
+  onDecline,
   docs,
   setDocs,
   docUrls,
@@ -61,14 +64,25 @@ export function OnboardingSection({
         Submit required documents and complete your onboarding process.
       </p>
 
-      <OfferLetterCard
-        offerAccepted={offerAccepted}
-        setOfferAccepted={setOfferAccepted}
-        offerRejected={offerRejected}
-        setOfferRejected={setOfferRejected}
-        showOfferConfirm={showOfferConfirm}
-        setShowOfferConfirm={setShowOfferConfirm}
-      />
+      {candidateOffer ? (
+        <OfferLetterCard
+          offerAccepted={offerAccepted}
+          setOfferAccepted={setOfferAccepted}
+          offerRejected={offerRejected}
+          setOfferRejected={setOfferRejected}
+          showOfferConfirm={showOfferConfirm}
+          setShowOfferConfirm={setShowOfferConfirm}
+          candidateOffer={candidateOffer}
+          onAccept={onAccept}
+          onDecline={onDecline}
+        />
+      ) : (
+        <div style={{ textAlign: "center", padding: "40px 20px", background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", color: "#6b7280", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", marginBottom: 24 }}>
+          <div style={{ fontSize: 36, marginBottom: 12, display: "inline-block" }}>🎉</div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#374151" }}>No Active Offers</h3>
+          <p style={{ fontSize: 13, marginTop: 4, maxWidth: 360, margin: "4px auto 0" }}>You do not have any active offer letters at the moment. We will notify you once HR issues an offer.</p>
+        </div>
+      )}
 
       {/* Required Documents Checklist - visible after acceptance */}
       {offerAccepted && (

@@ -28,8 +28,10 @@ class InterviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == "candidate":
+            from django.db.models import Q
+            full_name = f"{user.first_name} {user.last_name}".strip()
             return Interview.objects.filter(
-                application__candidate=user
+                Q(application__candidate=user) | Q(candidate_name__iexact=full_name)
             ).select_related("application", "application__candidate").prefetch_related("panel")
         return Interview.objects.all().select_related("application", "application__candidate").prefetch_related("panel")
 

@@ -323,11 +323,13 @@ export const toBackendInterview = (i, panelIds) => {
   if (backendRec === "—") {
     backendRec = "";
   } else if (backendRec === "Hold") {
-    backendRec = "On Hold";
-  } else if (backendRec === "Hire" || backendRec === "Strong Hire") {
-    backendRec = "Selected";
+    backendRec = "Hold";
+  } else if (backendRec === "Hire") {
+    backendRec = "Hire";
+  } else if (backendRec === "Strong Hire") {
+    backendRec = "Strong Hire";
   } else if (backendRec === "Reject") {
-    backendRec = "Rejected";
+    backendRec = "Reject";
   }
 
   const backendTime = mapTimeToBackend(i.time);
@@ -352,26 +354,38 @@ export const toBackendInterview = (i, panelIds) => {
   };
 };
 
-export const fromBackendOffer = (o) => ({
-  id: o.offer_id || `OFR-${o.id}`,
-  db_id: o.id,
-  candidate: o.candidate_name,
-  role: o.role,
-  ctc: o.ctc,
-  issued: o.issued_date,
-  expiry: o.expiry_date,
-  joining: o.joining_date || "",
-  status: o.status,
-});
+export const fromBackendOffer = (o) => {
+  let uiStatus = o.status;
+  if (o.status === "Sent") uiStatus = "Pending";
+  else if (o.status === "Accepted") uiStatus = "Accept";
+  else if (o.status === "Rejected") uiStatus = "Decline";
+  return {
+    id: o.offer_id,
+    db_id: o.id,
+    candidate: o.candidate_name,
+    role: o.role,
+    ctc: o.ctc,
+    issued: o.issued_date,
+    expiry: o.expiry_date,
+    joining: o.joining_date,
+    status: uiStatus,
+  };
+};
 
-export const toBackendOffer = (o, candidateId) => ({
-  offer_id: o.id,
-  candidate: candidateId || null,
-  candidate_name: o.candidate,
-  role: o.role,
-  ctc: o.ctc,
-  issued_date: o.issued || null,
-  expiry_date: o.expiry || null,
-  joining_date: o.joining || null,
-  status: o.status,
-});
+export const toBackendOffer = (o, candidateId) => {
+  let dbStatus = o.status;
+  if (o.status === "Pending") dbStatus = "Sent";
+  else if (o.status === "Accept") dbStatus = "Accepted";
+  else if (o.status === "Decline") dbStatus = "Rejected";
+  return {
+    offer_id: o.id,
+    candidate: candidateId || null,
+    candidate_name: o.candidate,
+    role: o.role,
+    ctc: o.ctc,
+    issued_date: o.issued || null,
+    expiry_date: o.expiry || null,
+    joining_date: o.joining || null,
+    status: dbStatus,
+  };
+};
