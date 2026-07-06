@@ -220,7 +220,7 @@ class JobPostingViewSet(viewsets.ModelViewSet):
         return JobPostingSerializer
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve", "public"]:
+        if self.action in ["public"]:
             return [AllowAny()]
         return [IsHRAdmin()]
 

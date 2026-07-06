@@ -4,6 +4,7 @@ import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
 import { Card, SectionTitle, Btn, Input, Select, Badge, Mono } from "../components/ui";
 import { QUAL_OPTIONS, TYPE_OPTIONS, VACANCY_OPTIONS } from "../data";
+import { QualificationsMultiSelect } from "./JobRequests";
 
 const labelCss = {
   fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase",
@@ -384,14 +385,10 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
                       <div>
                         <div style={labelCss}>Educational Qualification</div>
                         {isPending ? (
-                          <select
-                            value={sel.qual || ""}
-                            onChange={(e) => setSel({ ...sel, qual: e.target.value })}
-                            style={{ width: "100%", padding: "8px 10px", border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, outline: "none", background: T.surface, color: T.ink }}
-                          >
-                            <option value="">Select…</option>
-                            {QUAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                          </select>
+                          <QualificationsMultiSelect
+                            selected={sel.qual || ""}
+                            onChange={(val) => setSel({ ...sel, qual: val, educationalQualifications: val })}
+                          />
                         ) : (
                           <div style={{ fontSize: 13, color: T.ink }}>{sel.qual || "—"}</div>
                         )}

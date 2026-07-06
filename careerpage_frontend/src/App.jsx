@@ -219,7 +219,7 @@ function AppContent() {
 
   useEffect(() => {
     fetchPublicJobs();
-    const interval = setInterval(fetchPublicJobs, 3000);
+    const interval = setInterval(fetchPublicJobs, 60000);
     const token = localStorage.getItem("access_token");
     if (token) {
       loadCandidateData();

@@ -9,6 +9,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     candidate_phone = serializers.SerializerMethodField(read_only=True)
     posting_title   = serializers.SerializerMethodField(read_only=True)
     resume          = serializers.SerializerMethodField(read_only=True)
+    posting_id      = serializers.ReadOnlyField(source="posting.posting_id")
 
     class Meta:
         model  = JobApplication

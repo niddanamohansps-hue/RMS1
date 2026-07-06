@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { T, font, radius, shadow, transition } from "./theme";
 import { useBreakpoint } from "./hooks";
 import { NAV } from "./data";
-import { api } from "./lib/api";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 
 import Dashboard from "./screens/Dashboard";
@@ -19,23 +18,10 @@ import Auth from "./screens/Auth";
 import ModuleSelector from "./screens/ModuleSelector";
 import OfferManagement from "./screens/OfferManagement";
 
-const loadSession = (key, fallback) => {
-  try {
-    // Try localStorage first (survives tab close), then sessionStorage as fallback
-    const saved = localStorage.getItem(key) || sessionStorage.getItem(key);
-    return saved ? JSON.parse(saved) : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-const saveSession = (key, value) => {
-  try {
-    const serialized = JSON.stringify(value);
-    localStorage.setItem(key, serialized);
-    sessionStorage.setItem(key, serialized);
-  } catch { /* ignore */ }
-};
+import { loadSession, saveSession } from "./utils/translators";
+import useDashboardData from "./hooks/useDashboardData";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
 
 export default function App() {
   return (
@@ -49,39 +35,11 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [roleRequests, _setRoleRequests] = useState([]);
-  const [jobRequests, _setJobRequests] = useState([]);
-  const [approvalRequests, _setApprovalRequests] = useState([]);
-  const [existingRoles, _setExistingRoles] = useState([]);
-  const [jobPostings, _setJobPostings] = useState([]);
-  const [jobApplications, _setJobApplications] = useState([]);
-  const [generalApplications, _setGeneralApplications] = useState([]);
-  const [offers, _setOffers] = useState([]);
-  const [interviews, _setInterviews] = useState([]);
-  const [panelists, _setPanelists] = useState([]);
-  const [selectedPanelists] = useState(["Dr. Roy", "Mr. Patel", "Ms. Nisha"]);
-
-  const loadedOnce = useRef({
-    roles: false,
-    roleRequests: false,
-    jobRequests: false,
-    approvals: false,
-    jobPostings: false,
-    applications: false,
-    offers: false,
-    interviews: false,
-    panelists: false,
-  });
-  
   const [currentUser, setCurrentUser] = useState(() =>
     loadSession("currentUser", null)
   );
   const [selectedModule, setSelectedModule] = useState(() => {
     const saved = loadSession("selectedModule", null);
-    // If no saved module but we're on a dashboard/panelist path, infer it
     const path = window.location.pathname;
     if (!saved && (path.startsWith("/dashboard") || path.startsWith("/panelist"))) {
       return "Recruitment";
@@ -89,540 +47,37 @@ function AppContent() {
     return saved;
   });
 
-  // Translators
-  const fromBackendRole = (r) => ({
-    id: r.role_id,
-    db_id: r.id,
-    dept: r.department,
-    role: r.role,
-    type: r.type,
-    headcount: r.headcount,
-    filled: r.filled,
-    currentFilled: r.filled,
-    status: r.status,
-    currentStatus: r.status,
-    experience: r.experience || "—",
-    salaryRange: r.salary_range || "—",
-  });
+  const {
+    sidebarOpen,
+    setSidebarOpen,
+    isLoading,
+    roleRequests,
+    setRoleRequests,
+    jobRequests,
+    setJobRequests,
+    approvalRequests,
+    setApprovalRequests,
+    existingRoles,
+    setExistingRoles,
+    jobPostings,
+    setJobPostings,
+    jobApplications,
+    setJobApplications,
+    generalApplications,
+    setGeneralApplications,
+    offers,
+    setOffers,
+    interviews,
+    setInterviews,
+    panelists,
+    setPanelists,
+    handleGiveOffer,
+  } = useDashboardData(currentUser, location.pathname, navigate);
 
-  const toBackendRole = (r) => ({
-    role_id: r.id,
-    department: r.dept,
-    role: r.role,
-    type: r.type,
-    headcount: r.headcount,
-    filled: r.filled,
-    status: r.currentStatus || r.status,
-    experience: r.experience !== "—" ? r.experience : "",
-    salary_range: r.salaryRange !== "—" ? r.salaryRange : "",
-  });
+  useEffect(() => { saveSession("currentUser", currentUser); }, [currentUser]);
+  useEffect(() => { saveSession("selectedModule", selectedModule); }, [selectedModule]);
 
-  const fromBackendRoleRequest = (rr) => ({
-    id: rr.request_id,
-    db_id: rr.id,
-    dept: rr.department,
-    role: rr.role,
-    just: rr.justification,
-    salary: rr.salary_range || "",
-    salaryRange: rr.salary_range || "",
-    experience: rr.experience || "",
-    status: rr.status,
-    date: rr.date,
-    history: rr.history || [],
-  });
-
-  // Valid statuses for RoleRequest / JobRequest in the backend
-  const sanitizeRequestStatus = (status) => {
-    const valid = ["Pending", "Approved", "Rejected", "Sent Back", "Cancelled"];
-    return valid.includes(status) ? status : "Pending";
-  };
-
-  const toBackendRoleRequest = (rr) => ({
-    request_id: rr.id,
-    department: rr.dept,
-    role: rr.role,
-    justification: rr.just || "",
-    salary_range: rr.salaryRange || rr.salary || "",
-    experience: rr.experience || "",
-    status: sanitizeRequestStatus(rr.status),
-    submitted_by: currentUser?.name || "HR Admin",
-  });
-
-  const fromBackendJobRequest = (jr) => ({
-    id: jr.request_id,
-    db_id: jr.id,
-    role: jr.role,
-    department: jr.department || "",
-    vacancies: jr.vacancies,
-    vac: jr.vacancies,
-    experience: jr.experience,
-    exp: jr.experience,
-    salary: jr.salary_range,
-    sal: jr.salary_range,
-    type: jr.type,
-    qual: jr.educational_qualifications || "",
-    location: jr.location || "",
-    category: jr.category || "",
-    description: jr.description || "",
-    justification: jr.justification || "",
-    educationalQualifications: jr.educational_qualifications || "",
-    skillsRequired: jr.skills_required || "",
-    status: jr.status,
-    date: jr.created_at ? jr.created_at.substring(0, 10) : "",
-    history: jr.history || [],
-  });
-
-  const toBackendJobRequest = (jr) => ({
-    request_id: jr.id,
-    role: jr.role,
-    department: jr.department || "",
-    vacancies: jr.vacancies || jr.vac || 1,
-    experience: jr.experience || jr.exp || "",
-    salary_range: jr.salary || jr.sal || "",
-    type: jr.type || "Full-time",
-    description: jr.description || "",
-    justification: jr.justification || jr.just || "",
-    location: jr.location || "",
-    category: jr.category || "",
-    educational_qualifications: jr.educationalQualifications || jr.qual || "",
-    skills_required: jr.skillsRequired || "",
-    status: sanitizeRequestStatus(jr.status),
-    submitted_by: currentUser?.name || "HR Admin",
-  });
-
-  const fromBackendApproval = (ap) => ({
-    id: ap.id,
-    db_id: ap.id,
-    type: ap.type,
-    title: ap.title,
-    dept: ap.department,
-    by: ap.submitted_by,
-    requestedBy: ap.submitted_by || "HR Admin",
-    date: ap.date,
-    status: ap.status,
-    // source_request_id = the linked RoleRequest/JobRequest's own request_id
-    sourceId: ap.source_request_id || ap.request_id,
-    source_db_id: ap.source_db_id || null,
-    just: ap.justification || "",
-    vacancies: ap.vacancies || 1,
-    qual: ap.educational_qualifications || "",
-    empType: ap.employment_type || "Full-time",
-    experience: ap.experience || "",
-    salary: ap.salary_range || "",
-    role: ap.title,
-    location: ap.location || "",
-    category: ap.category || "",
-    description: ap.description || "",
-    educationalQualifications: ap.educational_qualifications || "",
-    skillsRequired: ap.skills_required || "",
-    history: (ap.history || []).map(h => ({
-      act: h.action,
-      by: h.acted_by,
-      date: h.date,
-      note: h.note,
-    })),
-  });
-
-  const fromBackendPosting = (jp) => ({
-    id: jp.posting_id,
-    db_id: jp.id,
-    role: jp.role,
-    status: jp.status,
-    posted: jp.posted_date || "—",
-    expiry: jp.expiry_date || "—",
-    channel: jp.channel,
-    apps: jp.application_count || 0,
-    location: jp.location,
-    salary: jp.salary_range,
-    vacancies: jp.vacancies,
-    exp: jp.experience,
-    qual: jp.qualification,
-    type: jp.type,
-    category: jp.category || "",
-    department: jp.department || "",
-    description: jp.description,
-    educationalQualifications: jp.educational_qualifications || "",
-    skillsRequired: jp.skills_required || "",
-    job_request: jp.job_request || null,
-  });
-
-  const toBackendPosting = (jp) => {
-    const sanitizeDate = (dateStr) => {
-      if (!dateStr || dateStr === "—" || dateStr === "30 Days") return null;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-      try {
-        const d = new Date(dateStr);
-        if (!isNaN(d.getTime())) {
-          return d.toISOString().split("T")[0];
-        }
-      } catch {}
-      return new Date().toISOString().split("T")[0];
-    };
-    const sanitizeChannel = (channelStr) => {
-      const valid = ["External", "Internal"];
-      if (channelStr === "Career Page") return "External";
-      return valid.includes(channelStr) ? channelStr : "External";
-    };
-    return {
-      posting_id: jp.id,
-      role: jp.role,
-      status: jp.status,
-      posted_date: sanitizeDate(jp.posted),
-      expiry_date: sanitizeDate(jp.expiry),
-      channel: sanitizeChannel(jp.channel),
-      location: jp.location || "Guwahati, Assam",
-      salary_range: jp.salary || "",
-      vacancies: jp.vacancies || 1,
-      experience: jp.exp || "",
-      qualification: jp.qual || "",
-      type: jp.type || "Full-time",
-      description: jp.description || "",
-      educational_qualifications: jp.educationalQualifications || "",
-      skills_required: jp.skillsRequired || "",
-      job_request: jp.job_request || null,
-      category: jp.category || "",
-      department: jp.department || jp.dept || "",
-    };
-  };
-
-  const fromBackendJobApp = (ja) => ({
-    id: ja.app_id,
-    db_id: ja.id,
-    candidate_id: ja.candidate,
-    name: ja.candidate_name,
-    email: ja.candidate_email,
-    phone: ja.candidate_phone,
-    role: ja.role,
-    posting_db_id: ja.posting || null,
-    jobPostingId: ja.posting ? `JP-${ja.posting}` : "",
-    exp: ja.experience,
-    qualification: ja.qualification,
-    applied: ja.applied_date,
-    status: ja.status,
-    referredBy: ja.referred_by || "None",
-    admin_note: ja.admin_note || "",
-    dept: ja.department || "",
-    resume: ja.resume || "",
-  });
-
-  const fromBackendGeneralApp = (ga) => ({
-    id: ga.app_id,
-    db_id: ga.id,
-    name: ga.candidate_name,
-    email: ga.candidate_email,
-    phone: ga.candidate_phone,
-    preferredRole: ga.preferred_role,
-    preferredDept: ga.preferred_dept,
-    exp: ga.experience,
-    qualification: ga.qualification,
-    applied: ga.applied_date,
-    status: ga.status,
-    admin_note: ga.admin_note || "",
-    resume: ga.resume || "",
-  });
-
-  const mapTimeToBackend = (timeStr) => {
-    if (!timeStr) return "09:00:00";
-    if (/^\d{2}:\d{2}(:\d{2})?$/.test(timeStr)) return timeStr;
-    const match = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
-    if (match) {
-      let hours = parseInt(match[1], 10);
-      const minutes = match[2];
-      const ampm = match[3].toUpperCase();
-      if (ampm === "PM" && hours < 12) hours += 12;
-      if (ampm === "AM" && hours === 12) hours = 0;
-      return `${String(hours).padStart(2, '0')}:${minutes}:00`;
-    }
-    return timeStr;
-  };
-
-  const mapTimeFromBackend = (timeStr) => {
-    if (!timeStr) return "";
-    const match = timeStr.match(/^(\d{2}):(\d{2})/);
-    if (match) {
-      let hours = parseInt(match[1], 10);
-      const minutes = match[2];
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      if (hours === 0) hours = 12;
-      return `${hours}:${minutes} ${ampm}`;
-    }
-    return timeStr;
-  };
-
-  const fromBackendInterview = (i) => {
-    // 1. Map status: "Scheduled" -> "Pending"
-    let frontendStatus = i.status;
-    if (frontendStatus === "Scheduled") {
-      frontendStatus = "Pending";
-    }
-
-    // 2. Map recommendation: "" -> "—", "On Hold" -> "Hold", "Selected" -> "Hire", "Rejected" -> "Reject"
-    let frontendRec = i.recommendation || "—";
-    if (!frontendRec) {
-      frontendRec = "—";
-    } else if (frontendRec === "On Hold") {
-      frontendRec = "Hold";
-    } else if (frontendRec === "Selected") {
-      frontendRec = "Hire";
-    } else if (frontendRec === "Rejected") {
-      frontendRec = "Reject";
-    }
-
-    // 3. Map time format: "09:00:00" -> "9:00 AM"
-    const frontendTime = mapTimeFromBackend(i.time);
-
-    // 4. Map mode: "Offline" -> "In-Person"
-    let frontendMode = i.mode === "Offline" ? "In-Person" : (i.mode || "Online");
-
-    return {
-      id: i.interview_id,
-      db_id: i.id,
-      candidate: i.candidate_name,
-      role: i.role,
-      date: i.date,
-      time: frontendTime,
-      // panel_details has full objects {id, name, email}; panel has IDs only
-      panel: (i.panel_details || i.panel || []).map(p => typeof p === 'object' ? p.name : p),
-      panel_ids: (i.panel || []).map(p => typeof p === 'object' ? p.id : p),
-      score: i.score || "",
-      rec: frontendRec,
-      feedback: i.feedback || "",
-      status: frontendStatus,
-      mode: frontendMode,
-      meetingLink: i.meeting_link,
-      round: i.round,
-    };
-  };
-
-  const toBackendInterview = (i, panelIds) => {
-    // 1. Map status: "Pending" -> "Scheduled"
-    let backendStatus = i.status || "Scheduled";
-    if (backendStatus === "Pending") {
-      backendStatus = "Scheduled";
-    }
-
-    // 2. Map recommendation: "—" -> "", "Hold" -> "On Hold", "Hire"/"Strong Hire" -> "Selected", "Reject" -> "Rejected"
-    let backendRec = i.rec || "";
-    if (backendRec === "—") {
-      backendRec = "";
-    } else if (backendRec === "Hold") {
-      backendRec = "On Hold";
-    } else if (backendRec === "Hire" || backendRec === "Strong Hire") {
-      backendRec = "Selected";
-    } else if (backendRec === "Reject") {
-      backendRec = "Rejected";
-    }
-
-    // 3. Map time format: "9:00 AM" -> "09:00:00"
-    const backendTime = mapTimeToBackend(i.time);
-
-    // 4. Map mode: "In-Person" -> "Offline"
-    let backendMode = i.mode === "In-Person" ? "Offline" : (i.mode || "Online");
-
-    return {
-      interview_id: i.id,
-      candidate_name: i.candidate,
-      role: i.role,
-      date: i.date,
-      time: backendTime,
-      panel: panelIds || [],
-      status: backendStatus,
-      mode: backendMode,
-      meeting_link: i.meetingLink || "",
-      round: i.round || 1,
-      score: (i.score !== null && i.score !== undefined && i.score !== "") ? parseInt(i.score) : null,
-      recommendation: backendRec,
-      feedback: i.feedback || "",
-    };
-  };
-
-  const fromBackendOffer = (o) => ({
-    id: o.offer_id || `OFR-${o.id}`,
-    db_id: o.id,
-    candidate: o.candidate_name,
-    role: o.role,
-    ctc: o.ctc,
-    issued: o.issued_date,
-    expiry: o.expiry_date,
-    joining: o.joining_date || "",
-    status: o.status,
-  });
-
-  const toBackendOffer = (o, candidateId) => ({
-    offer_id: o.id,
-    candidate: candidateId || null,
-    candidate_name: o.candidate,
-    role: o.role,
-    ctc: o.ctc,
-    issued_date: o.issued || null,
-    expiry_date: o.expiry || null,
-    joining_date: o.joining || null,
-    status: o.status,
-  });
-
-  // ── Targeted loaders — each fetches only what changed ──────────────────────
-  const loadRoles = async () => {
-    const d = await api.get("/roles/");
-    _setExistingRoles(d.results ? d.results.map(fromBackendRole) : (Array.isArray(d) ? d.map(fromBackendRole) : []));
-    loadedOnce.current.roles = true;
-  };
-  const loadRoleRequests = async () => {
-    const d = await api.get("/role-requests/");
-    _setRoleRequests(d.results ? d.results.map(fromBackendRoleRequest) : (Array.isArray(d) ? d.map(fromBackendRoleRequest) : []));
-    loadedOnce.current.roleRequests = true;
-  };
-  const loadJobRequests = async () => {
-    const d = await api.get("/job-requests/");
-    _setJobRequests(d.results ? d.results.map(fromBackendJobRequest) : (Array.isArray(d) ? d.map(fromBackendJobRequest) : []));
-    loadedOnce.current.jobRequests = true;
-  };
-  const loadApprovals = async () => {
-    const d = await api.get("/approvals/");
-    _setApprovalRequests(d.results ? d.results.map(fromBackendApproval) : (Array.isArray(d) ? d.map(fromBackendApproval) : []));
-    loadedOnce.current.approvals = true;
-  };
-  const loadJobPostings = async () => {
-    const d = await api.get("/job-postings/");
-    _setJobPostings(d.results ? d.results.map(fromBackendPosting) : (Array.isArray(d) ? d.map(fromBackendPosting) : []));
-    loadedOnce.current.jobPostings = true;
-  };
-  const loadApplications = async () => {
-    const [appsData, genAppsData] = await Promise.all([
-      api.get("/applications/"),
-      api.get("/general-applications/"),
-    ]);
-    _setJobApplications(appsData.results ? appsData.results.map(fromBackendJobApp) : (Array.isArray(appsData) ? appsData.map(fromBackendJobApp) : []));
-    _setGeneralApplications(genAppsData.results ? genAppsData.results.map(fromBackendGeneralApp) : (Array.isArray(genAppsData) ? genAppsData.map(fromBackendGeneralApp) : []));
-    loadedOnce.current.applications = true;
-  };
-  const loadOffers = async () => {
-    const d = await api.get("/offers/");
-    _setOffers(d.results ? d.results.map(fromBackendOffer) : (Array.isArray(d) ? d.map(fromBackendOffer) : []));
-    loadedOnce.current.offers = true;
-  };
-  const loadInterviews = async () => {
-    const d = await api.get("/interviews/");
-    const backendItems = d.results ? d.results.map(fromBackendInterview) : (Array.isArray(d) ? d.map(fromBackendInterview) : []);
-    _setInterviews((prev) => {
-      return backendItems.map((item) => {
-        const existing = prev.find((p) => p.id === item.id);
-        return existing ? { ...item, attendance: existing.attendance } : item;
-      });
-    });
-    loadedOnce.current.interviews = true;
-  };
-  const loadPanelists = async () => {
-    const d = await api.get("/panelists/");
-    _setPanelists(d.results ? d.results : (Array.isArray(d) ? d : []));
-    loadedOnce.current.panelists = true;
-  };
-
-  // Dynamic loader — fetches only the data required for the active screen to optimize dashboard load times
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const path = location.pathname;
-    const loadRequiredData = async (isBackground = false) => {
-      // Determine if we need to show the spinner — only when THIS SCREEN's datasets haven't been loaded once yet.
-      // Approvals are always loaded in the background and never block the spinner.
-      let needsSpinner = false;
-      if (!isBackground) {
-        if (path === "/dashboard") {
-          // Dashboard uses approvals count — but we'll load it non-blocking
-        } else if (path === "/dashboard/existing-roles") {
-          needsSpinner = !loadedOnce.current.roles;
-        } else if (path === "/dashboard/role-requests") {
-          needsSpinner = !loadedOnce.current.roleRequests || !loadedOnce.current.roles;
-        } else if (path === "/dashboard/job-requests") {
-          needsSpinner = !loadedOnce.current.jobRequests || !loadedOnce.current.jobPostings || !loadedOnce.current.roles;
-        } else if (path === "/dashboard/approval-requests") {
-          needsSpinner = !loadedOnce.current.roles || !loadedOnce.current.jobPostings;
-        } else if (path === "/dashboard/job-postings") {
-          needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests || !loadedOnce.current.roles;
-        } else if (path === "/dashboard/applications") {
-          needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.jobRequests;
-        } else if (path === "/dashboard/interview-panel") {
-          needsSpinner = !loadedOnce.current.applications || !loadedOnce.current.jobPostings || !loadedOnce.current.interviews || !loadedOnce.current.panelists;
-        } else if (path === "/dashboard/offer-management") {
-          needsSpinner = !loadedOnce.current.offers || !loadedOnce.current.jobPostings;
-        } else if (path === "/dashboard/onboarding") {
-          needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.offers;
-        } else if (path === "/panelist") {
-          needsSpinner = !loadedOnce.current.interviews || !loadedOnce.current.jobPostings;
-        }
-      }
-
-      if (needsSpinner) {
-        setIsLoading(true);
-      }
-
-      // Always refresh approvals in the background (never blocks the UI)
-      loadApprovals().catch(() => {});
-
-      try {
-        const promises = [];
-
-        if (path === "/dashboard") {
-          // Dashboard — approvals already loading above
-        } else if (path === "/dashboard/existing-roles") {
-          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
-        } else if (path === "/dashboard/role-requests") {
-          if (isBackground || !loadedOnce.current.roleRequests) promises.push(loadRoleRequests());
-          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
-        } else if (path === "/dashboard/job-requests") {
-          if (isBackground || !loadedOnce.current.jobRequests) promises.push(loadJobRequests());
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
-        } else if (path === "/dashboard/approval-requests") {
-          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-        } else if (path === "/dashboard/job-postings") {
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (isBackground || !loadedOnce.current.jobRequests) promises.push(loadJobRequests());
-          if (isBackground || !loadedOnce.current.roles) promises.push(loadRoles());
-        } else if (path === "/dashboard/applications") {
-          if (isBackground || !loadedOnce.current.applications) promises.push(loadApplications());
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (isBackground || !loadedOnce.current.jobRequests) promises.push(loadJobRequests());
-        } else if (path === "/dashboard/interview-panel") {
-          if (isBackground || !loadedOnce.current.applications) promises.push(loadApplications());
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (isBackground || !loadedOnce.current.interviews) promises.push(loadInterviews());
-          if (isBackground || !loadedOnce.current.panelists) promises.push(loadPanelists());
-        } else if (path === "/dashboard/offer-management") {
-          if (isBackground || !loadedOnce.current.offers) promises.push(loadOffers());
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-        } else if (path === "/dashboard/onboarding") {
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-          if (isBackground || !loadedOnce.current.offers) promises.push(loadOffers());
-        } else if (path === "/panelist") {
-          if (isBackground || !loadedOnce.current.interviews) promises.push(loadInterviews());
-          if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
-        }
-
-        if (promises.length > 0) {
-          await Promise.all(promises);
-        }
-      } catch (err) {
-        console.error("Failed to load screen-specific backend data", err);
-      } finally {
-        if (!isBackground) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadRequiredData(false);
-
-    const interval = setInterval(() => {
-      loadRequiredData(true);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [location.pathname, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Protected route redirects — only fire when auth state changes, NOT on every navigation
+  // Protected route redirects
   useEffect(() => {
     if (!currentUser && location.pathname !== "/login") {
       navigate("/login", { replace: true });
@@ -635,7 +90,6 @@ function AppContent() {
     }
   }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Redirect to /modules only when selectedModule is truly missing (not just loading)
   useEffect(() => {
     if (
       currentUser &&
@@ -648,436 +102,6 @@ function AppContent() {
       navigate("/modules", { replace: true });
     }
   }, [currentUser, selectedModule]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // State wrappers for backend persistence
-  const setExistingRoles = async (updateArg) => {
-    const current = existingRoles;
-    let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-    
-    if (next.length < current.length) {
-      const deleted = current.find(c => !next.some(n => n.id === c.id));
-      if (deleted && deleted.db_id) {
-        try {
-          await api.delete(`/roles/${deleted.db_id}/`);
-        } catch (err) { alert("Delete failed: " + err.message); }
-      }
-    } else if (next.length > current.length) {
-      const added = next.find(n => !current.some(c => c.id === n.id));
-      if (added) {
-        try {
-          await api.post("/roles/", toBackendRole(added));
-        } catch (err) { alert("Create failed: " + err.message); }
-      }
-    } else {
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-          try {
-            await api.put(`/roles/${c.db_id}/`, toBackendRole(n));
-          } catch (err) { alert("Update failed: " + err.message); }
-        }
-      }
-    }
-    // Refresh only roles after create/update/delete
-    await loadRoles();
-  };
-
-  const setRoleRequests = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = roleRequests;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      if (next.length > current.length) {
-        const added = next.find(n => !current.some(c => c.id === n.id));
-        if (added) {
-          try {
-            await api.post("/role-requests/", toBackendRoleRequest(added));
-          } catch (err) { alert("Create request failed: " + err.message); }
-        }
-      } else if (next.length < current.length) {
-        const deleted = current.find(c => !next.some(n => n.id === c.id));
-        if (deleted && deleted.db_id) {
-          try {
-            await api.delete(`/role-requests/${deleted.db_id}/`);
-          } catch (err) { alert("Delete failed: " + err.message); }
-        }
-      } else {
-        for (const n of next) {
-          const c = current.find(x => x.id === n.id);
-          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-            try {
-              await api.put(`/role-requests/${c.db_id}/`, toBackendRoleRequest(n));
-            } catch (err) { alert("Update failed: " + err.message); }
-          }
-        }
-      }
-      // After role request changes, also refresh approvals (they may have linked records)
-      await Promise.all([loadRoleRequests(), loadApprovals()]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setJobRequests = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = jobRequests;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      if (next.length > current.length) {
-        const added = next.find(n => !current.some(c => c.id === n.id));
-        if (added) {
-          try {
-            await api.post("/job-requests/", toBackendJobRequest(added));
-          } catch (err) { alert("Create request failed: " + err.message); }
-        }
-      } else if (next.length < current.length) {
-        const deleted = current.find(c => !next.some(n => n.id === c.id));
-        if (deleted && deleted.db_id) {
-          try {
-            await api.delete(`/job-requests/${deleted.db_id}/`);
-          } catch (err) { alert("Delete failed: " + err.message); }
-        }
-      } else {
-        for (const n of next) {
-          const c = current.find(x => x.id === n.id);
-          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-            try {
-              await api.put(`/job-requests/${c.db_id}/`, toBackendJobRequest(n));
-            } catch (err) { alert("Update failed: " + err.message); }
-          }
-        }
-      }
-      await Promise.all([loadJobRequests(), loadApprovals()]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setApprovalRequests = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = approvalRequests;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      // Backend ApprovalActionSerializer expects verb form: "Approve", "Reject", "Send Back"
-      const actionVerbMap = {
-        "Approved":  "Approve",
-        "Rejected":  "Reject",
-        "Sent Back": "Send Back",
-      };
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && c.status !== n.status && c.db_id) {
-          if (n.status === "Pending") {
-            try {
-              await api.patch(`/approvals/${c.db_id}/`, { status: "Pending" });
-            } catch (err) { alert("Resubmit failed: " + err.message); }
-          } else {
-            const actionVerb = actionVerbMap[n.status];
-            if (!actionVerb) continue; // unknown status, skip
-            try {
-              const payload = {
-                action: actionVerb,
-                note: n.comment || "",
-                acted_by: currentUser?.name || "HR Admin",
-              };
-              if (n.type === "Role Request") {
-                payload.department = n.dept || "";
-                payload.role = n.role || "";
-                payload.salary_range = n.salary ? n.salary.replace(/^₹/, "") : "";
-                payload.experience = n.experience || "";
-              } else if (n.type === "Job Request") {
-                payload.department = n.dept || "";
-                payload.role = n.role || "";
-                payload.salary_range = n.salary || "";
-                payload.experience = n.experience || "";
-                payload.location = n.location || "";
-                payload.category = n.category || "";
-                payload.vacancies = n.vacancies || 1;
-                payload.employment_type = n.empType || "";
-                payload.description = n.description || "";
-                payload.educational_qualifications = n.qual || n.educationalQualifications || "";
-                payload.skills_required = n.skillsRequired || "";
-              }
-              await api.post(`/approvals/${c.db_id}/action/`, payload);
-              // Perform side effects on successful approval
-              if (n.status === "Approved") {
-                if (n.type === "Role Request") {
-                  setExistingRoles((prev) => {
-                    const exists = prev.some((x) => x.role === n.role && x.dept === n.dept);
-                    if (exists) return prev;
-                    const cleanedSalary = n.salary ? n.salary.replace(/^₹/, "") : "";
-                    return [...prev, {
-                      id: `ROL-${Date.now()}`, dept: n.dept, role: n.role, type: "Full-time",
-                      headcount: 1, filled: 0, currentFilled: 0, status: "Inactive", currentStatus: "Inactive",
-                      experience: n.experience || "—",
-                      salaryRange: cleanedSalary || "—",
-                    }];
-                  });
-                  setTimeout(() => { navigate("/dashboard/existing-roles"); }, 300);
-                } else if (n.type === "Job Request") {
-                  setJobPostings((prev) => {
-                    const exists = prev.some((p) => p.role === n.role);
-                    if (exists) return prev;
-                    return [...prev, {
-                      id: `POST-${Date.now()}`, role: n.role, channel: "Career Page",
-                      status: "Unpublished", posted: new Date().toLocaleDateString(), expiry: "30 Days", apps: 0,
-                      location: n.location || "",
-                      salary: n.salary || "",
-                      vacancies: n.vacancies || "",
-                      exp: n.experience || "",
-                      qual: n.qual || "",
-                      type: n.empType || "",
-                      description: n.description || "",
-                      educationalQualifications: n.educationalQualifications || "",
-                      skillsRequired: n.skillsRequired || "",
-                      job_request: n.source_db_id,
-                      category: n.category || "",
-                      department: n.dept || "",
-                    }];
-                  });
-                  setTimeout(() => { navigate("/dashboard/applications"); }, 300);
-                }
-              }
-            } catch (err) { alert("Action failed: " + err.message); }
-          }
-        }
-      }
-      // Approval action affects approvals + the linked source request
-      await Promise.all([loadApprovals(), loadRoleRequests(), loadJobRequests()]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setJobPostings = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = jobPostings;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      
-      if (next.length > current.length) {
-        const added = next.find(n => !current.some(c => c.id === n.id));
-        if (added) {
-          try {
-            await api.post("/job-postings/", toBackendPosting(added));
-          } catch (err) { alert("Create posting failed: " + err.message); }
-        }
-      } else if (next.length < current.length) {
-        const deleted = current.find(c => !next.some(n => n.id === c.id));
-        if (deleted && deleted.db_id) {
-          try {
-            await api.delete(`/job-postings/${deleted.db_id}/`);
-          } catch (err) { alert("Delete failed: " + err.message); }
-        }
-      } else {
-        for (const n of next) {
-          const c = current.find(x => x.id === n.id);
-          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-            try {
-              if (c.status !== n.status) {
-                if (n.status === "Published") {
-                  await api.post(`/job-postings/${c.db_id}/publish/`);
-                } else if (n.status === "Unpublished") {
-                  await api.post(`/job-postings/${c.db_id}/unpublish/`);
-                } else {
-                  await api.put(`/job-postings/${c.db_id}/`, toBackendPosting(n));
-                }
-              } else {
-                await api.put(`/job-postings/${c.db_id}/`, toBackendPosting(n));
-              }
-            } catch (err) { alert("Update posting failed: " + err.message); }
-          }
-        }
-      }
-      await loadJobPostings();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setJobApplications = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = jobApplications;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-          try {
-            if (c.status !== n.status || c.admin_note !== n.admin_note) {
-              await api.patch(`/applications/${c.db_id}/update_status/`, {
-                status: n.status,
-                admin_note: n.admin_note || "",
-              });
-            }
-          } catch (err) { alert("Update status failed: " + err.message); }
-        }
-      }
-      await loadApplications();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setGeneralApplications = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = generalApplications;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      for (const n of next) {
-        const c = current.find(x => x.id === n.id);
-        if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-          try {
-            await api.patch(`/general-applications/${c.db_id}/`, {
-              status: n.status,
-              admin_note: n.admin_note || "",
-            });
-          } catch (err) { alert("Update failed: " + err.message); }
-        }
-      }
-      await loadApplications();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setInterviews = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = interviews;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      _setInterviews(next);
-
-      if (next.length > current.length) {
-        const added = next.find(n => !current.some(c => c.id === n.id));
-        if (added) {
-          try {
-            const panelIds = (added.panel || []).map(name => {
-              const p = panelists.find(px => px.name === name);
-              return p ? p.id : null;
-            }).filter(id => id !== null);
-
-            const matchedApp = jobApplications.find(a => a.name === added.candidate);
-            const payload = toBackendInterview(added, panelIds);
-            if (matchedApp && matchedApp.db_id) {
-              payload.application = matchedApp.db_id;
-            }
-            await api.post("/interviews/", payload);
-          } catch (err) { alert("Schedule interview failed: " + err.message); }
-        }
-      } else if (next.length < current.length) {
-        const deleted = current.find(c => !next.some(n => n.id === c.id));
-        if (deleted && deleted.db_id) {
-          try {
-            await api.delete(`/interviews/${deleted.db_id}/`);
-          } catch (err) { alert("Delete failed: " + err.message); }
-        }
-      } else {
-        for (const n of next) {
-          const c = current.find(x => x.id === n.id);
-          if (c && c.db_id) {
-            const cClean = { ...c, attendance: undefined };
-            const nClean = { ...n, attendance: undefined };
-            if (JSON.stringify(cClean) !== JSON.stringify(nClean)) {
-              try {
-                const panelIds = (n.panel || []).map(name => {
-                  const p = panelists.find(px => px.name === name);
-                  return p ? p.id : null;
-                }).filter(id => id !== null);
-                await api.put(`/interviews/${c.db_id}/`, toBackendInterview(n, panelIds));
-              } catch (err) { alert("Update failed: " + err.message); }
-            }
-          }
-        }
-      }
-      await loadInterviews();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setOffers = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = offers;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      
-      if (next.length > current.length) {
-        const added = next.find(n => !current.some(c => c.id === n.id));
-        if (added) {
-          try {
-            const matchedApp = jobApplications.find(a => a.name === added.candidate);
-            const candidateId = matchedApp ? matchedApp.candidate_id : null;
-            if (candidateId) {
-              await api.post("/offers/", toBackendOffer(added, candidateId));
-            } else {
-              console.error("Could not find candidate application for offer creation");
-            }
-          } catch (err) { alert("Issue offer failed: " + err.message); }
-        }
-      } else if (next.length < current.length) {
-        const deleted = current.find(c => !next.some(n => n.id === c.id));
-        if (deleted && deleted.db_id) {
-          try {
-            await api.delete(`/offers/${deleted.db_id}/`);
-          } catch (err) { alert("Delete failed: " + err.message); }
-        }
-      } else {
-        for (const n of next) {
-          const c = current.find(x => x.id === n.id);
-          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.db_id) {
-            try {
-              const matchedApp = jobApplications.find(a => a.name === n.candidate);
-              const candidateId = matchedApp ? matchedApp.candidate_id : null;
-              await api.put(`/offers/${c.db_id}/`, toBackendOffer(n, candidateId));
-            } catch (err) { alert("Update failed: " + err.message); }
-          }
-        }
-      }
-      await loadOffers();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setPanelists = async (updateArg) => {
-    setIsLoading(true);
-    try {
-      const current = panelists;
-      let next = typeof updateArg === "function" ? updateArg(current) : updateArg;
-      
-      if (next.length > current.length) {
-        const added = next.find(n => !current.some(c => c.email === n.email));
-        if (added) {
-          try {
-            await api.post("/panelists/", added);
-          } catch (err) { alert("Add panelist failed: " + err.message); }
-        }
-      } else if (next.length < current.length) {
-        const deleted = current.find(c => !next.some(n => n.email === c.email));
-        if (deleted && deleted.id) {
-          try {
-            await api.delete(`/panelists/${deleted.id}/`);
-          } catch (err) { alert("Delete failed: " + err.message); }
-        }
-      } else {
-        for (const n of next) {
-          const c = current.find(x => x.email === n.email);
-          if (c && JSON.stringify(c) !== JSON.stringify(n) && c.id) {
-            try {
-              await api.put(`/panelists/${c.id}/`, n);
-            } catch (err) { alert("Update failed: " + err.message); }
-          }
-        }
-      }
-      await loadPanelists();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => { saveSession("currentUser", currentUser); }, [currentUser]);
-  useEffect(() => { saveSession("selectedModule", selectedModule); }, [selectedModule]);
 
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
@@ -1101,199 +125,6 @@ function AppContent() {
       ? "panelist"
       : "";
   const pageLabel = NAV.find((n) => n.id === activeId)?.label || "";
-
-  const handleGiveOffer = (candidate) => {
-    const exists = offers.some((o) => o.candidate === candidate.name && o.role === candidate.role);
-    if (!exists) {
-      const newOffer = {
-        id: `OFR-${Date.now()}`,
-        candidate: candidate.name,
-        role: candidate.role,
-        ctc: "",
-        issued: "",
-        expiry: "",
-        joining: "",
-        status: "Draft",
-      };
-      setOffers((prev) => [...prev, newOffer]);
-    }
-    navigate("/dashboard/offer-management");
-  };
-
-  const SidebarContent = () => (
-    <>
-      {/* Navigation */}
-      <nav style={{ flex: 1, overflowY: "auto", padding: "12px 10px", paddingTop: "20px" }}>
-        {NAV.filter((item) => {
-          if (currentUser?.role !== "admin") {
-            return item.id === "panelist";
-          }
-          return true;
-        }).map((item, idx) => {
-          const isActive = activeId === item.id;
-          const itemPending = item.id === "approval-requests" ? pendingCount : 0;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleNav(item.id)}
-              className={`sidebar-item ${isActive ? "active" : ""}`}
-              style={{
-                display: "flex", alignItems: "center", gap: 11, width: "100%",
-                padding: "10px 14px", borderRadius: radius.md + 1, border: "none",
-                background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
-                color: "#fff",
-                fontWeight: isActive ? font.bold : font.medium,
-                fontSize: font.base,
-                fontFamily: font.body,
-                cursor: "pointer", textAlign: "left",
-                marginBottom: 2,
-                letterSpacing: "-0.01em",
-                animationDelay: `${idx * 0.03}s`,
-              }}
-            >
-              <span style={{
-                fontSize: font.md,
-                opacity: isActive ? 1 : 0.7,
-                transition: transition.fast,
-                transform: isActive ? "scale(1.15)" : "scale(1)",
-                display: "inline-block",
-              }}>
-                {item.icon}
-              </span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-
-              {itemPending > 0 && (
-                <span
-                  style={{
-                    background: T.accent,
-                    color: T.primaryDark,
-                    fontSize: 10,
-                    fontWeight: font.black,
-                    padding: "2px 6px",
-                    borderRadius: radius.full,
-                    minWidth: 16,
-                    textAlign: "center",
-                  }}
-                  className="badge-pulse"
-                >
-                  {itemPending}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* User profile & logout footer */}
-      <div
-        style={{
-          padding: "16px",
-          borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-          background: "rgba(0, 0, 0, 0.12)",
-        }}
-      >
-        <div
-          style={{
-            background: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: radius.lg,
-            padding: "12px",
-            boxShadow: shadow.sm,
-          }}
-        >
-          {/* User Details */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: radius.full,
-                background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark || T.accent})`,
-                color: T.primaryDark,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: font.bold,
-                fontSize: font.base,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                flexShrink: 0,
-              }}
-            >
-              {currentUser?.name ? currentUser.name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2) : "HR"}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: font.base, fontWeight: font.bold, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {currentUser?.name || "HR Admin"}
-              </div>
-              <div style={{ fontSize: font.xs, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {currentUser?.email || "hr@southpoint.edu"}
-              </div>
-            </div>
-          </div>
-
-          {/* Log Out Button */}
-          <button
-            onClick={() => {
-              setCurrentUser(null);
-              setSelectedModule(null);
-              localStorage.removeItem("access_token");
-              localStorage.removeItem("refresh_token");
-              localStorage.removeItem("currentUser");
-              localStorage.removeItem("selectedModule");
-              sessionStorage.removeItem("currentUser");
-              sessionStorage.removeItem("selectedModule");
-              navigate("/login");
-            }}
-            title="Log Out"
-            style={{
-              width: "100%",
-              background: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              borderRadius: radius.md,
-              padding: "8px 12px",
-              cursor: "pointer",
-              color: "#ff9e9e",
-              fontSize: font.xs + 1,
-              fontWeight: font.semibold,
-              fontFamily: font.body,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              transition: transition.fast,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(220, 38, 38, 0.18)";
-              e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.35)";
-              e.currentTarget.style.color = "#ffb3b3";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
-              e.currentTarget.style.color = "#ff9e9e";
-            }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            Log Out
-          </button>
-        </div>
-      </div>
-    </>
-  );
 
   if (!currentUser) {
     return (
@@ -1328,127 +159,16 @@ function AppContent() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: T.canvas, fontFamily: font.body, overflow: "hidden" }}>
       {/* Top bar (Header) - Full Width at very top */}
-      <div
-        style={{
-          background: "rgba(114, 16, 42, 0.85)",
-          backdropFilter: "blur(16px) saturate(180%)",
-          WebkitBackdropFilter: "blur(16px) saturate(180%)",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-          padding: "0 24px",
-          height: 60,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexShrink: 0,
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-          position: "relative",
-          zIndex: 10,
-        }}
-      >
-        {/* Left Section: hamburger + school branding */}
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16 }}>
-          {isCompact && (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="btn-hover"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1.5px solid rgba(250, 248, 245, 0.35)",
-                borderRadius: radius.md,
-                cursor: "pointer", padding: "6px 10px",
-                color: "#fff", fontSize: 16, lineHeight: 1,
-                transition: transition.fast,
-              }}
-            >
-              ☰
-            </button>
-          )}
-          <img
-            src="/images-removebg-preview.png"
-            alt="South Point School Logo"
-            style={{ height: isMobile ? 36 : 44, width: "auto", objectFit: "contain", flexShrink: 0 }}
-          />
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <div style={{
-              fontSize: isMobile ? font.base : font.lg,
-              fontWeight: font.extrabold,
-              fontFamily: font.heading,
-              color: T.accent,
-              letterSpacing: "-0.01em", lineHeight: 1.2,
-            }}>
-              South Point School
-            </div>
-            <div style={{
-              fontSize: isMobile ? 9 : font.xs,
-              fontWeight: font.semibold,
-              fontFamily: font.body,
-              color: "rgba(250, 248, 245, 0.7)",
-              textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.3, marginTop: 1,
-            }}>
-              Guwahati, Assam
-            </div>
-          </div>
-        </div>
-
-        {/* Right Section: page label + buttons */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {!isMobile && (
-            <span style={{
-              fontSize: font.base + 1, fontWeight: font.bold, fontFamily: font.body,
-              color: "rgba(250, 248, 245, 0.9)", letterSpacing: "-0.01em", marginRight: 8,
-            }}>
-              {pageLabel}
-            </span>
-          )}
-          {pendingCount > 0 && (
-            <button
-              onClick={() => handleNav("approval-requests")}
-              className="btn-hover badge-pulse"
-              style={{
-                background: T.accent,
-                border: "none",
-                borderRadius: radius.full, padding: "5px 14px",
-                fontSize: font.sm, fontWeight: font.bold,
-                fontFamily: font.body,
-                color: "#1a0a0a",
-                cursor: "pointer",
-                transition: transition.fast,
-              }}
-            >
-              {pendingCount} Pending
-            </button>
-          )}
-          <button
-            onClick={() => {
-              setSelectedModule(null);
-              navigate("/modules");
-            }}
-            className="btn-hover"
-            style={{
-              background: "transparent",
-              border: "1.5px solid rgba(250, 248, 245, 0.4)",
-              borderRadius: radius.md,
-              padding: "6px 14px",
-              cursor: "pointer",
-              color: "#faf8f5",
-              fontWeight: 700,
-              fontSize: 12,
-              transition: transition.fast,
-              fontFamily: font.body,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "#fff";
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "rgba(250, 248, 245, 0.4)";
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            Back to Modules
-          </button>
-        </div>
-      </div>
+      <Header
+        isMobile={isMobile}
+        isCompact={isCompact}
+        setSidebarOpen={setSidebarOpen}
+        pageLabel={pageLabel}
+        pendingCount={pendingCount}
+        handleNav={handleNav}
+        setSelectedModule={setSelectedModule}
+        navigate={navigate}
+      />
 
       {/* Main Body container below the header */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}>
@@ -1460,7 +180,15 @@ function AppContent() {
             display: "flex", flexDirection: "column", flexShrink: 0,
             boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
           }}>
-            <SidebarContent />
+            <Sidebar
+              currentUser={currentUser}
+              activeId={activeId}
+              pendingCount={pendingCount}
+              handleNav={handleNav}
+              setCurrentUser={setCurrentUser}
+              setSelectedModule={setSelectedModule}
+              navigate={navigate}
+            />
           </div>
         )}
 
@@ -1481,7 +209,15 @@ function AppContent() {
                 boxShadow: "8px 0 32px rgba(0,0,0,0.25)",
               }}
             >
-              <SidebarContent />
+              <Sidebar
+                currentUser={currentUser}
+                activeId={activeId}
+                pendingCount={pendingCount}
+                handleNav={handleNav}
+                setCurrentUser={setCurrentUser}
+                setSelectedModule={setSelectedModule}
+                navigate={navigate}
+              />
             </div>
           </>
         )}
@@ -1509,10 +245,7 @@ function AppContent() {
             }}>
               {/* Spinning Ring and Pulsing Logo Container */}
               <div style={{ position: "relative", width: 84, height: 84, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {/* Outer gradient spinning ring */}
                 <div className="loader-glow-ring" style={{ position: "absolute" }} />
-                
-                {/* Inner pulsing logo */}
                 <div className="loader-logo-pulse" style={{
                   width: 46, height: 46,
                   borderRadius: "50%",
@@ -1530,7 +263,6 @@ function AppContent() {
                 </div>
               </div>
               
-              {/* Text indicator */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                 <div style={{
                   fontSize: 14,

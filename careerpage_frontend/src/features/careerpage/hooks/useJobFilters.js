@@ -39,7 +39,7 @@ export function useJobFilters() {
       }
     };
     fetchJobs();
-    const interval = setInterval(fetchJobs, 3000);
+    const interval = setInterval(fetchJobs, 60000);
     return () => clearInterval(interval);
   }, []);
 

@@ -262,14 +262,29 @@ class JobPostingSerializer(serializers.ModelSerializer):
             ret["educational_qualifications"] = instance.job_request.educational_qualifications or ""
         if not ret.get("skills_required") and instance.job_request:
             ret["skills_required"] = instance.job_request.skills_required or ""
+        
+        matching_role = None
+        need_matching_role = not ret.get("experience") or not ret.get("department")
+        if need_matching_role:
+            if "matching_roles" not in self.context:
+                from jobs.models import ExistingRole
+                self.context["matching_roles"] = {r.role: r for r in ExistingRole.objects.all()}
+            matching_role = self.context["matching_roles"].get(instance.role)
+
         if not ret.get("experience"):
             if instance.job_request and instance.job_request.experience:
                 ret["experience"] = instance.job_request.experience
-            else:
-                from jobs.models import ExistingRole
-                matching_role = ExistingRole.objects.filter(role=instance.role).first()
-                if matching_role and matching_role.experience:
-                    ret["experience"] = matching_role.experience
+            elif matching_role and matching_role.experience:
+                ret["experience"] = matching_role.experience
+
+        if not ret.get("department"):
+            if instance.job_request and instance.job_request.department:
+                ret["department"] = instance.job_request.department
+            elif matching_role and matching_role.department:
+                ret["department"] = matching_role.department
+
+        if not ret.get("category") and instance.job_request and instance.job_request.category:
+            ret["category"] = instance.job_request.category.name
         return ret
 
     def create(self, validated_data):
@@ -300,12 +315,27 @@ class JobPostingPublicSerializer(serializers.ModelSerializer):
             ret["educational_qualifications"] = instance.job_request.educational_qualifications or ""
         if not ret.get("skills_required") and instance.job_request:
             ret["skills_required"] = instance.job_request.skills_required or ""
+        
+        matching_role = None
+        need_matching_role = not ret.get("experience") or not ret.get("department")
+        if need_matching_role:
+            if "matching_roles" not in self.context:
+                from jobs.models import ExistingRole
+                self.context["matching_roles"] = {r.role: r for r in ExistingRole.objects.all()}
+            matching_role = self.context["matching_roles"].get(instance.role)
+
         if not ret.get("experience"):
             if instance.job_request and instance.job_request.experience:
                 ret["experience"] = instance.job_request.experience
-            else:
-                from jobs.models import ExistingRole
-                matching_role = ExistingRole.objects.filter(role=instance.role).first()
-                if matching_role and matching_role.experience:
-                    ret["experience"] = matching_role.experience
+            elif matching_role and matching_role.experience:
+                ret["experience"] = matching_role.experience
+
+        if not ret.get("department"):
+            if instance.job_request and instance.job_request.department:
+                ret["department"] = instance.job_request.department
+            elif matching_role and matching_role.department:
+                ret["department"] = matching_role.department
+
+        if not ret.get("category") and instance.job_request and instance.job_request.category:
+            ret["category"] = instance.job_request.category.name
         return ret

@@ -5,7 +5,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from users.permissions import IsHRAdmin
+# pyrefly: ignore [missing-import]
 from .models import Panelist, Interview
+# pyrefly: ignore [missing-import]
 from .serializers import PanelistSerializer, InterviewSerializer, InterviewScoreSerializer
 
 class PanelistViewSet(viewsets.ModelViewSet):
@@ -50,6 +52,17 @@ class InterviewViewSet(viewsets.ModelViewSet):
                 title=f"Interview Update — {interview.role}",
                 message=f"Your Round {interview.round} interview status is now '{interview.status}'.",
             )
+        return Response(InterviewSerializer(interview).data)
+
+    @action(detail=True, methods=["post"])
+    def remind(self, request, pk=None):
+        interview = self.get_object()
+        from django.utils import timezone
+        from notifications.tasks import send_interview_reminder_task
+        send_interview_reminder_task.delay(interview.id)
+        
+        interview.reminder_sent_at = timezone.now()
+        interview.save()
         return Response(InterviewSerializer(interview).data)
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])

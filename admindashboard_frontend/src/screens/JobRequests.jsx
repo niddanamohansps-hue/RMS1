@@ -154,7 +154,7 @@ function SkillsMultiSelect({ selected = "", onChange }) {
   );
 }
 
-function QualificationsMultiSelect({ selected = "", onChange }) {
+export function QualificationsMultiSelect({ selected = "", onChange }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -183,9 +183,10 @@ function QualificationsMultiSelect({ selected = "", onChange }) {
       <div
         onClick={() => setOpen(!open)}
         style={{
-          border: `1.5px solid ${T.border}`,
+          border: `1.5px solid ${open ? T.accent : T.border}`,
+          boxShadow: open ? "0 0 0 3px rgba(201, 168, 76, 0.12)" : "none",
           borderRadius: 8,
-          padding: "9px 13px",
+          padding: "6px 12px",
           fontSize: 13,
           background: "#fff",
           minHeight: 38,
@@ -197,6 +198,7 @@ function QualificationsMultiSelect({ selected = "", onChange }) {
           boxSizing: "border-box",
           paddingRight: 32,
           position: "relative",
+          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
         }}
       >
         {selectedArray.length === 0 && (
@@ -207,22 +209,34 @@ function QualificationsMultiSelect({ selected = "", onChange }) {
             key={s}
             onClick={(e) => { e.stopPropagation(); toggle(s); }}
             style={{
-              background: "rgba(59, 130, 246, 0.1)",
-              color: "#2563EB",
+              background: T.primaryLight,
+              color: T.primary,
+              border: "1px solid #E8D0D8",
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 600,
               padding: "2px 8px",
               borderRadius: 6,
               display: "inline-flex",
               alignItems: "center",
               gap: 4,
+              transition: "background 0.2s, border-color 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = T.primaryPale;
+              e.currentTarget.style.borderColor = "#DDBBC5";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = T.primaryLight;
+              e.currentTarget.style.borderColor = "#E8D0D8";
             }}
           >
-            {s} <span style={{ fontSize: 13, lineHeight: 1 }}>&times;</span>
+            {s} <span style={{ fontSize: 13, lineHeight: 1, fontWeight: "normal" }}>&times;</span>
           </span>
         ))}
-        <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: T.inkFaint }}>
-          ▼
+        <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", width: 12, height: 12, display: "flex", alignItems: "center", pointerEvents: "none" }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12">
+            <path fill="#6B6B6B" d="M6 8L1 3h10z" />
+          </svg>
         </span>
       </div>
       {open && (
@@ -239,7 +253,7 @@ function QualificationsMultiSelect({ selected = "", onChange }) {
             maxHeight: 200,
             overflowY: "auto",
             zIndex: 100,
-            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
           }}
         >
           {QUAL_OPTIONS.map((optObj) => {
@@ -253,8 +267,8 @@ function QualificationsMultiSelect({ selected = "", onChange }) {
                   padding: "8px 12px",
                   fontSize: 13,
                   cursor: "pointer",
-                  background: isSel ? "rgba(59, 130, 246, 0.1)" : "transparent",
-                  color: isSel ? "#2563EB" : T.ink,
+                  background: isSel ? T.primaryLight : "transparent",
+                  color: isSel ? T.primary : T.ink,
                   fontWeight: isSel ? 700 : 400,
                   display: "flex",
                   justifyContent: "space-between",
@@ -265,7 +279,7 @@ function QualificationsMultiSelect({ selected = "", onChange }) {
                 onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = "transparent"; }}
               >
                 <span>{opt}</span>
-                {isSel && <span style={{ color: "#2563EB", fontWeight: "bold" }}>✓</span>}
+                {isSel && <span style={{ color: T.primary, fontWeight: "bold" }}>✓</span>}
               </div>
             );
           })}
@@ -428,6 +442,8 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
           educationalQualifications: selectedRequest.educationalQualifications || "",
           skillsRequired: selectedRequest.skillsRequired || "",
           job_request: selectedRequest.db_id,
+          department: selectedRequest.department || selectedRequest.dept || "",
+          category: selectedRequest.category || "",
         },
       ];
     });

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { api } from "../lib/api";
 import { T, font } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
@@ -2539,17 +2540,23 @@ export default function InterviewPanel({
           )}
 
           <button
-            onClick={() => {
-              // Write reminderSentAt into the matching interview record
-              if (setInterviews && reminderCandidate) {
-                const sentAt = new Date().toISOString();
-                setInterviews((prev) =>
-                  prev.map((i) =>
-                    i.candidate === reminderCandidate.name && i.role === reminderCandidate.role
-                      ? { ...i, reminderSentAt: sentAt }
-                      : i
-                  )
-                );
+            onClick={async () => {
+              if (reminderCandidate?.interview?.db_id) {
+                try {
+                  const res = await api.post(`/interviews/${reminderCandidate.interview.db_id}/remind/`);
+                  const sentAt = res.reminder_sent_at || new Date().toISOString();
+                  if (setInterviews) {
+                    setInterviews((prev) =>
+                      prev.map((i) =>
+                        i.db_id === reminderCandidate.interview.db_id
+                          ? { ...i, reminderSentAt: sentAt }
+                          : i
+                      )
+                    );
+                  }
+                } catch (err) {
+                  alert("Failed to send reminder: " + err.message);
+                }
               }
               setReminderCandidate(null);
             }}

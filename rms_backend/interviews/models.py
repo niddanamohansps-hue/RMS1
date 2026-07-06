@@ -53,6 +53,7 @@ class Interview(models.Model):
     mode           = models.CharField(max_length=20, choices=MODE_CHOICES, default="Online")
     meeting_link   = models.URLField(blank=True)
     round          = models.PositiveIntegerField(default=1)
+    reminder_sent_at = models.DateTimeField(null=True, blank=True)
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
 
