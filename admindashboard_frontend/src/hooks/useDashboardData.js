@@ -648,6 +648,13 @@ export default function useDashboardData(currentUser, pathname, navigate) {
     navigate("/dashboard/offer-management");
   };
 
+  const handleDeclineOffer = (candidate) => {
+    const existingOffer = offers.find((o) => o.candidate === candidate.name && o.role === candidate.role);
+    if (existingOffer) {
+      setOffers((prev) => prev.filter((o) => o.id !== existingOffer.id));
+    }
+  };
+
   return {
     sidebarOpen,
     setSidebarOpen,
@@ -674,5 +681,6 @@ export default function useDashboardData(currentUser, pathname, navigate) {
     panelists,
     setPanelists,
     handleGiveOffer,
+    handleDeclineOffer,
   };
 }

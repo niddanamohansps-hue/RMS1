@@ -56,6 +56,8 @@ export default function InterviewPanel({
   panelists = [],
   setPanelists,
   onGiveOffer,
+  offers = [],
+  onDeclineOffer,
 }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
@@ -384,6 +386,12 @@ export default function InterviewPanel({
     }
   };
 
+  const handleDeclineOffer = (c) => {
+    if (onDeclineOffer) {
+      onDeclineOffer(c);
+    }
+  };
+
   const handleOpenSchedule = (candidate) => {
     setSchedulingCandidate(candidate);
     const inv = candidate.interview;
@@ -606,7 +614,9 @@ export default function InterviewPanel({
             ? T.accentLight
             : variant === "reschedule"
               ? "#FFF3E0"
-              : T.skyLight,
+              : variant === "danger"
+                ? T.redLight
+                : T.skyLight,
     color: disabled
       ? T.inkFaint
       : variant === "primary"
@@ -617,7 +627,9 @@ export default function InterviewPanel({
             ? T.accentDark
             : variant === "reschedule"
               ? "#E65100"
-              : T.sky,
+              : variant === "danger"
+                ? T.red
+                : T.sky,
     borderRadius: 8,
     padding: "5px 8px",
     cursor: disabled ? "not-allowed" : "pointer",
@@ -1372,18 +1384,36 @@ export default function InterviewPanel({
                             }}
                           >🔔 Reminder</button>
                         )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
-                          disabled={isPreviousRound}
-                          style={{
-                            width: "100%", padding: "10px 0", borderRadius: 10,
-                            background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(52, 211, 153, 0.2)",
-                            color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#34D399",
-                            border: isPreviousRound ? "none" : "1px solid rgba(52, 211, 153, 0.3)",
-                            fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
-                            opacity: isPreviousRound ? 0.6 : 1,
-                          }}
-                        >📜 Give Offer</button>
+                        {(() => {
+                          const hasOffer = (offers || []).some(o => o.candidate === c.name && o.role === c.role);
+                          return hasOffer ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDeclineOffer(c); }}
+                              disabled={isPreviousRound}
+                              style={{
+                                width: "100%", padding: "10px 0", borderRadius: 10,
+                                background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(239, 68, 68, 0.15)",
+                                color: isPreviousRound ? "rgba(255,255,255,0.3)" : T.red,
+                                border: isPreviousRound ? "none" : `1px solid rgba(239, 68, 68, 0.25)`,
+                                fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
+                                opacity: isPreviousRound ? 0.6 : 1,
+                              }}
+                            >❌ Decline Offer</button>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleGiveOffer(c); }}
+                              disabled={isPreviousRound}
+                              style={{
+                                width: "100%", padding: "10px 0", borderRadius: 10,
+                                background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(52, 211, 153, 0.2)",
+                                color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#34D399",
+                                border: isPreviousRound ? "none" : "1px solid rgba(52, 211, 153, 0.3)",
+                                fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
+                                opacity: isPreviousRound ? 0.6 : 1,
+                              }}
+                            >📜 Give Offer</button>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
@@ -1731,14 +1761,28 @@ export default function InterviewPanel({
                           ) : (
                             <div style={{ width: 90 }} />
                           )}
-                          <button
-                            onClick={() => handleGiveOffer(c)}
-                            disabled={isPreviousRound}
-                            style={{ ...actionBtnStyle("success", isPreviousRound), width: "100%", textAlign: "center" }}
-                            className={isPreviousRound ? "" : "btn-action-hover"}
-                          >
-                            📜 Offer
-                          </button>
+                          {(() => {
+                            const hasOffer = (offers || []).some(o => o.candidate === c.name && o.role === c.role);
+                            return hasOffer ? (
+                              <button
+                                onClick={() => handleDeclineOffer(c)}
+                                disabled={isPreviousRound}
+                                style={{ ...actionBtnStyle("danger", isPreviousRound), width: "100%", textAlign: "center" }}
+                                className={isPreviousRound ? "" : "btn-action-hover"}
+                              >
+                                ❌ Decline
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleGiveOffer(c)}
+                                disabled={isPreviousRound}
+                                style={{ ...actionBtnStyle("success", isPreviousRound), width: "100%", textAlign: "center" }}
+                                className={isPreviousRound ? "" : "btn-action-hover"}
+                              >
+                                📜 Offer
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>

@@ -72,6 +72,7 @@ function AppContent() {
     panelists,
     setPanelists,
     handleGiveOffer,
+    handleDeclineOffer,
   } = useDashboardData(currentUser, location.pathname, navigate);
 
   useEffect(() => { saveSession("currentUser", currentUser); }, [currentUser]);
@@ -355,6 +356,8 @@ function AppContent() {
                 panelists={panelists}
                 setPanelists={setPanelists}
                 onGiveOffer={handleGiveOffer}
+                onDeclineOffer={handleDeclineOffer}
+                offers={offers}
               />
             } />
             <Route path="/dashboard/offer-management" element={
