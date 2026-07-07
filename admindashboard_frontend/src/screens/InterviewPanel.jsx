@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { api } from "../lib/api";
 import { T, font } from "../theme";
 import { statusVariant } from "../theme";
@@ -73,9 +73,18 @@ export default function InterviewPanel({
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [schedulingCandidate, setSchedulingCandidate] = useState(null);
   const [assigningCandidate, setAssigningCandidate] = useState(null);
+  const [tempPanelists, setTempPanelists] = useState([]);
   const [selectedAppDetail, setSelectedAppDetail] = useState(null);
   const [showAddPanelistModal, setShowAddPanelistModal] = useState(false);
   const [reminderCandidate, setReminderCandidate] = useState(null);
+
+  useEffect(() => {
+    if (assigningCandidate) {
+      setTempPanelists(assigningCandidate.interview?.panel || []);
+    } else {
+      setTempPanelists([]);
+    }
+  }, [assigningCandidate]);
 
   // Form validations for Add Panelist
   const [panelistErrors, setPanelistErrors] = useState({ name: "", email: "", phone: "" });
@@ -448,6 +457,14 @@ export default function InterviewPanel({
   };
 
   const handleTogglePanelistForCandidate = (panelistName) => {
+    setTempPanelists((prev) =>
+      prev.includes(panelistName)
+        ? prev.filter((p) => p !== panelistName)
+        : [...prev, panelistName]
+    );
+  };
+
+  const handleSavePanelists = () => {
     if (!assigningCandidate || !setInterviews) return;
     setInterviews((prev) => {
       const exists = prev.some(
@@ -464,11 +481,7 @@ export default function InterviewPanel({
             i.role === assigningCandidate.role &&
             i.round === assigningCandidate.activeRound
           ) {
-            const panel = i.panel || [];
-            const newPanel = panel.includes(panelistName)
-              ? panel.filter((p) => p !== panelistName)
-              : [...panel, panelistName];
-            return { ...i, panel: newPanel };
+            return { ...i, panel: tempPanelists };
           }
           return i;
         });
@@ -481,7 +494,7 @@ export default function InterviewPanel({
             role: assigningCandidate.role,
             date: "",
             time: "",
-            panel: [panelistName],
+            panel: tempPanelists,
             score: null,
             rec: "—",
             status: "Pending",
@@ -491,18 +504,9 @@ export default function InterviewPanel({
           },
         ];
       }
-      const updatedCand = updatedList.find(
-        (i) =>
-          i.candidate === assigningCandidate.name &&
-          i.role === assigningCandidate.role &&
-          i.round === assigningCandidate.activeRound
-      );
-      setAssigningCandidate((prevCand) => ({
-        ...prevCand,
-        interview: { ...prevCand.interview, panel: updatedCand?.panel || [] },
-      }));
       return updatedList;
     });
+    setAssigningCandidate(null);
   };
 
   const submitEvaluation = () => {
@@ -2059,7 +2063,7 @@ export default function InterviewPanel({
             <FormField label="Available Panel Members">
               <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 240, overflowY: "auto", paddingRight: 4 }}>
                 {panelists.map((p) => {
-                  const isAssigned = (assigningCandidate.interview?.panel || []).includes(p.name);
+                  const isAssigned = tempPanelists.includes(p.name);
                   return (
                     <div
                       key={p.name}
@@ -2104,7 +2108,7 @@ export default function InterviewPanel({
             </FormField>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-              <Btn label="Send Invite" onClick={() => setAssigningCandidate(null)} />
+              <Btn label="Send Invite" onClick={handleSavePanelists} />
             </div>
           </div>
         )}
