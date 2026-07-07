@@ -621,7 +621,7 @@ export default function Applications({
         </Card>
       )}
 
-      <Modal open={!!selectedApp} onClose={() => setSelectedApp(null)} maxWidth={600}>
+      <Modal open={!!selectedApp} onClose={() => setSelectedApp(null)} maxWidth={780}>
         {selectedApp && (
           <div style={{ overflow: "hidden" }}>
             <ModalHeader title={isJob ? "Job Application Details" : "General Application Details"} onClose={() => setSelectedApp(null)} />
@@ -694,7 +694,7 @@ export default function Applications({
                     <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>{item.icon}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{item.label}</div>
-                      <div style={{ fontSize: 13, color: T.ink, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.value}</div>
+                      <div style={{ fontSize: 13, color: T.ink, fontWeight: 600, wordBreak: "break-word" }}>{item.value}</div>
                     </div>
                   </div>
                 ))}

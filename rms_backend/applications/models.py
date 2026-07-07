@@ -49,8 +49,8 @@ class GeneralApplication(models.Model):
     ]
 
     app_id         = models.CharField(max_length=30, unique=True)
-    candidate      = models.ForeignKey(
-        "users.User", on_delete=models.CASCADE, related_name="general_applications"
+    candidate      = models.OneToOneField(
+        "users.User", on_delete=models.CASCADE, related_name="general_application"
     )
     preferred_role = models.CharField(max_length=200, blank=True)
     experience     = models.CharField(max_length=50, blank=True)
