@@ -1,5 +1,6 @@
 from rms_backend.celery_utils import custom_shared_task as shared_task
 from django.contrib.auth import get_user_model
+from django.conf import settings
 # pyrefly: ignore [missing-import]
 from .models import Notification
 
@@ -85,7 +86,7 @@ South Point School Recruitment Team
         send_mail(
             subject=subject,
             message=candidate_body,
-            from_email="no-reply@southpoint.edu",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[candidate.email],
             fail_silently=True,
         )
@@ -110,7 +111,7 @@ South Point School Recruitment Team
         send_mail(
             subject=subject,
             message=panelist_body,
-            from_email="no-reply@southpoint.edu",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[panelist.email],
             fail_silently=True,
         )
@@ -180,7 +181,7 @@ South Point School Recruitment Team
         send_mail(
             subject=subject,
             message=candidate_body,
-            from_email="no-reply@southpoint.edu",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[candidate.email],
             fail_silently=True,
         )
@@ -205,7 +206,7 @@ South Point School Recruitment Team
         send_mail(
             subject=subject,
             message=panelist_body,
-            from_email="no-reply@southpoint.edu",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[panelist.email],
             fail_silently=True,
         )
@@ -268,7 +269,7 @@ South Point School Recruitment Team
     send_mail(
         subject=subject,
         message=body,
-        from_email="no-reply@southpoint.edu",
+        from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[email],
         fail_silently=True,
     )
