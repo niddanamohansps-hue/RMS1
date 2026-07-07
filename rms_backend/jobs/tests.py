@@ -189,3 +189,51 @@ class CacheAndTaskTestCase(TestCase):
         self.assertEqual(approval.title, "Art Teacher")
         self.assertEqual(approval.department, "Arts")
 
+    def test_role_request_approval_signals_create_existing_role(self):
+        """
+        Verify that marking a RoleRequest as Approved directly
+        correctly triggers the creation of an ExistingRole in the database.
+        """
+        from jobs.models import ExistingRole
+        
+        # Create a RoleRequest with status Pending
+        role_request = RoleRequest.objects.create(
+            request_id="RR-TEST-04",
+            role="Chemistry Teacher",
+            department="Science",
+            salary_range="35000-45000",
+            experience="3-5",
+            status="Pending",
+            created_by=self.admin_user
+        )
+        
+        # Verify no ExistingRole exists yet for this role
+        self.assertFalse(ExistingRole.objects.filter(role="Chemistry Teacher", department="Science").exists())
+        
+        # Update the role request to Approved
+        role_request.status = "Approved"
+        role_request.save()
+        
+        # Verify that an ExistingRole was automatically created by the signal
+        existing = ExistingRole.objects.filter(role="Chemistry Teacher", department="Science").first()
+        self.assertIsNotNone(existing)
+        self.assertEqual(existing.headcount, 1)
+        self.assertEqual(existing.status, "Active")
+        
+        # Approve another identical role request, verify headcount increments to 2
+        role_request_2 = RoleRequest.objects.create(
+            request_id="RR-TEST-05",
+            role="Chemistry Teacher",
+            department="Science",
+            salary_range="35000-45000",
+            experience="3-5",
+            status="Pending",
+            created_by=self.admin_user
+        )
+        role_request_2.status = "Approved"
+        role_request_2.save()
+        
+        existing.refresh_from_db()
+        self.assertEqual(existing.headcount, 2)
+
+

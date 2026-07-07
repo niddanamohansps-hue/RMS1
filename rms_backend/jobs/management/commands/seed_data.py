@@ -203,7 +203,6 @@ class Command(BaseCommand):
             defaults={
                 "app_id": "GAPP-2026-0001",
                 "preferred_role": "Senior Mathematics Teacher",
-                "preferred_dept": "Academic Department",
                 "experience": "3–5 yrs",
                 "qualification": "Master's (M.Sc in Mathematics)",
                 "status": "Applied"

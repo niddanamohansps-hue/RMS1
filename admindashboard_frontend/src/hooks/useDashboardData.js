@@ -202,7 +202,7 @@ export default function useDashboardData(currentUser, pathname, navigate) {
 
     const interval = setInterval(() => {
       loadRequiredData(true);
-    }, 3000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [pathname, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps

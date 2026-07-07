@@ -3,6 +3,45 @@ from users.utils import auto_id
 from .models import JobApplication, GeneralApplication
 from jobs.models import JobPosting
 
+def get_profile_location(candidate):
+    profile = getattr(candidate, "profile", None)
+    return profile.current_location if profile else ""
+
+def get_profile_skills(candidate):
+    profile = getattr(candidate, "profile", None)
+    return profile.skills if profile else []
+
+def get_profile_salary(candidate):
+    profile = getattr(candidate, "profile", None)
+    return profile.salary_expectation if profile else ""
+
+def get_profile_educational_qualification(obj):
+    if obj.qualification:
+        return obj.qualification
+    profile = getattr(obj.candidate, "profile", None)
+    if profile:
+        edu = profile.educational_qualification or ""
+        deg = profile.degree_name or ""
+        return f"{edu} ({deg})" if (edu and deg) else (edu or deg or "")
+    return ""
+
+def get_profile_professional_qualification(candidate):
+    profile = getattr(candidate, "profile", None)
+    if not profile:
+        return ""
+    edu = profile.professional_qualification or ""
+    deg = profile.professional_degree_name or ""
+    return f"{edu} ({deg})" if (edu and deg) else (edu or deg or "")
+
+def get_profile_extracurricular_qualification(candidate):
+    profile = getattr(candidate, "profile", None)
+    if not profile:
+        return ""
+    edu = profile.extracurricular_qualification or ""
+    deg = profile.extracurricular_degree_name or ""
+    return f"{edu} ({deg})" if (edu and deg) else (edu or deg or "")
+
+
 class JobApplicationSerializer(serializers.ModelSerializer):
     candidate_name  = serializers.SerializerMethodField(read_only=True)
     candidate_email = serializers.SerializerMethodField(read_only=True)
@@ -10,6 +49,12 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     posting_title   = serializers.SerializerMethodField(read_only=True)
     resume          = serializers.SerializerMethodField(read_only=True)
     posting_id      = serializers.ReadOnlyField(source="posting.posting_id")
+    location        = serializers.SerializerMethodField(read_only=True)
+    skills          = serializers.SerializerMethodField(read_only=True)
+    salary          = serializers.SerializerMethodField(read_only=True)
+    educational_qualification = serializers.SerializerMethodField(read_only=True)
+    professional_qualification = serializers.SerializerMethodField(read_only=True)
+    extracurricular_qualification = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model  = JobApplication
@@ -47,6 +92,24 @@ class JobApplicationSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(url)
             return url
         return None
+
+    def get_location(self, obj):
+        return get_profile_location(obj.candidate)
+
+    def get_skills(self, obj):
+        return get_profile_skills(obj.candidate)
+
+    def get_salary(self, obj):
+        return get_profile_salary(obj.candidate)
+
+    def get_educational_qualification(self, obj):
+        return get_profile_educational_qualification(obj)
+
+    def get_professional_qualification(self, obj):
+        return get_profile_professional_qualification(obj.candidate)
+
+    def get_extracurricular_qualification(self, obj):
+        return get_profile_extracurricular_qualification(obj.candidate)
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -94,11 +157,32 @@ class GeneralApplicationSerializer(serializers.ModelSerializer):
     candidate_email = serializers.SerializerMethodField(read_only=True)
     candidate_phone = serializers.SerializerMethodField(read_only=True)
     resume          = serializers.SerializerMethodField(read_only=True)
+    location        = serializers.SerializerMethodField(read_only=True)
+    skills          = serializers.SerializerMethodField(read_only=True)
+    salary          = serializers.SerializerMethodField(read_only=True)
+    educational_qualification = serializers.SerializerMethodField(read_only=True)
+    professional_qualification = serializers.SerializerMethodField(read_only=True)
+    extracurricular_qualification = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model  = GeneralApplication
         fields = "__all__"
         read_only_fields = ["app_id", "applied_date", "candidate"]
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if (
+            request
+            and request.user
+            and not self.instance
+            and GeneralApplication.objects.filter(
+                candidate=request.user
+            ).exists()
+        ):
+            raise serializers.ValidationError(
+                "You have already submitted a general application."
+            )
+        return attrs
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -129,7 +213,35 @@ class GeneralApplicationSerializer(serializers.ModelSerializer):
             return url
         return None
 
+    def get_location(self, obj):
+        return get_profile_location(obj.candidate)
+
+    def get_skills(self, obj):
+        return get_profile_skills(obj.candidate)
+
+    def get_salary(self, obj):
+        return get_profile_salary(obj.candidate)
+
+    def get_educational_qualification(self, obj):
+        return get_profile_educational_qualification(obj)
+
+    def get_professional_qualification(self, obj):
+        return get_profile_professional_qualification(obj.candidate)
+
+    def get_extracurricular_qualification(self, obj):
+        return get_profile_extracurricular_qualification(obj.candidate)
+
     def create(self, validated_data):
         validated_data["app_id"] = auto_id("GAPP", GeneralApplication)
-        validated_data["candidate"] = self.context["request"].user
+        user = self.context["request"].user
+        validated_data["candidate"] = user
+
+        profile = getattr(user, "profile", None)
+        if profile:
+            if not validated_data.get("experience"):
+                validated_data["experience"] = profile.years_of_experience
+            if not validated_data.get("preferred_role"):
+                validated_data["preferred_role"] = ", ".join(profile.roles_interested) if profile.roles_interested else ""
+
         return super().create(validated_data)
+

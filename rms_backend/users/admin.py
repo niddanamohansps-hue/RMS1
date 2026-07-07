@@ -17,6 +17,6 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(CandidateProfile)
 class CandidateProfileAdmin(admin.ModelAdmin):
-    list_display  = ["user", "preferred_role", "preferred_dept", "years_of_experience"]
-    search_fields = ["user__email", "user__first_name", "preferred_role"]
+    list_display  = ["user", "years_of_experience"]
+    search_fields = ["user__email", "user__first_name"]
     raw_id_fields = ["user"]

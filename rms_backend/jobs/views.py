@@ -1,3 +1,4 @@
+import urllib.parse
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.core.cache import cache
@@ -6,6 +7,19 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
+
+def _get_cached_list_response(viewset_instance, request, cache_key_prefix, timeout=900):
+    sorted_params = sorted(request.query_params.items())
+    params_str = urllib.parse.urlencode(sorted_params)
+    cache_key = f"{cache_key_prefix}_{params_str}"
+    
+    data = cache.get(cache_key)
+    if data is None:
+        response = super(viewset_instance.__class__, viewset_instance).list(request)
+        data = response.data
+        cache.set(cache_key, data, timeout=timeout)
+        return response
+    return Response(data)
 
 from users.permissions import IsHRAdmin, IsHRAdminOrReadOnly
 from applications.models import JobApplication, GeneralApplication
@@ -41,6 +55,9 @@ class ExistingRoleViewSet(viewsets.ModelViewSet):
     filterset_fields   = ["department", "status", "type"]
     ordering_fields    = ["department", "role", "headcount", "filled"]
 
+    def list(self, request, *args, **kwargs):
+        return _get_cached_list_response(self, request, "existing_roles_list")
+
     @action(detail=False, methods=["get"])
     def departments(self, request):
         depts = ExistingRole.objects.values_list("department", flat=True).distinct()
@@ -67,6 +84,9 @@ class RoleRequestViewSet(viewsets.ModelViewSet):
     filterset_fields   = ["status", "department"]
     ordering_fields    = ["date", "status"]
 
+    def list(self, request, *args, **kwargs):
+        return _get_cached_list_response(self, request, "role_requests_list")
+
     @action(detail=True, methods=["patch"])
     def update_status(self, request, pk=None):
         instance = self.get_object()
@@ -83,6 +103,9 @@ class JobRequestViewSet(viewsets.ModelViewSet):
     search_fields      = ["role", "request_id"]
     filterset_fields   = ["status", "type"]
     ordering_fields    = ["created_at", "status"]
+
+    def list(self, request, *args, **kwargs):
+        return _get_cached_list_response(self, request, "job_requests_list")
 
     @action(detail=True, methods=["patch"])
     def update_status(self, request, pk=None):
@@ -104,6 +127,9 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
     search_fields      = ["request_id", "title", "submitted_by"]
     filterset_fields   = ["status", "type"]
     ordering_fields    = ["date", "status"]
+
+    def list(self, request, *args, **kwargs):
+        return _get_cached_list_response(self, request, "approval_requests_list")
 
     @action(detail=True, methods=["post"])
     def action(self, request, pk=None):
@@ -215,32 +241,6 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
             role_req = approval.role_request
             role_req.status = "Approved"
             role_req.save()
-            
-            from jobs.models import ExistingRole
-            from users.utils import auto_id
-            
-            existing = ExistingRole.objects.filter(
-                role__iexact=role_req.role,
-                department__iexact=role_req.department
-            ).first()
-            
-            if existing:
-                existing.headcount += 1
-                if existing.status == "Inactive":
-                    existing.status = "Active"
-                existing.save()
-            else:
-                ExistingRole.objects.create(
-                    role_id=auto_id("ROL", ExistingRole),
-                    role=role_req.role,
-                    department=role_req.department,
-                    salary_range=role_req.salary_range,
-                    experience=role_req.experience,
-                    type="Full-time",
-                    headcount=1,
-                    filled=0,
-                    status="Active"
-                )
         if new_status == "Sent Back" and approval.type == "Role Request" and approval.role_request:
             approval.role_request.status = "Sent Back"
             approval.role_request.save()

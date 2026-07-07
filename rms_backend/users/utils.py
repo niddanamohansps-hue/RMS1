@@ -21,3 +21,20 @@ def auto_id(prefix: str, model, id_field: str = "id") -> str:
         if not model.objects.filter(**kwargs).exists():
             return candidate_id
         count += 1
+
+
+from django.core.cache import cache
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.settings import api_settings
+
+class CachedJWTAuthentication(JWTAuthentication):
+    def get_user(self, validated_token):
+        user_id = validated_token[api_settings.USER_ID_CLAIM]
+        cache_key = f"user_profile_{user_id}"
+        user = cache.get(cache_key)
+        if user is None:
+            user = super().get_user(validated_token)
+            if user:
+                cache.set(cache_key, user, timeout=300)  # Cache for 5 minutes
+        return user
+

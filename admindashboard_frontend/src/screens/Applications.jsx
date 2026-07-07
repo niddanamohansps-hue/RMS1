@@ -597,7 +597,7 @@ export default function Applications({
             />
           ) : (
             <Table
-              cols={["App ID", "Candidate", "Preferred Role", "Department", "Experience", "Qualification", "Applied Date", "Status", "Actions"]}
+              cols={["App ID", "Candidate", "Preferred Role", "Experience", "Qualification", "Applied Date", "Status", "Actions"]}
               onRowClick={(index) => setSelectedApp(filtered[index])}
               onRowDoubleClick={isMobile ? (index) => updateStatus(filtered[index], "Shortlisted") : undefined}
               rows={filtered.map((a) => [
@@ -607,7 +607,6 @@ export default function Applications({
                   <div><strong>{a.name}</strong><div style={{ fontSize: 11, color: T.inkFaint }}>{a.email}</div></div>
                 </div>,
                 a.preferredRole || "—",
-                <span style={{ fontSize: 12, color: T.inkMid }}>{a.preferredDept || "—"}</span>,
                 a.exp,
                 a.qualification || "—",
                 a.applied,
@@ -665,21 +664,30 @@ export default function Applications({
                       { icon: "💼", label: "Role Applied", value: selectedApp.role },
                       { icon: "📋", label: "Job Posting", value: selectedApp.jobPostingId || "—" },
                       { icon: "⏳", label: "Experience", value: selectedApp.exp },
-                      { icon: "🎓", label: "Qualification", value: selectedApp.qualification || "—" },
+                      { icon: "🎓", label: "Educational Qual.", value: selectedApp.educationalQualification || "—" },
+                      { icon: "💼", label: "Prof. Qualification", value: selectedApp.professionalQualification || "—" },
+                      { icon: "🏆", label: "Extra. Qualification", value: selectedApp.extracurricularQualification || "—" },
                       { icon: "👤", label: "Referred By", value: selectedApp.referredBy || "—" },
                       { icon: "📅", label: "Applied Date", value: selectedApp.applied },
                       { icon: "✉️", label: "Email", value: selectedApp.email },
                       { icon: "📞", label: "Phone", value: selectedApp.phone || "—" },
+                      { icon: "📍", label: "Location", value: selectedApp.location || "—" },
+                      { icon: "💸", label: "Expected Salary", value: selectedApp.salary || "—" },
+                      { icon: "🛠️", label: "Skills", value: Array.isArray(selectedApp.skills) ? (selectedApp.skills.length > 0 ? selectedApp.skills.join(", ") : "—") : (selectedApp.skills || "—") },
                     ]
                   : [
                       { icon: "🆔", label: "Application ID", value: selectedApp.id },
                       { icon: "💼", label: "Preferred Role", value: selectedApp.preferredRole || "—" },
-                      { icon: "🏢", label: "Preferred Dept", value: selectedApp.preferredDept || "—" },
                       { icon: "⏳", label: "Experience", value: selectedApp.exp },
-                      { icon: "🎓", label: "Qualification", value: selectedApp.qualification || "—" },
+                      { icon: "🎓", label: "Educational Qual.", value: selectedApp.educationalQualification || "—" },
+                      { icon: "💼", label: "Prof. Qualification", value: selectedApp.professionalQualification || "—" },
+                      { icon: "🏆", label: "Extra. Qualification", value: selectedApp.extracurricularQualification || "—" },
                       { icon: "📅", label: "Applied Date", value: selectedApp.applied },
                       { icon: "✉️", label: "Email", value: selectedApp.email },
                       { icon: "📞", label: "Phone", value: selectedApp.phone || "—" },
+                      { icon: "📍", label: "Location", value: selectedApp.location || "—" },
+                      { icon: "💸", label: "Expected Salary", value: selectedApp.salary || "—" },
+                      { icon: "🛠️", label: "Skills", value: Array.isArray(selectedApp.skills) ? (selectedApp.skills.length > 0 ? selectedApp.skills.join(", ") : "—") : (selectedApp.skills || "—") },
                     ]
                 ).map((item, idx) => (
                   <div key={idx} style={{ padding: "12px 14px", background: T.canvas, border: `1px solid ${T.border}`, borderRadius: 10, display: "flex", alignItems: "center", gap: 12 }}>

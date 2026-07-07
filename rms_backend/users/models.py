@@ -60,6 +60,8 @@ class User(AbstractUser):
         if not self.username:
             self.username = self.email
         super().save(*args, **kwargs)
+        from django.core.cache import cache
+        cache.delete(f"user_profile_{self.id}")
 
     def __str__(self):
         return f"{self.get_full_name()} <{self.email}> ({self.role})"
@@ -95,8 +97,6 @@ class CandidateProfile(models.Model):
     extracurricular_qualification = models.CharField(max_length=200, blank=True)
     extracurricular_degree_name   = models.CharField(max_length=200, blank=True)
     years_of_experience = models.CharField(max_length=20, choices=EXPERIENCE_CHOICES, blank=True)
-    preferred_role      = models.CharField(max_length=200, blank=True)
-    preferred_dept      = models.CharField(max_length=200, blank=True)
     roles_interested    = models.JSONField(default=list, blank=True)
     skills              = models.JSONField(default=list, blank=True)
     salary_expectation  = models.CharField(max_length=100, blank=True)

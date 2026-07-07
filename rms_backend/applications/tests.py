@@ -4,8 +4,10 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from applications.models import JobApplication, GeneralApplication
 from jobs.models import JobPosting, JobCategory
+from users.models import CandidateProfile
 
 User = get_user_model()
+
 
 class GeneralApplicationAPITestCase(APITestCase):
     def setUp(self):
@@ -37,20 +39,18 @@ class GeneralApplicationAPITestCase(APITestCase):
             app_id="GAPP-2026-0001",
             candidate=self.candidate,
             preferred_role="Science Teacher",
-            preferred_dept="Science",
-            experience="3 years",
+            experience="3-5",
             qualification="B.Sc, B.Ed",
             status="Applied"
         )
 
     def test_candidate_can_submit_general_application(self):
         """Candidates can successfully submit a general application."""
-        self.client.force_authenticate(user=self.candidate)
+        self.client.force_authenticate(user=self.other_candidate)
         url = reverse("general-applications-list")
         data = {
             "preferred_role": "Math Teacher",
-            "preferred_dept": "Mathematics",
-            "experience": "5 years",
+            "experience": "5-8",
             "qualification": "M.Sc, B.Ed",
         }
         response = self.client.post(url, data)
@@ -60,11 +60,25 @@ class GeneralApplicationAPITestCase(APITestCase):
 
         # Verify auto-assigned candidate
         app = GeneralApplication.objects.get(app_id=response.data["app_id"])
-        self.assertEqual(app.candidate, self.candidate)
+        self.assertEqual(app.candidate, self.other_candidate)
+
+    def test_candidate_cannot_submit_duplicate_general_application(self):
+        """Candidates cannot submit multiple general applications."""
+        self.client.force_authenticate(user=self.candidate)
+        url = reverse("general-applications-list")
+        data = {
+            "preferred_role": "Physics Teacher",
+            "experience": "2-4",
+            "qualification": "M.Sc",
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("non_field_errors", response.data)
+        self.assertEqual(response.data["non_field_errors"][0], "You have already submitted a general application.")
 
     def test_candidate_cannot_set_status_or_admin_note_on_creation(self):
         """Candidates should not be allowed to define status or admin_note upon submission."""
-        self.client.force_authenticate(user=self.candidate)
+        self.client.force_authenticate(user=self.other_candidate)
         url = reverse("general-applications-list")
         data = {
             "preferred_role": "Math Teacher",
@@ -192,3 +206,93 @@ class JobApplicationAPITestCase(APITestCase):
         self.assertEqual(app.experience, "5 years")
         self.assertEqual(app.qualification, "M.Sc (Mathematics)")
 
+
+class CandidateProfileGeneralApplicationSyncTestCase(APITestCase):
+    def setUp(self):
+        self.candidate = User.objects.create_user(
+            email="sync_cand@school.com",
+            password="testpassword",
+            first_name="Sync",
+            last_name="Candidate",
+            role="candidate"
+        )
+        # Verify CandidateProfile was auto-created during register
+        self.profile, _ = CandidateProfile.objects.get_or_create(user=self.candidate)
+
+    def test_candidate_profile_post_save_syncs_to_general_application(self):
+        """Updating CandidateProfile fields must automatically sync to GeneralApplication if one exists."""
+        # 1. Create a GeneralApplication for the candidate
+        gen_app = GeneralApplication.objects.create(
+            app_id="GAPP-2026-9999",
+            candidate=self.candidate,
+            preferred_role="English Teacher",
+            experience="1-2",
+            qualification="B.A (English)",
+            status="Applied"
+        )
+
+        # 2. Modify profile fields
+        self.profile.roles_interested = ["Senior English Teacher"]
+        self.profile.years_of_experience = "3-5"
+        self.profile.educational_qualification = "M.A"
+        self.profile.degree_name = "English Lit"
+        self.profile.save()
+
+        # 3. Assert GeneralApplication has updated fields
+        gen_app.refresh_from_db()
+        self.assertEqual(gen_app.preferred_role, "Senior English Teacher")
+        self.assertEqual(gen_app.experience, "3-5")
+        self.assertEqual(gen_app.qualification, "M.A (English Lit)")
+
+    def test_general_application_post_save_syncs_to_candidate_profile(self):
+        """Creating/updating GeneralApplication must automatically sync to CandidateProfile."""
+        # Create GeneralApplication
+        gen_app = GeneralApplication.objects.create(
+            app_id="GAPP-2026-9998",
+            candidate=self.candidate,
+            preferred_role="History Teacher",
+            experience="5-8",
+            qualification="M.A (History)",
+            status="Applied"
+        )
+
+        # Verify profile is updated
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.roles_interested, ["History Teacher"])
+        self.assertEqual(self.profile.years_of_experience, "5-8")
+        self.assertEqual(self.profile.educational_qualification, "M.A")
+        self.assertEqual(self.profile.degree_name, "History")
+
+    def test_application_serialization_includes_profile_details(self):
+        """Verify that GeneralApplication and JobApplication serializers include candidate profile fields."""
+        # 1. Update candidate profile values
+        self.profile.current_location = "Mumbai"
+        self.profile.skills = ["Python", "Django"]
+        self.profile.salary_expectation = "₹5,00,000"
+        self.profile.professional_qualification = "B.Ed"
+        self.profile.professional_degree_name = "Science"
+        self.profile.extracurricular_qualification = "Sports"
+        self.profile.extracurricular_degree_name = "Football Coach"
+        self.profile.save()
+
+        # 2. Create general application
+        gen_app = GeneralApplication.objects.create(
+            app_id="GAPP-2026-8888",
+            candidate=self.candidate,
+            preferred_role="Science Teacher",
+            experience="1-2",
+            qualification="B.Sc",
+            status="Applied"
+        )
+
+        # 3. Request details via client API
+        self.client.force_authenticate(user=self.candidate)
+        url = reverse("general-applications-detail", args=[gen_app.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.assertEqual(response.data["location"], "Mumbai")
+        self.assertEqual(response.data["skills"], ["Python", "Django"])
+        self.assertEqual(response.data["salary"], "₹5,00,000")
+        self.assertEqual(response.data["professional_qualification"], "B.Ed (Science)")
+        self.assertEqual(response.data["extracurricular_qualification"], "Sports (Football Coach)")

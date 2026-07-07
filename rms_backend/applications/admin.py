@@ -12,7 +12,7 @@ class JobApplicationAdmin(admin.ModelAdmin):
 
 @admin.register(GeneralApplication)
 class GeneralApplicationAdmin(admin.ModelAdmin):
-    list_display  = ["app_id", "candidate", "preferred_role", "preferred_dept", "status", "applied_date"]
+    list_display  = ["app_id", "candidate", "preferred_role", "status", "applied_date"]
     list_filter   = ["status"]
     search_fields = ["app_id", "candidate__email", "preferred_role"]
     raw_id_fields = ["candidate"]

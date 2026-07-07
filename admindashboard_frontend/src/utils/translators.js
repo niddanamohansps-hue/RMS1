@@ -225,6 +225,12 @@ export const fromBackendJobApp = (ja) => ({
   admin_note: ja.admin_note || "",
   dept: ja.department || "",
   resume: ja.resume || "",
+  location: ja.location || "",
+  skills: ja.skills || [],
+  salary: ja.salary || "",
+  educationalQualification: ja.educational_qualification || ja.qualification || "",
+  professionalQualification: ja.professional_qualification || "",
+  extracurricularQualification: ja.extracurricular_qualification || "",
 });
 
 export const fromBackendGeneralApp = (ga) => ({
@@ -234,13 +240,18 @@ export const fromBackendGeneralApp = (ga) => ({
   email: ga.candidate_email,
   phone: ga.candidate_phone,
   preferredRole: ga.preferred_role,
-  preferredDept: ga.preferred_dept,
   exp: ga.experience,
   qualification: ga.qualification,
   applied: ga.applied_date,
   status: ga.status,
   admin_note: ga.admin_note || "",
   resume: ga.resume || "",
+  location: ga.location || "",
+  skills: ga.skills || [],
+  salary: ga.salary || "",
+  educationalQualification: ga.educational_qualification || ga.qualification || "",
+  professionalQualification: ga.professional_qualification || "",
+  extracurricularQualification: ga.extracurricular_qualification || "",
 });
 
 export const mapTimeToBackend = (timeStr) => {

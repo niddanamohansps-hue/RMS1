@@ -53,7 +53,6 @@ class GeneralApplication(models.Model):
         "users.User", on_delete=models.CASCADE, related_name="general_applications"
     )
     preferred_role = models.CharField(max_length=200, blank=True)
-    preferred_dept = models.CharField(max_length=200, blank=True)
     experience     = models.CharField(max_length=50, blank=True)
     qualification  = models.CharField(max_length=200, blank=True)
     applied_date   = models.DateField(auto_now_add=True)
