@@ -262,8 +262,13 @@ else:
 
 # ─── Email Configuration ─────────────────────────────────────────────────────
 USE_SMTP_EMAIL = config("USE_SMTP_EMAIL", default=False, cast=bool)
+USE_RESEND = config("USE_RESEND", default=False, cast=bool)
 
-if USE_SMTP_EMAIL:
+if USE_RESEND:
+    EMAIL_BACKEND = "rms_backend.resend_backend.ResendEmailBackend"
+    RESEND_API_KEY = config("RESEND_API_KEY", default="")
+    DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="onboarding@resend.dev")
+elif USE_SMTP_EMAIL:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
     EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
@@ -273,4 +278,5 @@ if USE_SMTP_EMAIL:
     DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="no-reply@southpoint.edu")
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 
