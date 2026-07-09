@@ -110,7 +110,7 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
                 department=instance.department,
                 salary_range=instance.salary_range,
                 experience=instance.experience,
-                type="Full-time",
+                type=instance.type or "Full-time",
                 headcount=1,
                 filled=0,
                 status="Active"

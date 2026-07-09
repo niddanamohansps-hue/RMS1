@@ -88,6 +88,7 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
 
       updatedSel.salary = minS && maxS ? `₹${minS}-${maxS}` : sel.salary;
       updatedSel.experience = minE && maxE ? `${minE}-${maxE}` : sel.experience;
+      updatedSel.empType = sel.empType || "Full-time";
     }
     if (sel.type === "Job Request") {
       updatedSel.dept = sel.dept || "";
@@ -230,6 +231,20 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
                         />
                       ) : (
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{sel.role || "—"}</div>
+                      )}
+                    </div>
+
+                    <div>
+                      <div style={labelCss}>Employment Type</div>
+                      {isPending ? (
+                        <Select
+                          value={sel.empType || "Full-time"}
+                          onChange={(e) => setSel({ ...sel, empType: e.target.value })}
+                          options={TYPE_OPTIONS}
+                          placeholder="Select type…"
+                        />
+                      ) : (
+                        <div style={{ fontSize: 13, color: T.ink }}>{sel.empType || "Full-time"}</div>
                       )}
                     </div>
 

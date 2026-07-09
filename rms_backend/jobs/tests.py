@@ -203,6 +203,7 @@ class CacheAndTaskTestCase(TestCase):
             department="Science",
             salary_range="35000-45000",
             experience="3-5",
+            type="Contract",
             status="Pending",
             created_by=self.admin_user
         )
@@ -219,6 +220,7 @@ class CacheAndTaskTestCase(TestCase):
         self.assertIsNotNone(existing)
         self.assertEqual(existing.headcount, 1)
         self.assertEqual(existing.status, "Active")
+        self.assertEqual(existing.type, "Contract")
         
         # Approve another identical role request, verify headcount increments to 2
         role_request_2 = RoleRequest.objects.create(
@@ -227,6 +229,7 @@ class CacheAndTaskTestCase(TestCase):
             department="Science",
             salary_range="35000-45000",
             experience="3-5",
+            type="Contract",
             status="Pending",
             created_by=self.admin_user
         )

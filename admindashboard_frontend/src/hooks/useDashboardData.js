@@ -340,6 +340,7 @@ export default function useDashboardData(currentUser, pathname, navigate) {
                 payload.role = n.role || "";
                 payload.salary_range = n.salary ? n.salary.replace(/^₹/, "") : "";
                 payload.experience = n.experience || "";
+                payload.employment_type = n.empType || "";
               } else if (n.type === "Job Request") {
                 payload.department = n.dept || "";
                 payload.role = n.role || "";
@@ -357,12 +358,12 @@ export default function useDashboardData(currentUser, pathname, navigate) {
               
               if (n.status === "Approved") {
                 if (n.type === "Role Request") {
-                  setExistingRoles((prev) => {
-                    const exists = prev.some((x) => x.role === n.role && x.dept === n.dept);
-                    if (exists) return prev;
-                    const cleanedSalary = n.salary ? n.salary.replace(/^₹/, "") : "";
-                    return [...prev, {
-                      id: `ROL-${Date.now()}`, dept: n.dept, role: n.role, type: "Full-time",
+                   setExistingRoles((prev) => {
+                     const exists = prev.some((x) => x.role === n.role && x.dept === n.dept);
+                     if (exists) return prev;
+                     const cleanedSalary = n.salary ? n.salary.replace(/^₹/, "") : "";
+                     return [...prev, {
+                       id: `ROL-${Date.now()}`, dept: n.dept, role: n.role, type: n.empType || "Full-time",
                       headcount: 1, filled: 0, currentFilled: 0, status: "Inactive", currentStatus: "Inactive",
                       experience: n.experience || "—",
                       salaryRange: cleanedSalary || "—",

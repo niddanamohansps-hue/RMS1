@@ -68,6 +68,12 @@ class RoleRequest(models.Model):
         ("Sent Back", "Sent Back"),
         ("Cancelled", "Cancelled"),
     ]
+    TYPE_CHOICES = [
+        ("Full-time",  "Full-time"),
+        ("Part-time",  "Part-time"),
+        ("Contract",   "Contract"),
+        ("Internship", "Internship"),
+    ]
 
     request_id    = models.CharField(max_length=30, unique=True)
     department    = models.CharField(max_length=100)
@@ -75,6 +81,7 @@ class RoleRequest(models.Model):
     justification = models.TextField(blank=True)
     salary_range  = models.CharField(max_length=100, blank=True)
     experience    = models.CharField(max_length=50, blank=True)
+    type          = models.CharField(max_length=50, choices=TYPE_CHOICES, default="Full-time")
     status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     submitted_by  = models.CharField(max_length=200, blank=True)
     date          = models.DateField(auto_now_add=True)

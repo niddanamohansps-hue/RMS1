@@ -236,6 +236,8 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
     def get_employment_type(self, obj):
         if obj.job_request:
             return obj.job_request.type
+        if obj.role_request:
+            return obj.role_request.type
         return ""
 
     def get_description(self, obj):

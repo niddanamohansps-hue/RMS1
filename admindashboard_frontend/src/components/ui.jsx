@@ -173,11 +173,13 @@ export const Select = ({
   options,
   placeholder,
   style = {},
+  ...rest
 }) => (
   <select
     value={value}
     onChange={onChange}
     className="select-focus"
+    {...rest}
     style={{
       border: `1.5px solid ${T.border}`,
       borderRadius: radius.md,

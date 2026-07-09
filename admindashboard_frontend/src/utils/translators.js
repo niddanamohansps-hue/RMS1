@@ -51,6 +51,7 @@ export const fromBackendRoleRequest = (rr) => ({
   salary: rr.salary_range || "",
   salaryRange: rr.salary_range || "",
   experience: rr.experience || "",
+  type: rr.type || "Full-time",
   status: rr.status,
   date: rr.date,
   history: rr.history || [],
@@ -68,6 +69,7 @@ export const toBackendRoleRequest = (rr, currentUser) => ({
   justification: rr.just || "",
   salary_range: rr.salaryRange || rr.salary || "",
   experience: rr.experience || "",
+  type: rr.type || "Full-time",
   status: sanitizeRequestStatus(rr.status),
   submitted_by: currentUser?.name || "HR Admin",
 });

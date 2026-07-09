@@ -351,6 +351,7 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
       updateForm(index, "department", matchingRole.dept || "");
       updateForm(index, "exp", matchingRole.experience || "");
       updateForm(index, "salary", matchingRole.salaryRange || "");
+      updateForm(index, "type", matchingRole.type || "Full-time");
     }
   };
 
@@ -373,6 +374,7 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
       department: matchingRole ? (matchingRole.dept || "") : selectedRequest.department,
       exp: matchingRole ? (matchingRole.experience || "") : selectedRequest.exp,
       salary: matchingRole ? (matchingRole.salaryRange || "") : selectedRequest.salary,
+      type: matchingRole ? (matchingRole.type || "Full-time") : selectedRequest.type,
     });
   };
 

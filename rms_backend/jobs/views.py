@@ -165,6 +165,8 @@ class ApprovalRequestViewSet(viewsets.ModelViewSet):
                 role_req.salary_range = serializer.validated_data["salary_range"]
             if "experience" in serializer.validated_data:
                 role_req.experience = serializer.validated_data["experience"]
+            if "employment_type" in serializer.validated_data:
+                role_req.type = serializer.validated_data["employment_type"]
             role_req.save()
 
         # Update JobRequest if type is Job Request

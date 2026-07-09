@@ -2,7 +2,8 @@ import { useState, useRef } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint } from "../hooks";
-import { Card, SectionTitle, Table, Mono, Btn, Input, Badge, FormField, Modal, ModalHeader, Textarea } from "../components/ui";
+import { Card, SectionTitle, Table, Mono, Btn, Input, Badge, FormField, Modal, ModalHeader, Textarea, Select } from "../components/ui";
+import { TYPE_OPTIONS } from "../data";
 
 const getStatusStyle = (status) => {
   switch (status) {
@@ -23,6 +24,7 @@ const emptyForm = () => ({
   minSalary: "",
   maxSalary: "",
   just: "",
+  type: "Full-time",
   date: new Date().toLocaleDateString(),
   status: "Pending",
   comment: "",
@@ -203,6 +205,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
       selectedRequest.dept !== originalRequest.dept ||
       selectedRequest.role !== originalRequest.role ||
       selectedRequest.just !== originalRequest.just ||
+      selectedRequest.type !== originalRequest.type ||
       currMinSal !== origMinSal ||
       currMaxSal !== origMaxSal ||
       currMinExp !== origMinExp ||
@@ -232,7 +235,7 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
         if (exists) return prev;
         const cleanedSalary = selectedRequest.salaryRange ? selectedRequest.salaryRange.replace(/^₹/, "") : "";
         return [...prev, {
-          id: `ROL-${Date.now()}`, dept: selectedRequest.dept, role: selectedRequest.role, type: "Full-time",
+          id: `ROL-${Date.now()}`, dept: selectedRequest.dept, role: selectedRequest.role, type: selectedRequest.type || "Full-time",
           headcount: 1, filled: 0, currentFilled: 0, status: "Inactive", currentStatus: "Inactive",
           experience: selectedRequest.experience || "—",
           salaryRange: cleanedSalary || "—",
@@ -403,6 +406,14 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                 </FormField>
                 <FormField label="Role Name" required>
                   <Input placeholder="Enter role" value={form.role} onChange={(e) => updateForm(index, "role", e.target.value)} />
+                </FormField>
+                <FormField label="Employment Type" required>
+                  <Select
+                    value={form.type || "Full-time"}
+                    onChange={(e) => updateForm(index, "type", e.target.value)}
+                    options={TYPE_OPTIONS}
+                    placeholder="Select type…"
+                  />
                 </FormField>
                 <FormField label="Min Experience (Yrs)" required>
                   <Input
@@ -598,6 +609,10 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{typeof r.id === "string" ? r.id.substring(0, 18) : String(r.id)}</div>
                       </div>
                       <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Type</div>
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{r.type || "Full-time"}</div>
+                      </div>
+                      <div>
                         <div style={{ fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", fontWeight: 700 }}>Experience</div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{r.experience ? `${r.experience} yrs` : "—"}</div>
                       </div>
@@ -664,13 +679,14 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
               setOriginalRequest(filteredRequests[index]);
               setShowViewModal(true);
             }}
-            cols={["Request ID", "Department", "Role", "Experience", "Salary Range", "Justification", "Date", "Status"]}
+            cols={["Request ID", "Department", "Role", "Type", "Experience", "Salary Range", "Justification", "Date", "Status"]}
             rows={filteredRequests.map((r) => {
               const ss = getStatusStyle(r.status);
               return [
                 <Mono v={typeof r.id === "string" ? r.id.substring(0, 18) : String(r.id)} />,
                 r.dept || "—",
                 <strong>{r.role || "—"}</strong>,
+                r.type || "Full-time",
                 r.experience ? `${r.experience} yrs` : "—",
                 r.salaryRange ? `₹${r.salaryRange}` : "—",
                 <span style={{ fontSize: 12, color: T.inkLight, maxWidth: 180, display: "inline-block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.just || "—"}</span>,
@@ -759,6 +775,20 @@ export default function RoleRequests({ roleRequests, setRoleRequests, setApprova
                     />
                   ) : (
                     <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>{selectedRequest.role || "—"}</div>
+                  )}
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Employment Type</div>
+                  {selectedRequest.status === "Pending" || selectedRequest.status === "Sent Back" ? (
+                    <Select
+                      value={selectedRequest.type || "Full-time"}
+                      onChange={(e) => setSelectedRequest({ ...selectedRequest, type: e.target.value })}
+                      options={TYPE_OPTIONS}
+                      placeholder="Select type…"
+                    />
+                  ) : (
+                    <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{selectedRequest.type || "Full-time"}</div>
                   )}
                 </div>
 
