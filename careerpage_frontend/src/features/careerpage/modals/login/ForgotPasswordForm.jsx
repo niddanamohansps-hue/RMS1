@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { User, Phone, Lock, EyeOff, Eye } from "lucide-react";
 import { MAROON } from "../../../../lib/constants";
+import { api } from "../../../../lib/api";
 
 export function ForgotPasswordForm({ onBackToLogin }) {
   const [step, setStep] = useState(1);
@@ -35,7 +36,7 @@ export function ForgotPasswordForm({ onBackToLogin }) {
     };
   }, []);
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     if (!identifier.trim()) {
       setError("Please enter your email address.");
@@ -46,21 +47,34 @@ export function ForgotPasswordForm({ onBackToLogin }) {
       return;
     }
     setError("");
-    setStep(2);
-    startOtpTimer();
+    try {
+      await api.post("/auth/password-reset/send-otp/", { email: identifier.trim() });
+      setStep(2);
+      startOtpTimer();
+    } catch (err) {
+      setError(err.message || "Failed to send OTP. Please try again.");
+    }
   };
 
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP.");
       return;
     }
     setError("");
-    setStep(3);
+    try {
+      await api.post("/auth/password-reset/verify-otp/", {
+        email: identifier.trim(),
+        otp: otp
+      });
+      setStep(3);
+    } catch (err) {
+      setError(err.message || "Invalid OTP. Please try again.");
+    }
   };
 
-  const handleResetPassword = (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     if (newPassword.length < 8) {
       setError("Password must be at least 8 characters long.");
@@ -71,10 +85,20 @@ export function ForgotPasswordForm({ onBackToLogin }) {
       return;
     }
     setError("");
-    setStep(4);
-    setTimeout(() => {
-      onBackToLogin();
-    }, 2000);
+    try {
+      await api.post("/auth/password-reset/reset/", {
+        email: identifier.trim(),
+        otp: otp,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      });
+      setStep(4);
+      setTimeout(() => {
+        onBackToLogin();
+      }, 2000);
+    } catch (err) {
+      setError(err.message || "Failed to reset password. Please try again.");
+    }
   };
 
   const handleResendOtp = () => {

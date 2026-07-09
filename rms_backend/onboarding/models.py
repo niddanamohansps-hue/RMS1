@@ -62,6 +62,33 @@ class OnboardingRecord(models.Model):
     task_docs_verify = models.BooleanField(default=False, verbose_name="Documents Verified")
     task_bgc         = models.BooleanField(default=False, verbose_name="Background Check")
     task_checkin     = models.BooleanField(default=False, verbose_name="Day-1 Check-in")
+
+    # Onboarding Compulsory Details
+    aadhar_number = models.CharField(max_length=20, blank=True, null=True)
+    aadhar_card = models.FileField(upload_to="onboarding/aadhar/%Y/", blank=True, null=True)
+    pan_number = models.CharField(max_length=20, blank=True, null=True)
+    pan_card = models.FileField(upload_to="onboarding/pan/%Y/", blank=True, null=True)
+    bank_holder_name = models.CharField(max_length=200, blank=True, null=True)
+    bank_account_number = models.CharField(max_length=50, blank=True, null=True)
+    bank_ifsc = models.CharField(max_length=20, blank=True, null=True)
+    bank_name = models.CharField(max_length=200, blank=True, null=True)
+    bank_passbook = models.FileField(upload_to="onboarding/bank/%Y/", blank=True, null=True)
+    passport_photo = models.FileField(upload_to="onboarding/photos/%Y/", blank=True, null=True)
+
+    # Onboarding Optional Details
+    pf_number = models.CharField(max_length=50, blank=True, null=True)
+    esi_number = models.CharField(max_length=50, blank=True, null=True)
+    driving_license = models.FileField(upload_to="onboarding/license/%Y/", blank=True, null=True)
+    class10_marksheet = models.FileField(upload_to="onboarding/marks10/%Y/", blank=True, null=True)
+    class12_marksheet = models.FileField(upload_to="onboarding/marks12/%Y/", blank=True, null=True)
+    degree_certificate = models.FileField(upload_to="onboarding/degree/%Y/", blank=True, null=True)
+    experience_certificate = models.FileField(upload_to="onboarding/experience/%Y/", blank=True, null=True)
+    professional_certificate = models.FileField(upload_to="onboarding/prof/%Y/", blank=True, null=True)
+
+    # Document-level verification states (JSON lists)
+    verified_docs = models.TextField(default="[]", blank=True)
+    rejected_docs = models.TextField(default="[]", blank=True)
+
     created_at       = models.DateTimeField(auto_now_add=True)
     updated_at       = models.DateTimeField(auto_now=True)
 

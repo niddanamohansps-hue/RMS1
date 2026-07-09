@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { T } from "../theme";
 import { statusVariant } from "../theme";
 import { useBreakpoint, useHorizontalScroll } from "../hooks";
+import { api } from "../lib/api";
 import { Card, SectionTitle, Mono, Badge, Btn, Modal, ModalHeader } from "../components/ui";
 
 const TASK_KEYS = ["profile", "offer", "docsUpload", "docsVerify", "bgc", "checkin"];
@@ -29,64 +30,133 @@ export default function Onboarding({ jobPostings = [], offers = [], jobApplicati
   const [previewDoc, setPreviewDoc] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  const [records, setRecords] = useState(() => {
-    const saved = localStorage.getItem("onboardingRecords");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.map((r) => {
-        const migratedTasks = { ...r.tasks };
-        ["profile", "offer", "docsUpload", "docsVerify", "bgc"].forEach((k) => {
-          if (typeof migratedTasks[k] === "boolean") {
-            migratedTasks[k] = migratedTasks[k] ? "Verified" : "Pending";
-          }
-        });
-        migratedTasks.docsUpload = "Verified";
-        migratedTasks.docsVerify = "Pending";
-        migratedTasks.bgc = "Pending";
-        return { ...r, tasks: migratedTasks };
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchOnboardingRecords = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get("/onboarding/");
+      const list = data.results ? data.results : data;
+      const mapped = list.map((onb) => {
+        const tasks = {
+          profile: "Verified",
+          offer: "Verified",
+          docsUpload: onb.task_docs_upload ? "Verified" : "Pending",
+          docsVerify: onb.task_docs_verify ? "Verified" : "Pending",
+          bgc: onb.task_bgc ? "Verified" : "Pending",
+          checkin: onb.task_checkin,
+        };
+
+        return {
+          id: onb.record_id,
+          db_id: onb.id,
+          name: onb.employee_name,
+          role: onb.role,
+          joining: onb.joining_date || "—",
+          empId: onb.employee_id || "—",
+          status: onb.status || "Documents Pending",
+          tasks: tasks,
+          aadhar_number: onb.aadhar_number,
+          aadhar_card: onb.aadhar_card,
+          pan_number: onb.pan_number,
+          pan_card: onb.pan_card,
+          bank_holder_name: onb.bank_holder_name,
+          bank_account_number: onb.bank_account_number,
+          bank_ifsc: onb.bank_ifsc,
+          bank_name: onb.bank_name,
+          bank_passbook: onb.bank_passbook,
+          passport_photo: onb.passport_photo,
+          pf_number: onb.pf_number,
+          esi_number: onb.esi_number,
+          driving_license: onb.driving_license,
+          class10_marksheet: onb.class10_marksheet,
+          class12_marksheet: onb.class12_marksheet,
+          degree_certificate: onb.degree_certificate,
+          experience_certificate: onb.experience_certificate,
+          professional_certificate: onb.professional_certificate,
+          verified_docs: onb.verified_docs || "[]",
+          rejected_docs: onb.rejected_docs || "[]",
+        };
       });
+      setRecords(mapped);
+    } catch (err) {
+      console.error("Failed to fetch onboarding records:", err);
+    } finally {
+      setLoading(false);
     }
-    return [];
-  });
+  };
 
-  useEffect(() => {
-    localStorage.setItem("onboardingRecords", JSON.stringify(records));
-  }, [records]);
-
-  useEffect(() => {
-    if (!offers || offers.length === 0) return;
-    const acceptedOffers = offers.filter((o) => o.status === "Accepted");
-    if (acceptedOffers.length === 0) return;
-
+  const handleToggleDocVerification = (record, docKey, status) => {
     setRecords((prev) => {
-      let updated = [...prev];
-      let changed = false;
-      for (const o of acceptedOffers) {
-        const alreadyExists = updated.some(
-          (r) => r.name?.toLowerCase() === o.candidate?.toLowerCase() && r.role?.toLowerCase() === o.role?.toLowerCase()
-        );
-        if (!alreadyExists) {
-          changed = true;
-          updated.push({
-            id: `ONB-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            name: o.candidate,
-            role: o.role,
-            joining: o.joining || "—",
-            empId: "—",
-            status: "Documents Pending",
-            tasks: {
-              profile: "Verified",
-              offer: "Verified",
-              docsUpload: "Verified",
-              docsVerify: "Pending",
-              bgc: "Pending",
-              checkin: false,
-            },
-          });
-        }
+      const currentRecordState = prev.find(r => r.db_id === record.db_id);
+      if (!currentRecordState) return prev;
+
+      let verified = [];
+      let rejected = [];
+      try {
+        verified = JSON.parse(currentRecordState.verified_docs || "[]");
+      } catch {}
+      try {
+        rejected = JSON.parse(currentRecordState.rejected_docs || "[]");
+      } catch {}
+
+      if (status === "Verified") {
+        if (!verified.includes(docKey)) verified.push(docKey);
+        rejected = rejected.filter(k => k !== docKey);
+      } else if (status === "Rejected") {
+        if (!rejected.includes(docKey)) rejected.push(docKey);
+        verified = verified.filter(k => k !== docKey);
       }
-      return changed ? updated : prev;
+
+      const payload = {
+        verified_docs: JSON.stringify(verified),
+        rejected_docs: JSON.stringify(rejected),
+      };
+
+      api.patch(`/onboarding/${record.db_id}/`, payload).catch((err) => {
+        alert("Failed to update document verification check: " + err.message);
+        fetchOnboardingRecords();
+      });
+
+      return prev.map((r) => {
+        if (r.db_id !== record.db_id) return r;
+        return {
+          ...r,
+          verified_docs: payload.verified_docs,
+          rejected_docs: payload.rejected_docs,
+        };
+      });
     });
+  };
+
+  const areAllDocsVerified = (record) => {
+    if (!record) return false;
+    const docKeys = [
+      { key: "aadhar", file: record.aadhar_card },
+      { key: "pan", file: record.pan_card },
+      { key: "bank_details", file: record.bank_passbook },
+      { key: "photo", file: record.passport_photo },
+      { key: "driving_license", file: record.driving_license },
+      { key: "class10", file: record.class10_marksheet },
+      { key: "class12", file: record.class12_marksheet },
+      { key: "degree", file: record.degree_certificate },
+      { key: "experience_cert", file: record.experience_certificate },
+      { key: "prof_cert", file: record.professional_certificate },
+    ].filter(item => item.file).map(item => item.key);
+
+    if (docKeys.length === 0) return false;
+
+    let verifiedList = [];
+    try {
+      verifiedList = JSON.parse(record.verified_docs || "[]");
+    } catch {}
+
+    return docKeys.every(k => verifiedList.includes(k));
+  };
+
+  useEffect(() => {
+    fetchOnboardingRecords();
   }, [offers]);
 
   const ALL_APPS = [...jobApplications, ...generalApplications.map((a) => ({ ...a, role: a.preferredRole }))];
@@ -100,6 +170,8 @@ export default function Onboarding({ jobPostings = [], offers = [], jobApplicati
       referredBy: app?.referredBy || "None",
       resume: app?.resume || "",
       ctc: offer?.ctc || "—",
+      education: app?.qualification || "—",
+      experience: app?.experience || "—",
     };
   };
 
@@ -108,28 +180,68 @@ export default function Onboarding({ jobPostings = [], offers = [], jobApplicati
     return val === "Verified";
   };
 
-  const toggleTask = (id, taskKey) => {
-    setRecords((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-        const updatedTasks = { ...r.tasks, [taskKey]: !r.tasks[taskKey] };
-        const done = TASK_KEYS.filter((k) => isTaskDone(k, updatedTasks[k])).length;
-        const newStatus = done === TASK_KEYS.length ? "Completed" : done === 0 ? "Initiated" : "Documents Pending";
-        return { ...r, tasks: updatedTasks, status: newStatus };
-      }),
-    );
+  const toggleTask = async (id, taskKey) => {
+    const record = records.find(r => r.id === id);
+    if (!record || !record.db_id) return;
+
+    const nextVal = !record.tasks[taskKey];
+    const backendKeyMap = {
+      profile: "task_profile",
+      offer: "task_offer",
+      docsUpload: "task_docs_upload",
+      docsVerify: "task_docs_verify",
+      bgc: "task_bgc",
+      checkin: "task_checkin",
+    };
+    const backendKey = backendKeyMap[taskKey];
+    if (!backendKey) return;
+
+    try {
+      await api.patch(`/onboarding/${record.db_id}/tasks/`, { [backendKey]: nextVal });
+      setRecords((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const updatedTasks = { ...r.tasks, [taskKey]: nextVal };
+          const done = TASK_KEYS.filter((k) => isTaskDone(k, updatedTasks[k])).length;
+          const newStatus = done === TASK_KEYS.length ? "Completed" : done === 0 ? "Initiated" : "Documents Pending";
+          return { ...r, tasks: updatedTasks, status: newStatus };
+        }),
+      );
+    } catch (err) {
+      alert("Failed to update task: " + err.message);
+    }
   };
 
-  const setTaskStatus = (id, taskKey, newStatus) => {
-    setRecords((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-        const updatedTasks = { ...r.tasks, [taskKey]: newStatus };
-        const done = TASK_KEYS.filter((k) => isTaskDone(k, updatedTasks[k])).length;
-        const newStatusStr = done === TASK_KEYS.length ? "Completed" : done === 0 ? "Initiated" : "Documents Pending";
-        return { ...r, tasks: updatedTasks, status: newStatusStr };
-      }),
-    );
+  const setTaskStatus = async (id, taskKey, newStatus) => {
+    const record = records.find(r => r.id === id);
+    if (!record || !record.db_id) return;
+
+    const nextVal = newStatus === "Verified";
+    const backendKeyMap = {
+      profile: "task_profile",
+      offer: "task_offer",
+      docsUpload: "task_docs_upload",
+      docsVerify: "task_docs_verify",
+      bgc: "task_bgc",
+      checkin: "task_checkin",
+    };
+    const backendKey = backendKeyMap[taskKey];
+    if (!backendKey) return;
+
+    try {
+      await api.patch(`/onboarding/${record.db_id}/tasks/`, { [backendKey]: nextVal });
+      setRecords((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const updatedTasks = { ...r.tasks, [taskKey]: newStatus };
+          const done = TASK_KEYS.filter((k) => isTaskDone(k, updatedTasks[k])).length;
+          const newStatusStr = done === TASK_KEYS.length ? "Completed" : done === 0 ? "Initiated" : "Documents Pending";
+          return { ...r, tasks: updatedTasks, status: newStatusStr };
+        }),
+      );
+    } catch (err) {
+      alert("Failed to update verification check: " + err.message);
+    }
   };
 
   const enrichedPostings = jobPostings.map((p) => ({
@@ -176,8 +288,8 @@ export default function Onboarding({ jobPostings = [], offers = [], jobApplicati
         <div><strong>CTC Offered:</strong> {details.ctc}</div>
         <div><strong>Referred By:</strong> {details.referredBy}</div>
       </div>
-      <div style={{ marginTop: 12 }}><strong>Education:</strong> Master of Science in Education / B.Ed.</div>
-      <div style={{ marginTop: 6 }}><strong>Experience:</strong> 4+ years of teaching experience.</div>
+      <div style={{ marginTop: 12 }}><strong>Education:</strong> {details.education}</div>
+      <div style={{ marginTop: 6 }}><strong>Experience:</strong> {details.experience}</div>
     </div>
   );
 
@@ -196,48 +308,202 @@ export default function Onboarding({ jobPostings = [], offers = [], jobApplicati
     </div>
   );
 
-  const renderDocsUploadPreview = (_record) => (
-    <div style={{ fontSize: 13, color: T.inkMid }}>
-      <div style={{ marginBottom: 12 }}><strong>Submitted Documents:</strong></div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {[
-          { name: "Government ID (Aadhaar).pdf", size: "1.2 MB", date: "2026-06-15" },
-          { name: "PAN Card.pdf", size: "840 KB", date: "2026-06-15" },
-          { name: "Degree Certificates.pdf", size: "4.5 MB", date: "2026-06-16" },
-          { name: "Relieving Letter.pdf", size: "1.1 MB", date: "2026-06-17" },
-        ].map((file) => (
-          <div key={file.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: T.canvas, borderRadius: 6, border: `1px solid ${T.border}` }}>
-            <div>
-              <div style={{ fontWeight: 600, color: T.ink }}>{file.name}</div>
-              <div style={{ fontSize: 11, color: T.inkFaint }}>{file.size} · Uploaded on {file.date}</div>
-            </div>
-            <button onClick={() => alert(`Opening ${file.name} in a new tab (mocked).`)} style={{ border: "none", background: "none", color: T.blue, fontWeight: 700, cursor: "pointer", fontSize: 12 }}>Download</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const renderDocsUploadPreview = (record) => {
+    const docList = [
+      { label: "Aadhaar Card", file: record.aadhar_card, extra: `Aadhaar Number: ${record.aadhar_number || "—"}` },
+      { label: "PAN Card", file: record.pan_card, extra: `PAN Number: ${record.pan_number || "—"}` },
+      { label: "Bank Passbook / Cheque", file: record.bank_passbook, extra: `Bank: ${record.bank_name || "—"} | A/C: ${record.bank_account_number || "—"} | IFSC: ${record.bank_ifsc || "—"} | Holder: ${record.bank_holder_name || "—"}` },
+      { label: "Passport Photo", file: record.passport_photo },
+      { label: "Driving License", file: record.driving_license },
+      { label: "Class 10 Marksheet", file: record.class10_marksheet },
+      { label: "Class 12 Marksheet", file: record.class12_marksheet },
+      { label: "Degree Certificate", file: record.degree_certificate },
+      { label: "Experience Certificate", file: record.experience_certificate },
+      { label: "Professional Certificate", file: record.professional_certificate },
+    ].filter(item => item.file);
 
-  const renderDocsVerifyPreview = (_record) => (
-    <div style={{ fontSize: 13, color: T.inkMid }}>
-      <div style={{ marginBottom: 12 }}><strong>Verification Checks:</strong></div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {[
-          { check: "Identity Verification", status: "PASSED", note: "Aadhaar and PAN details matched with government database." },
-          { check: "Academic Verification", status: "PASSED", note: "M.Sc. & B.Ed. degrees verified with Guwahati University." },
-          { check: "Employment History Check", status: "PASSED", note: "Previous school experience verified with Principal's reference." },
-        ].map((item) => (
-          <div key={item.check} style={{ padding: 12, background: T.canvas, borderRadius: 8, border: `1px solid ${T.border}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-              <span style={{ fontWeight: 700, color: T.ink }}>{item.check}</span>
-              <span style={{ fontSize: 10, fontWeight: 800, color: T.green, background: T.greenLight, padding: "2px 8px", borderRadius: 4 }}>{item.status}</span>
+    const textDetails = [
+      { label: "PF Number", value: record.pf_number },
+      { label: "ESI Number", value: record.esi_number },
+    ].filter(item => item.value);
+
+    const getFilename = (url) => {
+      if (!url) return "";
+      return url.split("/").pop();
+    };
+
+    const getFullUrl = (url) => {
+      if (!url) return "";
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      const hostname = window.location.hostname;
+      const port = 8000;
+      return `http://${hostname}:${port}${url}`;
+    };
+
+    return (
+      <div style={{ fontSize: 13, color: T.inkMid }}>
+        {textDetails.length > 0 && (
+          <div style={{ marginBottom: 16, padding: 12, background: T.canvas, borderRadius: 8, border: `1px solid ${T.border}` }}>
+            <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 11, color: T.inkLight, textTransform: "uppercase" }}>Identity Numbers:</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {textDetails.map(item => (
+                <div key={item.label}>
+                  <strong>{item.label}:</strong> {item.value}
+                </div>
+              ))}
             </div>
-            <div style={{ fontSize: 11, color: T.inkLight }}>{item.note}</div>
           </div>
-        ))}
+        )}
+
+        <div style={{ marginBottom: 10 }}><strong>Uploaded Files & Credentials:</strong></div>
+        {docList.length === 0 ? (
+          <div style={{ padding: 16, textAlign: "center", color: T.inkFaint }}>No documents uploaded yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {docList.map((doc) => (
+              <div key={doc.label} style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: T.canvas, borderRadius: 8, border: `1px solid ${T.border}`, gap: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, color: T.ink }}>{doc.label}</div>
+                    <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 2 }}>{getFilename(doc.file)}</div>
+                  </div>
+                  <button
+                    onClick={() => window.open(getFullUrl(doc.file), "_blank")}
+                    style={{ border: "none", background: "none", color: T.blue, fontWeight: 700, cursor: "pointer", fontSize: 12 }}
+                  >
+                    View File
+                  </button>
+                </div>
+                {doc.extra && (
+                  <div style={{ fontSize: 11, color: T.inkLight, borderTop: `1px dashed ${T.border}`, marginTop: 6, paddingTop: 4 }}>
+                    {doc.extra}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderDocsVerifyPreview = (record) => {
+    const docList = [
+      { key: "aadhar", label: "Aadhaar Card", file: record.aadhar_card, extra: `Aadhaar Number: ${record.aadhar_number || "—"}` },
+      { key: "pan", label: "PAN Card", file: record.pan_card, extra: `PAN Number: ${record.pan_number || "—"}` },
+      { key: "bank_details", label: "Bank Passbook / Cheque", file: record.bank_passbook, extra: `Bank: ${record.bank_name || "—"} | A/C: ${record.bank_account_number || "—"} | IFSC: ${record.bank_ifsc || "—"} | Holder: ${record.bank_holder_name || "—"}` },
+      { key: "photo", label: "Passport Photo", file: record.passport_photo },
+      { key: "driving_license", label: "Driving License", file: record.driving_license },
+      { key: "class10", label: "Class 10 Marksheet", file: record.class10_marksheet },
+      { key: "class12", label: "Class 12 Marksheet", file: record.class12_marksheet },
+      { key: "degree", label: "Degree Certificate", file: record.degree_certificate },
+      { key: "experience_cert", label: "Experience Certificate", file: record.experience_certificate },
+      { key: "prof_cert", label: "Professional Certificate", file: record.professional_certificate },
+    ].filter(item => item.file);
+
+    let verifiedList = [];
+    let rejectedList = [];
+    try {
+      verifiedList = JSON.parse(record.verified_docs || "[]");
+    } catch {}
+    try {
+      rejectedList = JSON.parse(record.rejected_docs || "[]");
+    } catch {}
+
+    const getFilename = (url) => {
+      if (!url) return "";
+      return url.split("/").pop();
+    };
+
+    const getFullUrl = (url) => {
+      if (!url) return "";
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      const hostname = window.location.hostname;
+      const port = 8000;
+      return `http://${hostname}:${port}${url}`;
+    };
+
+    return (
+      <div style={{ fontSize: 13, color: T.inkMid }}>
+        <div style={{ marginBottom: 12 }}><strong>Verify Uploaded Files:</strong></div>
+        {docList.length === 0 ? (
+          <div style={{ padding: 16, textAlign: "center", color: T.inkFaint }}>No documents uploaded yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {docList.map((doc) => {
+              const isVerified = verifiedList.includes(doc.key);
+              const isRejected = rejectedList.includes(doc.key);
+
+              return (
+                <div key={doc.key} style={{ display: "flex", flexDirection: "column", padding: "10px 14px", background: T.canvas, borderRadius: 8, border: `1px solid ${isVerified ? "#A7F3D0" : isRejected ? "#FECACA" : T.border}`, gap: 4 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: T.ink }}>{doc.label}</div>
+                      <div style={{ fontSize: 11, color: T.inkFaint, marginTop: 2 }}>{getFilename(doc.file)}</div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button
+                        onClick={() => window.open(getFullUrl(doc.file), "_blank")}
+                        style={{ border: "none", background: "none", color: T.blue, fontWeight: 700, cursor: "pointer", fontSize: 12, marginRight: 8 }}
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleToggleDocVerification(record, doc.key, "Verified")}
+                        style={{
+                          border: "none",
+                          background: isVerified ? T.green : "transparent",
+                          color: isVerified ? "#fff" : T.green,
+                          border: `1.5px solid ${T.green}`,
+                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          fontSize: 12,
+                          transition: "all 0.15s",
+                        }}
+                        title="Verify Document"
+                      >✓</button>
+                      <button
+                        onClick={() => handleToggleDocVerification(record, doc.key, "Rejected")}
+                        style={{
+                          border: "none",
+                          background: isRejected ? T.red : "transparent",
+                          color: isRejected ? "#fff" : T.red,
+                          border: `1.5px solid ${T.red}`,
+                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          fontSize: 10,
+                          transition: "all 0.15s",
+                        }}
+                        title="Reject Document"
+                      >✗</button>
+                    </div>
+                  </div>
+                  {doc.extra && (
+                    <div style={{ fontSize: 11, color: T.inkLight, borderTop: `1px dashed ${T.border}`, marginTop: 6, paddingTop: 4 }}>
+                      {doc.extra}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderBgcPreview = (_record) => (
     <div style={{ fontSize: 13, color: T.inkMid }}>
@@ -643,19 +909,32 @@ export default function Onboarding({ jobPostings = [], offers = [], jobApplicati
                             <button
                               onClick={() => {
                                 let title = "";
-                                let content = null;
-                                if (key === "profile") { title = "Candidate Profile"; content = renderProfilePreview(currentRecord, candDetails); }
-                                else if (key === "offer") { title = "Offer Letter Details"; content = renderOfferPreview(currentRecord, candDetails); }
-                                else if (key === "docsUpload") { title = "Uploaded Documents"; content = renderDocsUploadPreview(currentRecord); }
-                                else if (key === "docsVerify") { title = "Document Verification Checks"; content = renderDocsVerifyPreview(currentRecord); }
-                                else if (key === "bgc") { title = "Background Check Details"; content = renderBgcPreview(currentRecord); }
-                                setPreviewDoc({ type: key, title, content });
+                                if (key === "profile") title = "Candidate Profile";
+                                else if (key === "offer") title = "Offer Letter Details";
+                                else if (key === "docsUpload") title = "Uploaded Documents";
+                                else if (key === "docsVerify") title = "Document Verification Checks";
+                                else if (key === "bgc") title = "Background Check Details";
+                                setPreviewDoc({ type: key, title });
                               }}
                               style={{ border: `1.5px solid ${T.border}`, background: T.surface, color: T.blue, borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
                             >View</button>
-                            {(key === "docsVerify" || key === "bgc") && val !== "Verified" && val !== "Rejected" && (
+                            {(key === "docsVerify" || key === "bgc") && (
                               <>
-                                <button onClick={() => setConfirmAction({ id: currentRecord.id, key, status: "Verified" })} style={{ border: "none", background: T.greenLight, color: T.green, borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Verify</button>
+                                <button
+                                  disabled={key === "docsVerify" && !areAllDocsVerified(currentRecord)}
+                                  onClick={() => setConfirmAction({ id: currentRecord.id, key, status: "Verified" })}
+                                  style={{
+                                    border: "none",
+                                    background: (key === "docsVerify" && !areAllDocsVerified(currentRecord)) ? T.canvas : T.greenLight,
+                                    color: (key === "docsVerify" && !areAllDocsVerified(currentRecord)) ? T.inkFaint : T.green,
+                                    borderRadius: 6,
+                                    padding: "4px 10px",
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    cursor: (key === "docsVerify" && !areAllDocsVerified(currentRecord)) ? "not-allowed" : "pointer",
+                                    opacity: (key === "docsVerify" && !areAllDocsVerified(currentRecord)) ? 0.6 : 1
+                                  }}
+                                >Verify</button>
                                 <button onClick={() => setConfirmAction({ id: currentRecord.id, key, status: "Rejected" })} style={{ border: "none", background: T.redLight, color: T.red, borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Reject</button>
                               </>
                             )}
@@ -682,15 +961,25 @@ export default function Onboarding({ jobPostings = [], offers = [], jobApplicati
       </Modal>
 
       <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} maxWidth={500}>
-        {previewDoc && (
-          <>
-            <ModalHeader title={previewDoc.title} onClose={() => setPreviewDoc(null)} />
-            <div style={{ padding: "12px 0" }}>{previewDoc.content}</div>
-            <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-              <Btn label="Close" onClick={() => setPreviewDoc(null)} />
-            </div>
-          </>
-        )}
+        {previewDoc && (() => {
+          let content = null;
+          const candDetails = getCandidateDetails(currentRecord.name);
+          if (previewDoc.type === "profile") content = renderProfilePreview(currentRecord, candDetails);
+          else if (previewDoc.type === "offer") content = renderOfferPreview(currentRecord, candDetails);
+          else if (previewDoc.type === "docsUpload") content = renderDocsUploadPreview(currentRecord);
+          else if (previewDoc.type === "docsVerify") content = renderDocsVerifyPreview(currentRecord);
+          else if (previewDoc.type === "bgc") content = renderBgcPreview(currentRecord);
+
+          return (
+            <>
+              <ModalHeader title={previewDoc.title} onClose={() => setPreviewDoc(null)} />
+              <div style={{ padding: "12px 0" }}>{content}</div>
+              <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+                <Btn label="Close" onClick={() => setPreviewDoc(null)} />
+              </div>
+            </>
+          );
+        })()}
       </Modal>
 
       <Modal open={!!confirmAction} onClose={() => setConfirmAction(null)} maxWidth={400}>

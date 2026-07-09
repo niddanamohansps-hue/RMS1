@@ -382,6 +382,7 @@ export const fromBackendOffer = (o) => {
     expiry: o.expiry_date,
     joining: o.joining_date,
     status: uiStatus,
+    onboarding: o.onboarding,
   };
 };
 

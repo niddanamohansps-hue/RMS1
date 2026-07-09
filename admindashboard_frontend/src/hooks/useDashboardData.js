@@ -130,7 +130,7 @@ export default function useDashboardData(currentUser, pathname, navigate) {
         } else if (path === "/dashboard/offer-management") {
           needsSpinner = !loadedOnce.current.offers || !loadedOnce.current.jobPostings;
         } else if (path === "/dashboard/onboarding") {
-          needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.offers;
+          needsSpinner = !loadedOnce.current.jobPostings || !loadedOnce.current.offers || !loadedOnce.current.applications;
         } else if (path === "/panelist") {
           needsSpinner = !loadedOnce.current.interviews || !loadedOnce.current.jobPostings;
         }
@@ -181,6 +181,7 @@ export default function useDashboardData(currentUser, pathname, navigate) {
         } else if (path === "/dashboard/onboarding") {
           if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
           if (isBackground || !loadedOnce.current.offers) promises.push(loadOffers());
+          if (isBackground || !loadedOnce.current.applications) promises.push(loadApplications());
         } else if (path === "/panelist") {
           if (isBackground || !loadedOnce.current.interviews) promises.push(loadInterviews());
           if (isBackground || !loadedOnce.current.jobPostings) promises.push(loadJobPostings());
@@ -355,42 +356,10 @@ export default function useDashboardData(currentUser, pathname, navigate) {
                 payload.skills_required = n.skillsRequired || "";
               }
               await api.post(`/approvals/${c.db_id}/action/`, payload);
-              
-              if (n.status === "Approved") {
+                           if (n.status === "Approved") {
                 if (n.type === "Role Request") {
-                   setExistingRoles((prev) => {
-                     const exists = prev.some((x) => x.role === n.role && x.dept === n.dept);
-                     if (exists) return prev;
-                     const cleanedSalary = n.salary ? n.salary.replace(/^₹/, "") : "";
-                     return [...prev, {
-                       id: `ROL-${Date.now()}`, dept: n.dept, role: n.role, type: n.empType || "Full-time",
-                      headcount: 1, filled: 0, currentFilled: 0, status: "Inactive", currentStatus: "Inactive",
-                      experience: n.experience || "—",
-                      salaryRange: cleanedSalary || "—",
-                    }];
-                  });
                   setTimeout(() => { navigate("/dashboard/existing-roles"); }, 300);
                 } else if (n.type === "Job Request") {
-                  setJobPostings((prev) => {
-                    const exists = prev.some((p) => p.role === n.role);
-                    if (exists) return prev;
-                    return [...prev, {
-                      id: `POST-${Date.now()}`, role: n.role, channel: "Career Page",
-                      status: "Unpublished", posted: new Date().toLocaleDateString(), expiry: "30 Days", apps: 0,
-                      location: n.location || "",
-                      salary: n.salary || "",
-                      vacancies: n.vacancies || "",
-                      exp: n.experience || "",
-                      qual: n.qual || "",
-                      type: n.empType || "",
-                      description: n.description || "",
-                      educationalQualifications: n.educationalQualifications || "",
-                      skillsRequired: n.skillsRequired || "",
-                      job_request: n.source_db_id,
-                      category: n.category || "",
-                      department: n.dept || "",
-                    }];
-                  });
                   setTimeout(() => { navigate("/dashboard/applications"); }, 300);
                 }
               }
@@ -398,7 +367,13 @@ export default function useDashboardData(currentUser, pathname, navigate) {
           }
         }
       }
-      await Promise.all([loadApprovals(), loadRoleRequests(), loadJobRequests()]);
+      await Promise.all([
+        loadApprovals(),
+        loadRoleRequests(),
+        loadJobRequests(),
+        loadJobPostings(),
+        loadRoles(),
+      ]);
     } finally {
       setIsLoading(false);
     }

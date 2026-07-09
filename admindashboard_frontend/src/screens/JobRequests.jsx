@@ -624,8 +624,8 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
                 </FormField>
 
                 {/* Row 3 */}
-                <FormField label="Employment Type" required>
-                  <Select value={form.type} onChange={(e) => updateForm(index, "type", e.target.value)} options={TYPE_OPTIONS} placeholder="Select type…" />
+                <FormField label="Employment Type (Auto-populated)" required>
+                  <Select value={form.type} disabled options={TYPE_OPTIONS} placeholder="Select role first" style={{ background: T.canvas, cursor: "not-allowed" }} />
                 </FormField>
                 <FormField label="Location" required>
                   <Input placeholder="Enter job location" value={form.location} onChange={(e) => updateForm(index, "location", e.target.value)} />
@@ -961,12 +961,13 @@ export default function JobRequests({ jobRequests, setJobRequests, setApprovalRe
 
                       {/* Row 3 */}
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Employment Type</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Employment Type (Auto-populated)</div>
                         <Select
                           value={selectedRequest.type || ""}
-                          onChange={(e) => setSelectedRequest({ ...selectedRequest, type: e.target.value })}
                           options={TYPE_OPTIONS}
-                          placeholder="Select type…"
+                          placeholder="Select role first"
+                          disabled
+                          style={{ background: T.canvas, cursor: "not-allowed" }}
                         />
                       </div>
                       <div>

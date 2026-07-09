@@ -2,8 +2,23 @@ from rest_framework import serializers
 from users.utils import auto_id
 from .models import Offer, OnboardingRecord
 
+
+class OnboardingSerializer(serializers.ModelSerializer):
+    completion_percentage = serializers.ReadOnlyField()
+
+    class Meta:
+        model  = OnboardingRecord
+        fields = "__all__"
+        read_only_fields = ["record_id", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        validated_data["record_id"] = auto_id("ONB", OnboardingRecord)
+        return super().create(validated_data)
+
+
 class OfferSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField()
+    onboarding = OnboardingSerializer(read_only=True)
 
     class Meta:
         model  = Offer
@@ -62,19 +77,6 @@ class OfferStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Offer
         fields = ["status"]
-
-
-class OnboardingSerializer(serializers.ModelSerializer):
-    completion_percentage = serializers.ReadOnlyField()
-
-    class Meta:
-        model  = OnboardingRecord
-        fields = "__all__"
-        read_only_fields = ["record_id", "created_at", "updated_at"]
-
-    def create(self, validated_data):
-        validated_data["record_id"] = auto_id("ONB", OnboardingRecord)
-        return super().create(validated_data)
 
 
 class OnboardingTaskSerializer(serializers.ModelSerializer):

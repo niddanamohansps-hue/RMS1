@@ -204,6 +204,40 @@ export function CandidateDashboard({
   useEffect(() => {
     setOfferAccepted(candidateOffer?.status === "Accepted");
     setOfferRejected(candidateOffer?.status === "Rejected");
+
+    if (candidateOffer?.onboarding) {
+      const onb = candidateOffer.onboarding;
+      setDocsSubmitted(onb.task_docs_upload);
+      setAadharNumber(onb.aadhar_number || "");
+      setPanNumber(onb.pan_number || "");
+      setPfNumber(onb.pf_number || "");
+      setEsiNumber(onb.esi_number || "");
+      setBankAccount(onb.bank_account_number || "");
+      setBankIfsc(onb.bank_ifsc || "");
+      setBankName(onb.bank_name || "");
+      setBankHolder(onb.bank_holder_name || "");
+
+      const mappedDocs = {};
+      const keyMapping = {
+        aadhar_card: "aadhar",
+        pan_card: "pan",
+        bank_passbook: "bank_details",
+        passport_photo: "photo",
+        driving_license: "driving_license",
+        class10_marksheet: "class10",
+        class12_marksheet: "class12",
+        degree_certificate: "degree",
+        experience_certificate: "experience_cert",
+        professional_certificate: "prof_cert",
+      };
+
+      for (const [backendKey, frontendKey] of Object.entries(keyMapping)) {
+        if (onb[backendKey]) {
+          mappedDocs[frontendKey] = onb[backendKey];
+        }
+      }
+      setDocs(mappedDocs);
+    }
   }, [candidateOffer]);
 
   const [showOfferConfirm, setShowOfferConfirm] = useState(null);
@@ -864,8 +898,20 @@ export function CandidateDashboard({
     return true;
   };
 
-  // Onboarding documents submission validation
-  const handleSubmitDocs = () => {
+  const dataURLtoFile = (dataurl, filename) => {
+    const arr = dataurl.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Onboarding documents submission validation & API upload
+  const handleSubmitDocs = async () => {
     const requiredKeys = ["aadhar", "pan", "bank_details", "photo"];
     const missing = requiredKeys.filter((k) => !docs[k]);
     if (missing.length > 0) {
@@ -899,8 +945,61 @@ export function CandidateDashboard({
       toast.error("Please fill all bank details (Account Number, IFSC, Bank Name, Holder Name)");
       return;
     }
-    setDocsSubmitted(true);
-    toast.success("Documents submitted successfully!");
+
+    const onboardingId = candidateOffer.onboarding?.id;
+    if (!onboardingId) {
+      toast.error("No active onboarding record found for this offer.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("aadhar_number", aadharNumber.replace(/\s/g, ""));
+      formData.append("pan_number", panNumber.trim());
+      formData.append("bank_holder_name", bankHolder.trim());
+      formData.append("bank_account_number", bankAccount.trim());
+      formData.append("bank_ifsc", bankIfsc.trim());
+      formData.append("bank_name", bankName.trim());
+      formData.append("pf_number", pfNumber.trim());
+      formData.append("esi_number", esiNumber.trim());
+      formData.append("task_docs_upload", "true");
+      formData.append("status", "In Progress");
+
+      const keyMapping = {
+        aadhar: "aadhar_card",
+        pan: "pan_card",
+        bank_details: "bank_passbook",
+        photo: "passport_photo",
+        driving_license: "driving_license",
+        class10: "class10_marksheet",
+        class12: "class12_marksheet",
+        degree: "degree_certificate",
+        experience_cert: "experience_certificate",
+        prof_cert: "professional_certificate",
+      };
+
+      for (const [key, val] of Object.entries(docs)) {
+        const backendKey = keyMapping[key];
+        if (!backendKey) continue;
+
+        if (val instanceof File) {
+          formData.append(backendKey, val);
+        } else if (typeof val === "string" && val.startsWith("Captured_")) {
+          const dataUrl = docUrls[key];
+          if (dataUrl) {
+            const file = dataURLtoFile(dataUrl, val);
+            formData.append(backendKey, file);
+          }
+        }
+      }
+
+      await api.patch(`/onboarding/${onboardingId}/`, formData, true);
+      toast.success("Documents submitted successfully!");
+      setDocsSubmitted(true);
+      if (onReloadCandidateData) await onReloadCandidateData();
+    } catch (err) {
+      toast.error("Failed to submit documents: " + err.message);
+    }
   };
 
   // Doc camera helper

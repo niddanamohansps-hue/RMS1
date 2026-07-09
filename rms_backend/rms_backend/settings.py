@@ -104,7 +104,7 @@ else:
                 "PASSWORD": url.password,
                 "HOST": url.hostname,
                 "PORT": url.port or 5432,
-                "CONN_MAX_AGE": config("CONN_MAX_AGE", default=600, cast=int),
+                "CONN_MAX_AGE": config("CONN_MAX_AGE", default=0, cast=int),
             }
         }
     else:
@@ -116,7 +116,7 @@ else:
                 "PASSWORD": config("DB_PASSWORD", default=""),
                 "HOST": config("DB_HOST", default="127.0.0.1"),
                 "PORT": config("DB_PORT", default="5432"),
-                "CONN_MAX_AGE": config("CONN_MAX_AGE", default=600, cast=int),
+                "CONN_MAX_AGE": config("CONN_MAX_AGE", default=0, cast=int),
             }
         }
 

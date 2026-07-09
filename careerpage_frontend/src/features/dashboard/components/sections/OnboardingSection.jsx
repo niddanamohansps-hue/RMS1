@@ -40,16 +40,14 @@ export function OnboardingSection({
   startDocCamera,
   handleSubmitDocs,
 }) {
-  const uploadedKeys = Object.keys(docs);
-  const anyUploadedAndVerified = uploadedKeys.some((k) => docStatus[k] === "verified");
-
+  const onboarding = candidateOffer?.onboarding || {};
   const steps = [
-    { label: "Profile Submitted", done: true, desc: "Your basic profile has been received." },
-    { label: "Offer Letter Accepted", done: offerAccepted, desc: "Accept your offer letter to proceed." },
-    { label: "Documentation Upload", done: docsSubmitted, desc: "Upload all required documents after accepting the offer." },
-    { label: "Document Verification", done: anyUploadedAndVerified, desc: "HR will verify your submitted documents." },
-    { label: "Background Check", done: false, desc: "HR will initiate a background verification." },
-    { label: "Joining Confirmation", done: false, desc: "You will receive a final confirmation email." },
+    { label: "Profile Submitted", done: !!onboarding.task_profile, desc: "Your basic profile has been received." },
+    { label: "Offer Letter Accepted", done: !!onboarding.task_offer || offerAccepted, desc: "Accept your offer letter to proceed." },
+    { label: "Documentation Upload", done: !!onboarding.task_docs_upload || docsSubmitted, desc: "Upload all required documents after accepting the offer." },
+    { label: "Document Verification", done: !!onboarding.task_docs_verify, desc: "HR will verify your submitted documents." },
+    { label: "Background Check", done: !!onboarding.task_bgc, desc: "HR will initiate a background verification." },
+    { label: "Joining Confirmation", done: !!onboarding.task_checkin, desc: "You will receive a final confirmation email." },
   ];
 
   return (

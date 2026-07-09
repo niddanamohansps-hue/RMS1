@@ -206,6 +206,7 @@ function AppContent() {
             status: activeOffer.status === "Sent" ? "Pending" : activeOffer.status,
             candidateName: activeOffer.candidate_name,
             letterUrl: activeOffer.offer_letter,
+            onboarding: activeOffer.onboarding,
           });
         } else {
           setCandidateOffer(null);

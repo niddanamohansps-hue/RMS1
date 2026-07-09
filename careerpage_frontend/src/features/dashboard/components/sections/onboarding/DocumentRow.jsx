@@ -48,13 +48,26 @@ export function DocumentRow({
   const uploaded = docs[docKey];
   const verif = docsSubmitted && uploaded ? docStatus[docKey] || "pending" : null;
 
+  const getDocName = (val) => {
+    if (!val) return "";
+    if (val instanceof File) return val.name;
+    if (typeof val === "string") {
+      if (val.startsWith("http://") || val.startsWith("https://") || val.startsWith("/media/")) {
+        return val.split("/").pop();
+      }
+      return val;
+    }
+    return String(val);
+  };
+  const docName = getDocName(uploaded);
+
   return (
     <div className="dr-row-container">
       <div className="dr-row-header">
         <div className="dr-info">
           <div className="dr-label">{label}</div>
           <div className="dr-note">
-            {uploaded ? uploaded : note}
+            {uploaded ? docName : note}
           </div>
         </div>
 
@@ -66,7 +79,7 @@ export function DocumentRow({
               </div>
               <button
                 onClick={() => {
-                  const url = docUrls[docKey];
+                  const url = docUrls[docKey] || (typeof uploaded === "string" ? uploaded : null);
                   if (url) {
                     window.open(url, "_blank");
                   }
@@ -110,7 +123,7 @@ export function DocumentRow({
                     const f = e.target.files?.[0];
                     if (f) {
                       const url = URL.createObjectURL(f);
-                      setDocs((prev) => ({ ...prev, [docKey]: f.name }));
+                      setDocs((prev) => ({ ...prev, [docKey]: f }));
                       setDocUrls((prev) => ({ ...prev, [docKey]: url }));
                     }
                   }}
