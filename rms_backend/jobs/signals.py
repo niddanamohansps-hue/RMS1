@@ -53,7 +53,7 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
     If it's updated (resubmitted) and its status changes to "Pending", create a new ApprovalRequest.
     """
     if created:
-        ApprovalRequest.objects.create(
+        apr = ApprovalRequest.objects.create(
             request_id=instance.request_id,
             type="Role Request",
             title=instance.role,
@@ -61,6 +61,12 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
             submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
             status="Pending",
             role_request=instance,
+        )
+        ApprovalHistory.objects.create(
+            approval=apr,
+            action="Submitted",
+            acted_by=apr.submitted_by or "Requester",
+            note=instance.justification or ""
         )
     else:
         # Sync title and department of all approvals linked to this role request
@@ -75,7 +81,7 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
             # If it's updated to Pending (resubmitted), check if there is already an active Pending approval
             has_pending = ApprovalRequest.objects.filter(role_request=instance, status="Pending").exists()
             if not has_pending:
-                ApprovalRequest.objects.create(
+                apr = ApprovalRequest.objects.create(
                     request_id=instance.request_id,
                     type="Role Request",
                     title=instance.role,
@@ -83,6 +89,12 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
                     submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
                     status="Pending",
                     role_request=instance,
+                )
+                ApprovalHistory.objects.create(
+                    approval=apr,
+                    action="Submitted",
+                    acted_by=apr.submitted_by or "Requester",
+                    note=instance.justification or ""
                 )
 
     # Auto-create or update ExistingRole when status transitions to Approved
@@ -126,7 +138,7 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
     If it's updated (resubmitted) and its status changes to "Pending", create a new ApprovalRequest.
     """
     if created:
-        ApprovalRequest.objects.create(
+        apr = ApprovalRequest.objects.create(
             request_id=instance.request_id,
             type="Job Request",
             title=instance.role,
@@ -134,6 +146,12 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
             submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
             status="Pending",
             job_request=instance,
+        )
+        ApprovalHistory.objects.create(
+            approval=apr,
+            action="Submitted",
+            acted_by=apr.submitted_by or "Requester",
+            note=instance.justification or instance.description or ""
         )
     else:
         # Sync title and department of all approvals linked to this job request
@@ -148,7 +166,7 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
             # If it's updated to Pending (resubmitted), check if there is already an active Pending approval
             has_pending = ApprovalRequest.objects.filter(job_request=instance, status="Pending").exists()
             if not has_pending:
-                ApprovalRequest.objects.create(
+                apr = ApprovalRequest.objects.create(
                     request_id=instance.request_id,
                     type="Job Request",
                     title=instance.role,
@@ -156,6 +174,12 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
                     submitted_by=instance.created_by.get_full_name() if instance.created_by else instance.submitted_by,
                     status="Pending",
                     job_request=instance,
+                )
+                ApprovalHistory.objects.create(
+                    approval=apr,
+                    action="Submitted",
+                    acted_by=apr.submitted_by or "Requester",
+                    note=instance.justification or instance.description or ""
                 )
 
 

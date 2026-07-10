@@ -294,6 +294,7 @@ function AppContent() {
             <Route path="/dashboard/existing-roles" element={<ExistingRoles roles={existingRoles} setRoles={setExistingRoles} />} />
             <Route path="/dashboard/role-requests" element={
               <RoleRequests
+                currentUser={currentUser}
                 roleRequests={roleRequests}
                 setRoleRequests={setRoleRequests}
                 setApprovalRequests={setApprovalRequests}
@@ -304,6 +305,7 @@ function AppContent() {
             } />
             <Route path="/dashboard/job-requests" element={
               <JobRequests
+                currentUser={currentUser}
                 jobRequests={jobRequests}
                 setJobRequests={setJobRequests}
                 approvalRequests={approvalRequests}
@@ -316,6 +318,7 @@ function AppContent() {
             } />
             <Route path="/dashboard/approval-requests" element={
               <ApprovalRequests
+                currentUser={currentUser}
                 requests={approvalRequests}
                 setRequests={setApprovalRequests}
                 existingRoles={existingRoles}

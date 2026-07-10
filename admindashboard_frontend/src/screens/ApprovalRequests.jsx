@@ -11,7 +11,27 @@ const labelCss = {
   letterSpacing: "0.06em", marginBottom: 4,
 };
 
-export default function ApprovalRequests({ requests, setRequests, existingRoles, setExistingRoles, setJobPostings, setRoleRequests, setJobRequests, onNavigateToApplications, onNavigateToExistingRoles }) {
+const chatAvatar = (name) => {
+  const initials = (name || "U").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+  const colors = ["#E0F2FE", "#F3E8FF", "#FFE4E6", "#FEF3C7", "#D1FAE5", "#F1F5F9"];
+  const textColors = ["#0369A1", "#6B21A8", "#BE123C", "#B45309", "#047857", "#475569"];
+  const code = (name || "").charCodeAt(0) || 0;
+  const index = code % colors.length;
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: "50%",
+      background: colors[index], color: textColors[index],
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontWeight: 700, fontSize: 11, flexShrink: 0,
+      border: `1.5px solid ${T.white || "#ffffff"}`,
+      boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+    }}>
+      {initials}
+    </div>
+  );
+};
+
+export default function ApprovalRequests({ currentUser, requests, setRequests, existingRoles, setExistingRoles, jobPostings, setJobPostings, setRoleRequests, setJobRequests, onNavigateToApplications, onNavigateToExistingRoles }) {
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
   const [sel, setSel] = useState(null);
@@ -514,27 +534,151 @@ export default function ApprovalRequests({ requests, setRequests, existingRoles,
               </div>
 
               {sel.history?.length > 0 && (
-                <div>
+                <div style={{ marginTop: 20 }}>
                   <div style={{ ...labelCss, marginBottom: 12 }}>Activity History</div>
-                  {sel.history.map((h, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: i === sel.history.length - 1 ? T.blue : T.border, marginTop: 3, flexShrink: 0 }} />
-                        {i < sel.history.length - 1 && <div style={{ width: 2, flex: 1, background: T.border, margin: "3px 0" }} />}
-                      </div>
-                      <div style={{ paddingBottom: i < sel.history.length - 1 ? 4 : 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: T.ink }}>
-                          {h.act} <span style={{ fontWeight: 400, color: T.inkLight }}>by {h.by}</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: T.inkFaint }}>{h.date}</div>
-                        {h.note && (
-                          <div style={{ marginTop: 4, fontSize: 12, color: T.amber, background: T.amberLight, padding: "6px 10px", borderRadius: 7, border: `1px solid #FDE68A` }}>
-                            {h.note}
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    background: T.canvas || "#faf8f5",
+                    border: `1px solid ${T.border || "#E8E2D9"}`,
+                    borderRadius: 12,
+                    padding: "16px 24px 16px 16px",
+                    maxHeight: 400,
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    boxSizing: "border-box",
+                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.02)"
+                  }}>
+                    {sel.history.map((h, i) => {
+                      const isMe = h.act !== "Submitted" && (h.by === "HR Admin" || (currentUser && (
+                        h.by === currentUser.name ||
+                        h.by === currentUser.full_name ||
+                        h.by === `${currentUser.first_name} ${currentUser.last_name}`
+                      )));
+
+                      const hasNote = !!h.note;
+
+                      if (!hasNote) {
+                        return (
+                          <div key={i} style={{ display: "flex", justifyContent: "center", margin: "4px 0" }}>
+                            <div style={{
+                              background: "#F0F2F5",
+                              color: "#54656F",
+                              fontSize: 11,
+                              fontWeight: 600,
+                              padding: "4px 12px",
+                              borderRadius: 8,
+                              boxShadow: "0 1px 1px rgba(0,0,0,0.02)",
+                              textAlign: "center"
+                            }}>
+                              {h.act} by {h.by} • {h.date}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                        );
+                      }
+
+                      const isApprove = h.act === "Approved" || h.act === "Approve";
+                      const isSendBack = h.act === "Sent Back" || h.act === "Send Back";
+                      const isReject = h.act === "Rejected" || h.act === "Reject";
+                      
+                      let bubbleBg = "#F3F4F6";
+                      let bubbleBorder = "#E5E7EB";
+                      let bubbleColor = T.ink;
+                      let actLabel = h.act;
+                      let badgeColor = T.inkLight;
+                      let badgeBg = "#E5E7EB";
+
+                      if (isApprove) {
+                        bubbleBg = "#ECFDF5"; // greenLight
+                        bubbleBorder = "#A7F3D0";
+                        bubbleColor = "#065F46";
+                        actLabel = "Approved";
+                        badgeBg = "#D1FAE5";
+                        badgeColor = "#047857";
+                      } else if (isSendBack) {
+                        bubbleBg = "#FFF7ED"; // amberLight
+                        bubbleBorder = "#FDE68A";
+                        bubbleColor = "#9A3412";
+                        actLabel = "Sent Back";
+                        badgeBg = "#FEF3C7";
+                        badgeColor = "#B45309";
+                      } else if (isReject) {
+                        bubbleBg = "#FEF2F2"; // redLight
+                        bubbleBorder = "#FCA5A5";
+                        bubbleColor = "#991B1B";
+                        actLabel = "Rejected";
+                        badgeBg = "#FEE2E2";
+                        badgeColor = "#B91C1C";
+                      } else if (h.act === "Submitted") {
+                        bubbleBg = "#F0FDFA"; // tealLight
+                        bubbleBorder = "#CCFBF1";
+                        bubbleColor = "#115E59";
+                        actLabel = "Submitted";
+                        badgeBg = "#CCFBF1";
+                        badgeColor = "#0D9488";
+                      }
+
+                      const borderRadius = isMe ? "12px 12px 0px 12px" : "12px 12px 12px 0px";
+
+                      return (
+                        <div key={i} style={{
+                          display: "flex",
+                          justifyContent: isMe ? "flex-end" : "flex-start",
+                          gap: 8,
+                          alignItems: "flex-start",
+                          width: "100%"
+                        }}>
+                          {!isMe && chatAvatar(h.by)}
+                          
+                          <div style={{
+                            maxWidth: "75%",
+                            minWidth: "120px",
+                            background: bubbleBg,
+                            border: `1.5px solid ${bubbleBorder}`,
+                            borderRadius: borderRadius,
+                            padding: "8px 12px",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                            position: "relative"
+                          }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>
+                                {isMe ? "You" : h.by}
+                              </span>
+                              <span style={{
+                                fontSize: 8,
+                                fontWeight: 800,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                background: badgeBg,
+                                color: badgeColor,
+                                padding: "1px 4px",
+                                borderRadius: 3
+                              }}>
+                                {actLabel}
+                              </span>
+                            </div>
+                            
+                            <div style={{ fontSize: 12, color: bubbleColor, lineHeight: 1.4, wordBreak: "break-word" }}>
+                              {h.note}
+                            </div>
+                            
+                            <div style={{
+                              fontSize: 9,
+                              color: T.inkFaint || "#8696A0",
+                              textAlign: "right",
+                              marginTop: 4,
+                              display: "block"
+                            }}>
+                              {h.date}
+                            </div>
+                          </div>
+
+                          {isMe && chatAvatar(h.by)}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
