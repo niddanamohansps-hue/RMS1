@@ -2257,7 +2257,27 @@ export default function InterviewPanel({
                         <div><strong>Date &amp; Time:</strong> {roundInv.date ? `${roundInv.date} at ${roundInv.time}` : "Not Scheduled"}</div>
                         <div><strong>Mode:</strong> {roundInv.mode || "In-Person"}</div>
                         <div><strong>Panel:</strong> {roundInv.panel?.join(", ") || "None"}</div>
-                        <div><strong>Score / Rec:</strong> {roundInv.score !== null ? `${roundInv.score}/100 (${roundInv.rec})` : "Not Evaluated"}</div>
+                        <div>
+                          <strong>Score / Rec:</strong>{" "}
+                          {roundInv.score !== null ? (
+                            <>
+                              {roundInv.score}/100 ({roundInv.rec}) [Average]
+                              {roundInv.evaluations && roundInv.evaluations.length > 0 && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 4 }}>
+                                  {roundInv.evaluations.map((ev, idx) => {
+                                    const vals = ev.scores ? Object.values(ev.scores) : [];
+                                    const evScore = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / (vals.length * 5)) * 100) : null;
+                                    return (
+                                      <div key={idx} style={{ fontSize: 10, color: T.inkLight, paddingLeft: 8 }}>
+                                        • {ev.panelist}: {evScore !== null ? `${evScore}/100` : "No Score"} ({ev.recommendation || "—"})
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          ) : "Not Evaluated"}
+                        </div>
                       </div>
                       {roundInv.remarks && (
                         <div style={{ fontSize: 11, color: T.inkLight, background: "#fff", padding: 6, borderRadius: 4, border: `1px solid ${T.border}` }}>

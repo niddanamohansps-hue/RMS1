@@ -33,6 +33,12 @@ class InterviewViewSet(viewsets.ModelViewSet):
             return Interview.objects.filter(
                 Q(application__candidate=user) | Q(candidate_name__iexact=full_name)
             ).select_related("application", "application__candidate").prefetch_related("panel")
+        
+        # If the user is a panelist (and not the main HR admin or superuser), filter interviews to only theirs
+        if not user.is_superuser and user.email != "hr@southpoint.edu":
+            if Panelist.objects.filter(email=user.email).exists():
+                return Interview.objects.filter(panel__email=user.email).distinct().select_related("application", "application__candidate").prefetch_related("panel")
+
         return Interview.objects.all().select_related("application", "application__candidate").prefetch_related("panel")
 
     def get_permissions(self):

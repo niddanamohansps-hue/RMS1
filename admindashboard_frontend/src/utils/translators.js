@@ -305,6 +305,14 @@ export const fromBackendInterview = (i) => {
   const frontendTime = mapTimeFromBackend(i.time);
   let frontendMode = i.mode === "Offline" ? "In-Person" : (i.mode || "Online");
 
+  let evaluations = [];
+  try {
+    evaluations = JSON.parse(i.feedback || "[]");
+    if (!Array.isArray(evaluations)) evaluations = [];
+  } catch {
+    evaluations = [];
+  }
+
   return {
     id: i.interview_id,
     db_id: i.id,
@@ -317,6 +325,7 @@ export const fromBackendInterview = (i) => {
     score: i.score || "",
     rec: frontendRec,
     feedback: i.feedback || "",
+    evaluations: evaluations,
     status: frontendStatus,
     mode: frontendMode,
     meetingLink: i.meeting_link,
@@ -327,10 +336,7 @@ export const fromBackendInterview = (i) => {
 };
 
 export const toBackendInterview = (i, panelIds) => {
-  let backendStatus = i.status || "Scheduled";
-  if (backendStatus === "Pending") {
-    backendStatus = "Scheduled";
-  }
+  let backendStatus = i.status || "Pending";
 
   let backendRec = i.rec || "";
   if (backendRec === "—") {
@@ -348,6 +354,10 @@ export const toBackendInterview = (i, panelIds) => {
   const backendTime = mapTimeToBackend(i.time);
   let backendMode = i.mode === "In-Person" ? "Offline" : (i.mode || "Online");
 
+  const feedbackValue = Array.isArray(i.evaluations) && i.evaluations.length > 0
+    ? JSON.stringify(i.evaluations)
+    : (i.feedback || "");
+
   return {
     interview_id: i.id,
     candidate_name: i.candidate,
@@ -361,7 +371,7 @@ export const toBackendInterview = (i, panelIds) => {
     round: i.round || 1,
     score: (i.score !== null && i.score !== undefined && i.score !== "") ? parseInt(i.score) : null,
     recommendation: backendRec,
-    feedback: i.feedback || "",
+    feedback: feedbackValue,
     application: i.application || null,
     reminder_sent_at: i.reminderSentAt || null,
   };

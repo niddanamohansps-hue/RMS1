@@ -18,6 +18,7 @@ class Panelist(models.Model):
 
 class Interview(models.Model):
     STATUS_CHOICES = [
+        ("Pending",    "Pending"),
         ("Scheduled",  "Scheduled"),
         ("Completed",  "Completed"),
         ("Cancelled",  "Cancelled"),
@@ -54,7 +55,7 @@ class Interview(models.Model):
         max_length=20, choices=RECOMMENDATION_CHOICES, blank=True
     )
     feedback       = models.TextField(blank=True)
-    status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Scheduled")
+    status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     mode           = models.CharField(max_length=20, choices=MODE_CHOICES, default="Online")
     meeting_link   = models.URLField(blank=True)
     round          = models.PositiveIntegerField(default=1)

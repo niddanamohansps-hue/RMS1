@@ -392,13 +392,32 @@ export default function OfferManagement({ offers, setOffers, jobPostings = [], e
                       </div>
                     ))}
                   </div>
-                  {interview && (interview.feedback || (interview.evaluations?.length > 0 && interview.evaluations[interview.evaluations.length - 1].notes)) && (
-                    <div style={{ padding: "12px 14px", background: T.primaryLight, border: `1px solid ${T.primary}22`, borderRadius: 10, marginBottom: 16 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: T.primary, textTransform: "uppercase", letterSpacing: "0.05em" }}>Panelist Remarks</span>
-                      <div style={{ fontSize: 13, color: T.primaryDark, marginTop: 4, fontStyle: "italic" }}>
-                        "{interview.feedback || interview.evaluations[interview.evaluations.length - 1].notes}"
-                      </div>
-                    </div>
+                  {interview && (
+                    (() => {
+                      const isJson = interview.feedback && interview.feedback.trim().startsWith("[");
+                      const evsWithNotes = (interview.evaluations || []).filter(ev => ev.notes && ev.notes.trim());
+                      const hasRemarks = evsWithNotes.length > 0 || (interview.feedback && !isJson);
+                      if (!hasRemarks) return null;
+
+                      return (
+                        <div style={{ padding: "12px 14px", background: T.primaryLight, border: `1px solid ${T.primary}22`, borderRadius: 10, marginBottom: 16 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: T.primary, textTransform: "uppercase", letterSpacing: "0.05em" }}>Panelist Remarks</span>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+                            {evsWithNotes.length > 0 ? (
+                              evsWithNotes.map((ev, idx) => (
+                                <div key={idx} style={{ fontSize: 12, color: T.primaryDark, fontStyle: "italic" }}>
+                                  <strong>{ev.panelist}:</strong> "{ev.notes}"
+                                </div>
+                              ))
+                            ) : (
+                              <div style={{ fontSize: 13, color: T.primaryDark, fontStyle: "italic" }}>
+                                "{interview.feedback}"
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()
                   )}
                 </>
               );

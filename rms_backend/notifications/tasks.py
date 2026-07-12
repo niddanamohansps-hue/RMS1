@@ -350,3 +350,84 @@ South Point School Recruitment Team
         fail_silently=True,
     )
     return f"Sent offer letter email to {email} for offer {offer.offer_id}"
+
+
+@shared_task
+def send_interview_completed_email_task(interview_id):
+    """
+    Sends email notification to the candidate with their overall average scores for completed rounds.
+    """
+    from interviews.models import Interview
+    try:
+        interview = Interview.objects.get(id=interview_id)
+    except Interview.DoesNotExist:
+        return f"Interview with id {interview_id} does not exist"
+
+    # Find candidate
+    candidate = interview.application.candidate if interview.application else None
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        from applications.models import JobApplication
+        app = JobApplication.objects.annotate(
+            full_name=Concat('candidate__first_name', Value(' '), 'candidate__last_name')
+        ).filter(full_name__iexact=interview.candidate_name, role=interview.role).first()
+        if app:
+            candidate = app.candidate
+
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        from applications.models import GeneralApplication
+        app = GeneralApplication.objects.annotate(
+            full_name=Concat('candidate__first_name', Value(' '), 'candidate__last_name')
+        ).filter(full_name__iexact=interview.candidate_name, preferred_role=interview.role).first()
+        if app:
+            candidate = app.candidate
+
+    if not candidate:
+        from django.db.models import Value
+        from django.db.models.functions import Concat
+        candidate = get_user_model().objects.annotate(
+            full_name=Concat('first_name', Value(' '), 'last_name')
+        ).filter(full_name__iexact=interview.candidate_name).first()
+
+    if not candidate:
+        return f"Could not find candidate profile for email lookup: {interview.candidate_name}"
+
+    # Get all completed rounds for this candidate and role
+    completed_interviews = Interview.objects.filter(
+        candidate_name=interview.candidate_name,
+        role=interview.role,
+        status="Completed"
+    ).order_by("round")
+
+    round_summaries = []
+    for r_inv in completed_interviews:
+        round_summaries.append(f"- Round {r_inv.round}: {r_inv.score}/100")
+    rounds_text = "\n".join(round_summaries)
+
+    subject = f"Interview Round Completed: {interview.role}"
+    body = f"""Dear {candidate.get_full_name() or "Candidate"},
+
+Thank you for participating in the interview process for the position of '{interview.role}'.
+
+We have completed the evaluations for your Round {interview.round} interview. Here is a summary of your average scores:
+
+{rounds_text}
+
+We will get back to you soon with the next steps.
+
+Best regards,
+South Point School Recruitment Team
+"""
+
+    from django.core.mail import send_mail
+    send_mail(
+        subject=subject,
+        message=body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[candidate.email],
+        fail_silently=True,
+    )
+    return f"Sent interview round completed email to candidate {candidate.email} for round {interview.round}"

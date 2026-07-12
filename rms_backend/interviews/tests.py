@@ -195,3 +195,30 @@ class InterviewNotificationTestCase(APITransactionTestCase):
         
         # Verify send_interview_email_task is called with is_reschedule=False (first-time schedule)
         mock_send_email.assert_called_once_with(interview.id, is_reschedule=False)
+
+    @patch("notifications.tasks.send_interview_completed_email_task.delay")
+    def test_complete_interview_triggers_completed_email(self, mock_completed_email):
+        # Create a scheduled interview
+        interview = Interview.objects.create(
+            interview_id="INT-003",
+            candidate_name="Souradip Roy",
+            role="Computer Science Teacher",
+            round=1,
+            mode="Offline",
+            date="2026-08-01",
+            time="10:00:00",
+            status="Scheduled"
+        )
+
+        url = reverse("interviews-detail", args=[interview.id])
+        data = {
+            "status": "Completed",
+            "score": 92,
+            "recommendation": "Hire",
+            "feedback": "Great candidate."
+        }
+        response = self.client.patch(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify completed email is triggered
+        mock_completed_email.assert_called_once_with(interview.id)

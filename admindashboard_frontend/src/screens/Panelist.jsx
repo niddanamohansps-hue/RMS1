@@ -82,13 +82,18 @@ export default function Panelist({ interviews = [], setInterviews, jobPostings =
     return { allowed: true };
   };
 
+  const isAdmin = currentUser === "admin";
+  const myInterviews = isAdmin
+    ? interviews
+    : interviews.filter((i) => i.panel?.includes(currentUser));
+
   const enrichedPostings = jobPostings.map((p) => ({
     ...p,
-    count: interviews.filter((i) => i.role === p.role && i.date && i.status !== "Completed").length,
+    count: myInterviews.filter((i) => i.role === p.role && i.date && i.status !== "Completed").length,
   }));
 
   const selectedRole = enrichedPostings.find((p) => p.id === selectedJobId)?.role ?? null;
-  const scheduledInterviews = interviews.filter((i) => i.date);
+  const scheduledInterviews = myInterviews.filter((i) => i.date);
 
   const statusFilteredInterviews = statusFilter === "All"
     ? scheduledInterviews

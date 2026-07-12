@@ -198,8 +198,8 @@ Maintains internal panelists and interview scheduling details against applicatio
       "fields": {
         "interview_id": { "type": "String(30)", "attributes": "Unique" },
         "application_id": { "type": "Foreign Key", "attributes": "To job_applications" },
-        "date": { "type": "Date", "attributes": "Required" },
-        "time": { "type": "Time", "attributes": "Required" },
+        "date": { "type": "Date", "attributes": "Optional, Nullable" },
+        "time": { "type": "Time", "attributes": "Optional, Nullable" },
         "status": { "type": "String(20)", "attributes": "Default: 'Scheduled'" },
         "recommendation": { "type": "String(20)", "attributes": "Blank" }
       }

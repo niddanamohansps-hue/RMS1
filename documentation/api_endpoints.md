@@ -2652,12 +2652,12 @@ https://rms1-1-suhq.onrender.com/api/interviews/
 | application    | Integer | No       | Application ID (nullable)          | 12                                         |
 | candidate_name | String  | Yes      | Name of the candidate              | Jane Doe                                   |
 | role           | String  | Yes      | Role being interviewed for         | Senior Mathematics Teacher                 |
-| date           | String  | Yes      | Interview date (YYYY-MM-DD)        | 2026-07-10                                 |
-| time           | String  | Yes      | Interview time (HH:MM:SS)         | 14:00:00                                   |
-| mode           | String  | No       | Online or Offline (default Online) | Online                                     |
-| meeting_link   | String  | No       | Meeting link (for online mode)     | https://meet.google.com/abc-defg-hij       |
-| round          | Integer | No       | Interview round number (default 1) | 1                                          |
-| panel          | Array   | Yes      | List of panelist IDs               | [1, 2]                                     |
+| date           | String  | No       | Interview date (YYYY-MM-DD) (nullable/optional) | 2026-07-10                                 |
+| time           | String  | No       | Interview time (HH:MM:SS) (nullable/optional)   | 14:00:00                                   |
+| mode           | String  | No       | Online or Offline (default Online)              | Online                                     |
+| meeting_link   | String  | No       | Meeting link (for online mode)                  | https://meet.google.com/abc-defg-hij       |
+| round          | Integer | No       | Interview round number (default 1)              | 1                                          |
+| panel          | Array   | No       | List of panelist IDs (optional on write)        | [1, 2]                                     |
 
 **Example Request**
 

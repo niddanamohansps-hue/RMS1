@@ -56,6 +56,10 @@ class InterviewSerializer(serializers.ModelSerializer):
         # Determine if it was already scheduled previously
         was_previously_scheduled = bool(instance.date and instance.time)
 
+        # Track completion status and score for candidate email trigger
+        was_completed = (instance.status == "Completed")
+        old_score = instance.score
+
         new_panelist_ids_to_email = []
         if panel_data is not None:
             current_panel_ids = set(instance.panel.values_list("id", flat=True))
@@ -74,9 +78,10 @@ class InterviewSerializer(serializers.ModelSerializer):
         if panel_data is not None:
             instance.panel.set(panel_data)
 
+        from django.db import transaction
+
         # Trigger emails ONLY if the interview actually has a date and time scheduled!
         if instance.date and instance.time:
-            from django.db import transaction
             if scheduling_changed:
                 from notifications.tasks import send_interview_email_task
                 is_reschedule = was_previously_scheduled
@@ -85,6 +90,12 @@ class InterviewSerializer(serializers.ModelSerializer):
                 from notifications.tasks import send_new_panelists_email_task
                 transaction.on_commit(lambda: send_new_panelists_email_task.delay(instance.id, new_panelist_ids_to_email))
 
+        # Trigger candidate completed score email
+        if instance.status == "Completed" and instance.score is not None:
+            if not was_completed or instance.score != old_score:
+                from notifications.tasks import send_interview_completed_email_task
+                transaction.on_commit(lambda: send_interview_completed_email_task.delay(instance.id))
+
         return instance
 
 
@@ -92,3 +103,17 @@ class InterviewScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Interview
         fields = ["score", "recommendation", "feedback", "status"]
+
+    def update(self, instance, validated_data):
+        was_completed = (instance.status == "Completed")
+        old_score = instance.score
+
+        instance = super().update(instance, validated_data)
+
+        if instance.status == "Completed" and instance.score is not None:
+            if not was_completed or instance.score != old_score:
+                from django.db import transaction
+                from notifications.tasks import send_interview_completed_email_task
+                transaction.on_commit(lambda: send_interview_completed_email_task.delay(instance.id))
+
+        return instance
