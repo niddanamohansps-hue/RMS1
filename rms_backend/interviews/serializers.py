@@ -20,7 +20,7 @@ class PanelistSerializer(serializers.ModelSerializer):
 class InterviewSerializer(serializers.ModelSerializer):
     panel_details = PanelistSerializer(source="panel", many=True, read_only=True)
     panel         = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Panelist.objects.all(), write_only=True
+        many=True, queryset=Panelist.objects.all(), write_only=True, required=False
     )
 
     class Meta:
@@ -34,10 +34,11 @@ class InterviewSerializer(serializers.ModelSerializer):
         interview = Interview.objects.create(**validated_data)
         interview.panel.set(panel_data)
 
-        # Trigger email notification task
-        from django.db import transaction
-        from notifications.tasks import send_interview_email_task
-        transaction.on_commit(lambda: send_interview_email_task.delay(interview.id))
+        # Trigger email notification task ONLY if date and time are both set
+        if interview.date and interview.time:
+            from django.db import transaction
+            from notifications.tasks import send_interview_email_task
+            transaction.on_commit(lambda: send_interview_email_task.delay(interview.id, is_reschedule=False))
 
         return interview
 
@@ -46,17 +47,25 @@ class InterviewSerializer(serializers.ModelSerializer):
         
         # Track if scheduling fields are changing
         scheduling_fields = ["date", "time", "mode", "meeting_link", "round"]
-        has_scheduling_changes = False
+        scheduling_changed = False
         
         for field in scheduling_fields:
             if field in validated_data and getattr(instance, field) != validated_data[field]:
-                has_scheduling_changes = True
+                scheduling_changed = True
                 
+        # Determine if it was already scheduled previously
+        was_previously_scheduled = bool(instance.date and instance.time)
+
+        new_panelist_ids_to_email = []
         if panel_data is not None:
             current_panel_ids = set(instance.panel.values_list("id", flat=True))
             new_panel_ids = {p.id for p in panel_data}
-            if current_panel_ids != new_panel_ids:
-                has_scheduling_changes = True
+            
+            # If scheduling itself changed, we will email ALL currently assigned panelists (new_panel_ids) the updated schedule.
+            # But if scheduling did NOT change, and only panelists changed, we only email the newly added panelists.
+            if not scheduling_changed:
+                added_panel_ids = new_panel_ids - current_panel_ids
+                new_panelist_ids_to_email = list(added_panel_ids)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -65,11 +74,16 @@ class InterviewSerializer(serializers.ModelSerializer):
         if panel_data is not None:
             instance.panel.set(panel_data)
 
-        # Trigger email notification task only if scheduling details changed
-        if has_scheduling_changes:
+        # Trigger emails ONLY if the interview actually has a date and time scheduled!
+        if instance.date and instance.time:
             from django.db import transaction
-            from notifications.tasks import send_interview_email_task
-            transaction.on_commit(lambda: send_interview_email_task.delay(instance.id))
+            if scheduling_changed:
+                from notifications.tasks import send_interview_email_task
+                is_reschedule = was_previously_scheduled
+                transaction.on_commit(lambda: send_interview_email_task.delay(instance.id, is_reschedule=is_reschedule))
+            elif new_panelist_ids_to_email:
+                from notifications.tasks import send_new_panelists_email_task
+                transaction.on_commit(lambda: send_new_panelists_email_task.delay(instance.id, new_panelist_ids_to_email))
 
         return instance
 

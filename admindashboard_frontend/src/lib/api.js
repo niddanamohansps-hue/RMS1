@@ -68,6 +68,10 @@ const handleResponse = async (res, retryFn) => {
         // Refresh failed — clear session and force re-login
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
+        localStorage.removeItem("currentUser");
+        localStorage.removeItem("selectedModule");
+        sessionStorage.removeItem("currentUser");
+        sessionStorage.removeItem("selectedModule");
         window.location.href = "/login";
         throw new Error("Session expired. Please log in again.");
       }

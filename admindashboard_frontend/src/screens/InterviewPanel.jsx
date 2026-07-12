@@ -1360,16 +1360,18 @@ export default function InterviewPanel({
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); setAssigningCandidate(c); }}
-                          disabled={isPreviousRound}
+                          disabled={isPreviousRound || !isScheduled}
                           style={{
                             flex: 1, padding: "10px 0", borderRadius: 10,
-                            background: isPreviousRound ? "rgba(255,255,255,0.05)" : "rgba(255, 215, 0, 0.15)",
-                            color: isPreviousRound ? "rgba(255,255,255,0.3)" : "#FBBF24",
-                            border: isPreviousRound ? "none" : "1px solid rgba(255, 215, 0, 0.25)",
-                            fontSize: 13, fontWeight: 700, cursor: isPreviousRound ? "not-allowed" : "pointer",
-                            opacity: isPreviousRound ? 0.6 : 1,
+                            background: (isPreviousRound || !isScheduled) ? "rgba(255,255,255,0.05)" : "rgba(255, 215, 0, 0.15)",
+                            color: (isPreviousRound || !isScheduled) ? "rgba(255,255,255,0.3)" : "#FBBF24",
+                            border: (isPreviousRound || !isScheduled) ? "none" : "1px solid rgba(255, 215, 0, 0.25)",
+                            fontSize: 13, fontWeight: 700, cursor: (isPreviousRound || !isScheduled) ? "not-allowed" : "pointer",
+                            opacity: (isPreviousRound || !isScheduled) ? 0.6 : 1,
                           }}
-                        >👥 Panelist</button>
+                        >
+                          {i.panel && i.panel.length > 0 ? "👥 Edit Panelist" : "👥 Panelist"}
+                        </button>
                         {isScheduled && (
                           <button
                             onClick={(e) => { e.stopPropagation(); setReminderCandidate(c); }}
@@ -1743,11 +1745,11 @@ export default function InterviewPanel({
                           )}
                           <button
                             onClick={() => setAssigningCandidate(c)}
-                            disabled={isPreviousRound}
-                            style={{ ...actionBtnStyle("amber", isPreviousRound), width: "100%", textAlign: "center" }}
-                            className={isPreviousRound ? "" : "btn-action-hover"}
+                            disabled={isPreviousRound || !i.date}
+                            style={{ ...actionBtnStyle("amber", isPreviousRound || !i.date), width: "100%", textAlign: "center" }}
+                            className={(isPreviousRound || !i.date) ? "" : "btn-action-hover"}
                           >
-                            Panelist
+                            {i.panel && i.panel.length > 0 ? "Edit Panelist" : "Panelist"}
                           </button>
                           {i.date ? (
                             <button

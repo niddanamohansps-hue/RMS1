@@ -46,8 +46,8 @@ class Interview(models.Model):
     )
     candidate_name = models.CharField(max_length=200)
     role           = models.CharField(max_length=200)
-    date           = models.DateField()
-    time           = models.TimeField()
+    date           = models.DateField(null=True, blank=True)
+    time           = models.TimeField(null=True, blank=True)
     panel          = models.ManyToManyField(Panelist, blank=True, related_name="interviews")
     score          = models.PositiveIntegerField(null=True, blank=True)
     recommendation = models.CharField(

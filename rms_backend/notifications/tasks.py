@@ -25,7 +25,7 @@ def create_notification_task(recipient_id, notification_type, title, message):
 
 
 @shared_task
-def send_interview_email_task(interview_id):
+def send_interview_email_task(interview_id, is_reschedule=False):
     """
     Sends notification emails to the candidate and all panelists assigned to the interview.
     """
@@ -35,7 +35,10 @@ def send_interview_email_task(interview_id):
     except Interview.DoesNotExist:
         return f"Interview with id {interview_id} does not exist"
 
-    subject = f"Interview Scheduled: {interview.role} - Round {interview.round}"
+    if is_reschedule:
+        subject = f"Interview Rescheduled: {interview.role} - Round {interview.round}"
+    else:
+        subject = f"Interview Scheduled: {interview.role} - Round {interview.round}"
 
     # 1. Email to Candidate
     candidate = interview.application.candidate if interview.application else None
@@ -67,7 +70,24 @@ def send_interview_email_task(interview_id):
         ).filter(full_name__iexact=interview.candidate_name).first()
 
     if candidate:
-        candidate_body = f"""Dear {candidate.get_full_name() or "Candidate"},
+        if is_reschedule:
+            candidate_body = f"""Dear {candidate.get_full_name() or "Candidate"},
+
+Your Round {interview.round} interview for the role of '{interview.role}' has been rescheduled.
+
+Updated Details:
+Date: {interview.date}
+Time: {interview.time}
+Mode: {interview.mode}
+{"Meeting Link: " + interview.meeting_link if interview.meeting_link else ""}
+
+Please be prepared.
+
+Best regards,
+South Point School Recruitment Team
+"""
+        else:
+            candidate_body = f"""Dear {candidate.get_full_name() or "Candidate"},
 
 Your Round {interview.round} interview for the role of '{interview.role}' has been scheduled.
 
@@ -94,6 +114,61 @@ South Point School Recruitment Team
     # 2. Email to Panelists
     panelists = interview.panel.all()
     for panelist in panelists:
+        if is_reschedule:
+            panelist_body = f"""Dear {panelist.name},
+
+The Round {interview.round} interview of {interview.candidate_name} for the role of '{interview.role}', where you are assigned as a panelist, has been rescheduled.
+
+Updated Details:
+Date: {interview.date}
+Time: {interview.time}
+Mode: {interview.mode}
+{"Meeting Link: " + interview.meeting_link if interview.meeting_link else ""}
+
+Best regards,
+South Point School Recruitment Team
+"""
+        else:
+            panelist_body = f"""Dear {panelist.name},
+
+You have been assigned as a panelist for the Round {interview.round} interview of {interview.candidate_name} for the role of '{interview.role}'.
+
+Details:
+Date: {interview.date}
+Time: {interview.time}
+Mode: {interview.mode}
+{"Meeting Link: " + interview.meeting_link if interview.meeting_link else ""}
+
+Best regards,
+South Point School Recruitment Team
+"""
+        from django.core.mail import send_mail
+        send_mail(
+            subject=subject,
+            message=panelist_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[panelist.email],
+            fail_silently=True,
+        )
+
+    return f"Sent interview scheduling/rescheduling emails for {interview.interview_id}"
+
+
+@shared_task
+def send_new_panelists_email_task(interview_id, new_panelist_ids):
+    """
+    Sends notification emails only to the newly assigned/added panelists.
+    """
+    from interviews.models import Interview, Panelist
+    try:
+        interview = Interview.objects.get(id=interview_id)
+    except Interview.DoesNotExist:
+        return f"Interview with id {interview_id} does not exist"
+
+    subject = f"Assigned as Panelist: {interview.role} - Round {interview.round}"
+    
+    panelists = Panelist.objects.filter(id__in=new_panelist_ids)
+    for panelist in panelists:
         panelist_body = f"""Dear {panelist.name},
 
 You have been assigned as a panelist for the Round {interview.round} interview of {interview.candidate_name} for the role of '{interview.role}'.
@@ -116,7 +191,8 @@ South Point School Recruitment Team
             fail_silently=True,
         )
 
-    return f"Sent interview scheduling emails for {interview.interview_id}"
+    return f"Sent assignment email to newly added panelists for interview {interview.interview_id}"
+
 
 
 @shared_task
