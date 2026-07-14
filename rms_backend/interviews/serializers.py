@@ -104,6 +104,12 @@ class InterviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         panel_data = validated_data.pop("panel", [])
         validated_data["interview_id"] = auto_id("INT", Interview)
+
+        # Set status to Scheduled if date and time are provided and status is default/Pending
+        status = validated_data.get("status", "Pending")
+        if validated_data.get("date") and validated_data.get("time") and status == "Pending":
+            validated_data["status"] = "Scheduled"
+
         interview = Interview.objects.create(**validated_data)
         interview.panel.set(panel_data)
 
@@ -129,6 +135,16 @@ class InterviewSerializer(serializers.ModelSerializer):
                 
         # Determine if it was already scheduled previously
         was_previously_scheduled = bool(instance.date and instance.time)
+
+        # Update status if date and time are set and status is in Pending/Scheduled/Rescheduled
+        status = validated_data.get("status", instance.status)
+        if status in ["Pending", "Scheduled", "Rescheduled"]:
+            has_date_time = bool(validated_data.get("date", instance.date) and validated_data.get("time", instance.time))
+            if has_date_time:
+                if scheduling_changed and was_previously_scheduled:
+                    validated_data["status"] = "Rescheduled"
+                else:
+                    validated_data["status"] = "Scheduled"
 
         # Track completion status and score for candidate email trigger
         was_completed = (instance.status == "Completed")

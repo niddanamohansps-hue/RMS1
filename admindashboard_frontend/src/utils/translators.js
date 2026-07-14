@@ -358,6 +358,9 @@ export const fromBackendInterview = (i) => {
 
 export const toBackendInterview = (i, panelIds) => {
   let backendStatus = i.status || "Pending";
+  if (backendStatus === "Pending" && i.date && i.time) {
+    backendStatus = "Scheduled";
+  }
 
   let backendRec = i.rec || "";
   if (backendRec === "—") {
