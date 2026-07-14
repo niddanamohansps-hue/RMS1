@@ -20,9 +20,13 @@ const REC_COLORS = {
 };
 
 function computeScore(scores) {
-  const vals = Object.values(scores);
-  if (!vals.length) return null;
-  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 20);
+  const keys = Object.keys(scores || {});
+  if (!keys.length) return 0;
+  let total = 0;
+  for (const k of keys) {
+    total += scores[k] || 0;
+  }
+  return Math.round((total / (keys.length * 5)) * 100);
 }
 
 function computeTotalScore(evaluations) {
@@ -115,8 +119,10 @@ export default function Panelist({ interviews = [], setInterviews, jobPostings =
 
   const openEval = (interview) => {
     setSelectedInterview(interview);
-    setEvaluatorName(currentUser);
-    const existingEval = interview.evaluations?.find((e) => e.panelist === currentUser);
+    const assigned = interview.panel || [];
+    const defaultEvaluator = assigned.includes(currentUser) ? currentUser : "admin";
+    setEvaluatorName(defaultEvaluator);
+    const existingEval = interview.evaluations?.find((e) => e.panelist === defaultEvaluator);
     if (existingEval) {
       setScores(existingEval.scores || {});
       setCustomFields(existingEval.customFields || []);
@@ -218,17 +224,17 @@ export default function Panelist({ interviews = [], setInterviews, jobPostings =
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}`, paddingBottom: 12 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: isMobileCard ? "#fff" : T.ink }}>Candidate Evaluation</h3>
-            <div style={{ marginTop: 2, fontSize: 11, color: isMobileCard ? "rgba(255,255,255,0.7)" : T.inkLight }}>Evaluating as <strong>{evaluatorName}</strong></div>
+            <div style={{ marginTop: 2, fontSize: 11, color: isMobileCard ? "rgba(255,255,255,0.7)" : T.inkLight }}>{currentUser === "admin" ? "Record Evaluation For" : "Evaluating as"} <strong>{evaluatorName}</strong></div>
           </div>
           <button onClick={() => setSelectedInterview(null)} style={{ background: isMobileCard ? "rgba(255,255,255,0.1)" : "none", border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.2)" : T.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: isMobileCard ? "#fff" : T.inkMid, cursor: "pointer", transition: "all 0.15s" }} className="btn-action-hover">✕ Cancel</button>
         </div>
 
         {currentUser === "admin" && (
           <div style={{ padding: 12, background: isMobileCard ? "rgba(255,255,255,0.05)" : "#fff", borderRadius: 8, border: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}` }}>
-            <label style={{ display: "block", fontWeight: 700, marginBottom: 6, fontSize: 9, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Evaluating as</label>
+            <label style={{ display: "block", fontWeight: 700, marginBottom: 6, fontSize: 9, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>Record Evaluation For</label>
             <select value={evaluatorName} onChange={(e) => handleEvaluatorChange(interview, e.target.value)} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.2)" : T.border}`, fontSize: 12, fontWeight: 600, color: isMobileCard ? "#fff" : T.inkMid, background: isMobileCard ? "#3a0010" : "#fff", cursor: "pointer", outline: "none" }}>
-              <option value={currentUser}>{currentUser}</option>
-              {(interview.panel || []).filter((name) => name !== currentUser).map((name) => (
+              <option value="admin">admin</option>
+              {(interview.panel || []).filter(name => name !== "admin").map((name) => (
                 <option key={name} value={name}>{name}</option>
               ))}
             </select>
@@ -245,7 +251,27 @@ export default function Panelist({ interviews = [], setInterviews, jobPostings =
               return (
                 <div key={field} style={{ padding: "10px 12px", border: `1px solid ${isMobileCard ? "rgba(255,255,255,0.12)" : T.border}`, borderRadius: 8, background: isMobileCard ? "rgba(255,255,255,0.03)" : T.canvas }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: isMobileCard ? "#fff" : T.ink }}>{field}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 13, color: isMobileCard ? "#fff" : T.ink }}>{field}</span>
+                      {!DEFAULT_FIELDS.includes(field) && (
+                        <button
+                          onClick={() => {
+                            setCustomFields(prev => prev.filter(f => f !== field));
+                            setScores(prev => {
+                              const copy = { ...prev };
+                              delete copy[field];
+                              return copy;
+                            });
+                          }}
+                          style={{
+                            background: "none", border: "none", color: T.red, cursor: "pointer",
+                            fontSize: 11, fontWeight: 700, padding: 0
+                          }}
+                        >
+                          ✕ Remove
+                        </button>
+                      )}
+                    </div>
                     <span style={{ fontSize: 11, fontWeight: 800, color: hasScore ? activeColor : (isMobileCard ? "rgba(255,255,255,0.4)" : T.inkFaint) }}>{hasScore ? `${displayScore} / 5` : "Not Rated"}</span>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
@@ -274,7 +300,7 @@ export default function Panelist({ interviews = [], setInterviews, jobPostings =
         )}
 
         <div style={{ borderTop: `1px solid ${isMobileCard ? "rgba(255,255,255,0.15)" : T.border}`, paddingTop: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Add Custom Field</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: isMobileCard ? "rgba(255,255,255,0.5)" : T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Add Custom Criterion</div>
           <div style={{ display: "flex", gap: 8 }}>
             <input value={newField} onChange={(e) => setNewField(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustomField()} placeholder="e.g. Technical Skills..." style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1.5px solid ${isMobileCard ? "rgba(255,255,255,0.2)" : T.border}`, fontSize: 12.5, color: isMobileCard ? "#fff" : T.ink, background: isMobileCard ? "rgba(255,255,255,0.1)" : "#fff", outline: "none" }} />
             <button onClick={addCustomField} style={{ background: isMobileCard ? "rgba(255,255,255,0.2)" : T.inkMid, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>Add</button>

@@ -305,13 +305,32 @@ export const fromBackendInterview = (i) => {
   const frontendTime = mapTimeFromBackend(i.time);
   let frontendMode = i.mode === "Offline" ? "In-Person" : (i.mode || "Online");
 
-  let evaluations = [];
-  try {
-    evaluations = JSON.parse(i.feedback || "[]");
-    if (!Array.isArray(evaluations)) evaluations = [];
-  } catch {
-    evaluations = [];
-  }
+  const backendEvals = i.evaluations || [];
+  const panelDetails = i.panel_details || [];
+  const evaluations = backendEvals.map(ev => {
+    const pDetail = panelDetails.find(pd => pd.id === ev.panelist);
+    const pName = pDetail ? pDetail.name : `Panelist ${ev.panelist}`;
+    return {
+      id: ev.id,
+      panelist_id: ev.panelist,
+      panelist: pName,
+      criteria: ev.criteria || {},
+      custom_criteria: ev.custom_criteria || {},
+      scores: { ...(ev.criteria || {}), ...(ev.custom_criteria || {}) },
+      customFields: Object.keys(ev.custom_criteria || {}),
+      overall_score: ev.overall_score,
+      recommendation: ev.recommendation,
+      notes: ev.notes || "",
+      submittedAt: ev.submitted_at,
+      updatedAt: ev.updated_at
+    };
+  });
+
+  const evaluationSummary = i.evaluation_summary || {
+    assigned_count: (i.panel_details || i.panel || []).length,
+    submitted_count: evaluations.length,
+    average_score: i.score || null
+  };
 
   return {
     id: i.interview_id,
@@ -322,10 +341,12 @@ export const fromBackendInterview = (i) => {
     time: frontendTime,
     panel: (i.panel_details || i.panel || []).map(p => typeof p === 'object' ? p.name : p),
     panel_ids: (i.panel || []).map(p => typeof p === 'object' ? p.id : p),
+    panel_details: panelDetails,
     score: i.score || "",
     rec: frontendRec,
     feedback: i.feedback || "",
     evaluations: evaluations,
+    evaluation_summary: evaluationSummary,
     status: frontendStatus,
     mode: frontendMode,
     meetingLink: i.meeting_link,

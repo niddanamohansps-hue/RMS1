@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from users.utils import auto_id
-from .models import Panelist, Interview
+from .models import Panelist, Interview, InterviewEvaluation
 
 class PanelistSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,16 +17,89 @@ class PanelistSerializer(serializers.ModelSerializer):
         return value
 
 
+CORE_CRITERIA = {
+    "Communication Skills",
+    "Subject Knowledge",
+    "Confidence",
+    "Problem Solving",
+    "Cultural Fit",
+}
+
+
+class InterviewEvaluationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InterviewEvaluation
+        fields = [
+            "id",
+            "panelist",
+            "criteria",
+            "custom_criteria",
+            "overall_score",
+            "recommendation",
+            "notes",
+            "submitted_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "overall_score", "submitted_at", "updated_at"]
+
+    def validate_criteria(self, value):
+        if not value:
+            raise serializers.ValidationError("criteria cannot be empty.")
+        keys = set(value.keys())
+        if keys != CORE_CRITERIA:
+            missing = CORE_CRITERIA - keys
+            unexpected = keys - CORE_CRITERIA
+            raise serializers.ValidationError(
+                "criteria must contain exactly the core rubric. "
+                f"Missing: {sorted(missing)}. Unexpected (move to "
+                f"custom_criteria instead): {sorted(unexpected)}."
+            )
+        if not all(isinstance(v, int) and 1 <= v <= 5 for v in value.values()):
+            raise serializers.ValidationError("Every core criterion score must be an integer 1-5.")
+        return value
+
+    def validate_custom_criteria(self, value):
+        if value:
+            if not all(isinstance(v, int) and 1 <= v <= 5 for v in value.values()):
+                raise serializers.ValidationError("Every custom criterion score must be an integer 1-5.")
+        return value
+
+
 class InterviewSerializer(serializers.ModelSerializer):
     panel_details = PanelistSerializer(source="panel", many=True, read_only=True)
     panel         = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Panelist.objects.all(), write_only=True, required=False
     )
+    evaluations   = InterviewEvaluationSerializer(many=True, read_only=True)
+    panelist_evaluation = InterviewEvaluationSerializer(write_only=True, required=False)
+    evaluation_summary = serializers.SerializerMethodField()
 
     class Meta:
         model  = Interview
-        fields = "__all__"
+        fields = [
+            "id", "interview_id", "application", "candidate_name", "role", "date", "time",
+            "panel", "panel_details", "score", "recommendation", "feedback", "status",
+            "mode", "meeting_link", "round", "reminder_sent_at", "created_at", "updated_at",
+            "evaluations", "panelist_evaluation", "evaluation_summary"
+        ]
         read_only_fields = ["interview_id", "created_at", "updated_at"]
+
+    def get_evaluation_summary(self, instance):
+        evals = instance.evaluations.all()
+        assigned_count = len(instance.panel.all())
+        valid_scores = [e.overall_score for e in evals if e.overall_score is not None]
+        submitted_count = len(valid_scores)
+        
+        if submitted_count > 0:
+            avg = round(sum(valid_scores) / submitted_count)
+        else:
+            avg = None
+            
+        return {
+            "assigned_count": assigned_count,
+            "submitted_count": len(evals),
+            "average_score": avg
+        }
 
     def create(self, validated_data):
         panel_data = validated_data.pop("panel", [])
@@ -43,6 +116,7 @@ class InterviewSerializer(serializers.ModelSerializer):
         return interview
 
     def update(self, instance, validated_data):
+        evaluation_data = validated_data.pop("panelist_evaluation", None)
         panel_data = validated_data.pop("panel", None)
         
         # Track if scheduling fields are changing
@@ -78,6 +152,32 @@ class InterviewSerializer(serializers.ModelSerializer):
         if panel_data is not None:
             instance.panel.set(panel_data)
 
+        # Upsert scorecard if panelist_evaluation is provided
+        if evaluation_data is not None:
+            panelist = evaluation_data.pop("panelist")
+
+            if panelist.name == 'admin':
+                if not instance.panel.filter(pk=panelist.pk).exists():
+                    instance.panel.add(panelist)
+            elif not instance.panel.filter(pk=panelist.pk).exists():
+                raise serializers.ValidationError(
+                    {"panelist_evaluation": {"panelist": "This panelist is not assigned to this interview."}}
+                )
+
+            criteria = evaluation_data.get("criteria", {})
+            custom_criteria = evaluation_data.get("custom_criteria", {})
+            all_criteria = {**criteria, **(custom_criteria or {})}
+            overall_score = self._compute_overall_score(all_criteria)
+
+            InterviewEvaluation.objects.update_or_create(
+                interview=instance,
+                panelist=panelist,
+                defaults={
+                    **evaluation_data,
+                    "overall_score": overall_score,
+                },
+            )
+
         from django.db import transaction
 
         # Trigger emails ONLY if the interview actually has a date and time scheduled!
@@ -97,6 +197,14 @@ class InterviewSerializer(serializers.ModelSerializer):
                 transaction.on_commit(lambda: send_interview_completed_email_task.delay(instance.id))
 
         return instance
+
+    @staticmethod
+    def _compute_overall_score(criteria):
+        if not criteria:
+            return None
+        total = sum(criteria.values())
+        return round(total / (len(criteria) * 5) * 100)
+
 
 
 class InterviewScoreSerializer(serializers.ModelSerializer):

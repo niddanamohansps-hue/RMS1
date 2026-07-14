@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Panelist, Interview
+from .models import Panelist, Interview, InterviewEvaluation
 
 @admin.register(Panelist)
 class PanelistAdmin(admin.ModelAdmin):
@@ -15,3 +15,11 @@ class InterviewAdmin(admin.ModelAdmin):
     search_fields = ["interview_id", "candidate_name", "role"]
     filter_horizontal = ["panel"]
     ordering      = ["-date"]
+
+
+@admin.register(InterviewEvaluation)
+class InterviewEvaluationAdmin(admin.ModelAdmin):
+    list_display  = ["id", "interview", "panelist", "overall_score", "recommendation", "submitted_at"]
+    list_filter   = ["recommendation", "submitted_at"]
+    search_fields = ["interview__interview_id", "interview__candidate_name", "panelist__name"]
+

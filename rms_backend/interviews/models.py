@@ -71,6 +71,46 @@ class Interview(models.Model):
         return f"{self.interview_id} — {self.candidate_name} (Round {self.round})"
 
 
+class InterviewEvaluation(models.Model):
+    interview = models.ForeignKey(
+        Interview,
+        on_delete=models.CASCADE,
+        related_name="evaluations",
+    )
+    panelist = models.ForeignKey(
+        Panelist,
+        on_delete=models.CASCADE,
+        related_name="evaluations",
+    )
+    criteria = models.JSONField(default=dict, blank=True)
+    custom_criteria = models.JSONField(default=dict, blank=True)
+    overall_score = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    recommendation = models.CharField(
+        max_length=20,
+        choices=Interview.RECOMMENDATION_CHOICES,
+        blank=True,
+    )
+    notes = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "interview_evaluations"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["interview", "panelist"],
+                name="unique_interview_panelist_evaluation",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.interview.interview_id} — {self.panelist.name}"
+
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model

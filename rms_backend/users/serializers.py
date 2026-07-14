@@ -47,6 +47,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Read-only user info returned after login / in profile."""
     full_name = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model  = User
@@ -54,6 +55,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return obj.get_full_name() or obj.email
+
+    def get_role(self, obj):
+        if obj.is_superuser:
+            return "admin"
+        return obj.role
 
 
 class ChangePasswordSerializer(serializers.Serializer):

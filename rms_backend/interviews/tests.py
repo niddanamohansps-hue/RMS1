@@ -222,3 +222,168 @@ class InterviewNotificationTestCase(APITransactionTestCase):
 
         # Verify completed email is triggered
         mock_completed_email.assert_called_once_with(interview.id)
+
+
+class PerPanelistEvaluationTestCase(APITransactionTestCase):
+    def setUp(self):
+        self.User = get_user_model()
+        self.admin_user = self.User.objects.create_user(
+            username="admin@school.edu",
+            email="admin@school.edu",
+            password="adminpassword",
+            role="admin",
+            is_staff=True
+        )
+        self.client.force_authenticate(user=self.admin_user)
+        
+        self.panelist1 = Panelist.objects.create(name="Panelist One", email="p1@school.edu")
+        self.panelist2 = Panelist.objects.create(name="Panelist Two", email="p2@school.edu")
+        
+        self.interview = Interview.objects.create(
+            interview_id="INT-EVAL-01",
+            candidate_name="Jane Doe",
+            role="Math Teacher",
+            date="2026-07-20",
+            time="10:00:00",
+            mode="Online",
+            round=1
+        )
+        self.interview.panel.set([self.panelist1, self.panelist2])
+
+    def test_submit_valid_scorecard_calculates_overall_score(self):
+        url = reverse("interviews-detail", args=[self.interview.id])
+        data = {
+            "panelist_evaluation": {
+                "panelist": self.panelist1.id,
+                "criteria": {
+                    "Communication Skills": 4,
+                    "Subject Knowledge": 5,
+                    "Confidence": 3,
+                    "Problem Solving": 4,
+                    "Cultural Fit": 5
+                },
+                "custom_criteria": {
+                    "Coding": 4
+                },
+                "recommendation": "Hire",
+                "notes": "Good candidates"
+            }
+        }
+        response = self.client.patch(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Check overall score logic ((4+5+3+4+5+4) = 25, 25/30 * 100 = 83)
+        from interviews.models import InterviewEvaluation
+        eval_obj = InterviewEvaluation.objects.get(interview=self.interview, panelist=self.panelist1)
+        self.assertEqual(eval_obj.overall_score, 83)
+        self.assertEqual(eval_obj.notes, "Good candidates")
+        
+        # Verify JSON response contains evaluations and evaluation_summary
+        self.assertEqual(len(response.data["evaluations"]), 1)
+        self.assertEqual(response.data["evaluations"][0]["overall_score"], 83)
+        self.assertEqual(response.data["evaluation_summary"]["assigned_count"], 2)
+        self.assertEqual(response.data["evaluation_summary"]["submitted_count"], 1)
+        self.assertEqual(response.data["evaluation_summary"]["average_score"], 83)
+
+    def test_submit_scorecard_rejects_missing_or_extra_core_criteria(self):
+        url = reverse("interviews-detail", args=[self.interview.id])
+        
+        # 1. Missing "Cultural Fit"
+        data = {
+            "panelist_evaluation": {
+                "panelist": self.panelist1.id,
+                "criteria": {
+                    "Communication Skills": 4,
+                    "Subject Knowledge": 5,
+                    "Confidence": 3,
+                    "Problem Solving": 4
+                },
+                "recommendation": "Hire"
+            }
+        }
+        response = self.client.patch(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("criteria", response.data["panelist_evaluation"])
+
+        # 2. Unexpected core criterion "Coding" inside criteria (should go to custom_criteria)
+        data = {
+            "panelist_evaluation": {
+                "panelist": self.panelist1.id,
+                "criteria": {
+                    "Communication Skills": 4,
+                    "Subject Knowledge": 5,
+                    "Confidence": 3,
+                    "Problem Solving": 4,
+                    "Cultural Fit": 5,
+                    "Coding": 5
+                },
+                "recommendation": "Hire"
+            }
+        }
+        response = self.client.patch(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("criteria", response.data["panelist_evaluation"])
+
+    def test_submit_scorecard_rejects_unassigned_panelist(self):
+        unassigned_panelist = Panelist.objects.create(name="Stranger", email="stranger@school.edu")
+        url = reverse("interviews-detail", args=[self.interview.id])
+        data = {
+            "panelist_evaluation": {
+                "panelist": unassigned_panelist.id,
+                "criteria": {
+                    "Communication Skills": 4,
+                    "Subject Knowledge": 5,
+                    "Confidence": 3,
+                    "Problem Solving": 4,
+                    "Cultural Fit": 5
+                },
+                "recommendation": "Hire"
+            }
+        }
+        response = self.client.patch(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("panelist", response.data["panelist_evaluation"])
+
+    def test_submit_scorecard_updates_existing_evaluation(self):
+        url = reverse("interviews-detail", args=[self.interview.id])
+        data1 = {
+            "panelist_evaluation": {
+                "panelist": self.panelist1.id,
+                "criteria": {
+                    "Communication Skills": 4,
+                    "Subject Knowledge": 4,
+                    "Confidence": 4,
+                    "Problem Solving": 4,
+                    "Cultural Fit": 4
+                },
+                "recommendation": "Hire"
+            }
+        }
+        response1 = self.client.patch(url, data1, format="json")
+        self.assertEqual(response1.status_code, status.HTTP_200_OK)
+        
+        # Check summary average
+        self.assertEqual(response1.data["evaluation_summary"]["average_score"], 80)
+        
+        # Submit again for panelist1 with different scores
+        data2 = {
+            "panelist_evaluation": {
+                "panelist": self.panelist1.id,
+                "criteria": {
+                    "Communication Skills": 5,
+                    "Subject Knowledge": 5,
+                    "Confidence": 5,
+                    "Problem Solving": 5,
+                    "Cultural Fit": 5
+                },
+                "recommendation": "Strong Hire"
+            }
+        }
+        response2 = self.client.patch(url, data2, format="json")
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        
+        # Check summary average updated to 100
+        self.assertEqual(response2.data["evaluation_summary"]["average_score"], 100)
+        from interviews.models import InterviewEvaluation
+        self.assertEqual(InterviewEvaluation.objects.filter(interview=self.interview).count(), 1)
+

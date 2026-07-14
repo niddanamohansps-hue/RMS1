@@ -57,6 +57,8 @@ class User(AbstractUser):
         verbose_name_plural = "Users"
 
     def save(self, *args, **kwargs):
+        if self.is_superuser:
+            self.role = "admin"
         if not self.username:
             self.username = self.email
         super().save(*args, **kwargs)

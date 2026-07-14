@@ -509,13 +509,57 @@ export default function useDashboardData(currentUser, pathname, navigate) {
             const cClean = { ...c, attendance: undefined };
             const nClean = { ...n, attendance: undefined };
             if (JSON.stringify(cClean) !== JSON.stringify(nClean)) {
-              try {
-                const panelIds = (n.panel || []).map(name => {
-                  const p = panelists.find(px => px.name === name);
-                  return p ? p.id : null;
-                }).filter(id => id !== null);
-                await api.put(`/interviews/${c.db_id}/`, toBackendInterview(n, panelIds));
-              } catch (err) { alert("Update failed: " + err.message); }
+              // Check if evaluations changed
+              const evalChanged = n.evaluations?.find(ne => {
+                const ce = c.evaluations?.find(x => x.panelist === ne.panelist);
+                return !ce || JSON.stringify(ce) !== JSON.stringify(ne);
+              });
+
+              if (evalChanged) {
+                try {
+                  const p = panelists.find(px => px.name === evalChanged.panelist) || { id: evalChanged.panelist_id };
+                  if (p && p.id) {
+                    const CORE_CRITERIA_KEYS = ["Communication Skills", "Subject Knowledge", "Confidence", "Problem Solving", "Cultural Fit"];
+                    const criteria = {};
+                    const custom_criteria = {};
+                    const evalScores = evalChanged.scores || evalChanged.criteria || {};
+
+                    CORE_CRITERIA_KEYS.forEach(key => {
+                      criteria[key] = evalScores[key] !== undefined ? Number(evalScores[key]) : 5;
+                    });
+
+                    Object.keys(evalScores).forEach(key => {
+                      if (!CORE_CRITERIA_KEYS.includes(key)) {
+                        custom_criteria[key] = Number(evalScores[key]);
+                      }
+                    });
+
+                    const payload = {
+                      panelist_evaluation: {
+                        panelist: p.id,
+                        criteria: criteria,
+                        custom_criteria: custom_criteria,
+                        recommendation: evalChanged.recommendation,
+                        notes: evalChanged.notes || ""
+                      }
+                    };
+
+                    await api.patch(`/interviews/${c.db_id}/`, payload);
+                  } else {
+                    throw new Error(`Panelist "${evalChanged.panelist}" not found in system.`);
+                  }
+                } catch (err) {
+                  alert("Submit evaluation failed: " + err.message);
+                }
+              } else {
+                try {
+                  const panelIds = (n.panel || []).map(name => {
+                    const p = panelists.find(px => px.name === name);
+                    return p ? p.id : null;
+                  }).filter(id => id !== null);
+                  await api.put(`/interviews/${c.db_id}/`, toBackendInterview(n, panelIds));
+                } catch (err) { alert("Update failed: " + err.message); }
+              }
             }
           }
         }
@@ -654,6 +698,7 @@ export default function useDashboardData(currentUser, pathname, navigate) {
     setOffers,
     interviews,
     setInterviews,
+    loadInterviews,
     panelists,
     setPanelists,
     handleGiveOffer,

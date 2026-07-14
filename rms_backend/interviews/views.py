@@ -11,11 +11,17 @@ from .models import Panelist, Interview
 from .serializers import PanelistSerializer, InterviewSerializer, InterviewScoreSerializer
 
 class PanelistViewSet(viewsets.ModelViewSet):
-    queryset           = Panelist.objects.filter(is_active=True)
     serializer_class   = PanelistSerializer
     permission_classes = [IsHRAdmin]
     search_fields      = ["name", "email", "department"]
     ordering_fields    = ["name"]
+
+    def get_queryset(self):
+        Panelist.objects.get_or_create(
+            name="admin",
+            defaults={"email": "admin@southpoint.edu", "department": "HR"}
+        )
+        return Panelist.objects.filter(is_active=True)
 
     def perform_destroy(self, instance):
         instance.is_active = False
@@ -32,14 +38,14 @@ class InterviewViewSet(viewsets.ModelViewSet):
             full_name = f"{user.first_name} {user.last_name}".strip()
             return Interview.objects.filter(
                 Q(application__candidate=user) | Q(candidate_name__iexact=full_name)
-            ).select_related("application", "application__candidate").prefetch_related("panel")
+            ).select_related("application", "application__candidate").prefetch_related("panel", "evaluations")
         
         # If the user is a panelist (and not the main HR admin or superuser), filter interviews to only theirs
         if not user.is_superuser and user.email != "hr@southpoint.edu":
             if Panelist.objects.filter(email=user.email).exists():
-                return Interview.objects.filter(panel__email=user.email).distinct().select_related("application", "application__candidate").prefetch_related("panel")
+                return Interview.objects.filter(panel__email=user.email).distinct().select_related("application", "application__candidate").prefetch_related("panel", "evaluations")
 
-        return Interview.objects.all().select_related("application", "application__candidate").prefetch_related("panel")
+        return Interview.objects.all().select_related("application", "application__candidate").prefetch_related("panel", "evaluations")
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "score", "upcoming"]:

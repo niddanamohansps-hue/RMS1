@@ -72,6 +72,10 @@ export default function InterviewPanel({
   const [scores, setScores] = useState({});
   const [recommendation, setRecommendation] = useState("");
   const [remarks, setRemarks] = useState("");
+  const [selectedPanelistId, setSelectedPanelistId] = useState("");
+  const [customFields, setCustomFields] = useState([]);
+  const [newField, setNewField] = useState("");
+  const [viewingEvaluation, setViewingEvaluation] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [schedulingCandidate, setSchedulingCandidate] = useState(null);
   const [assigningCandidate, setAssigningCandidate] = useState(null);
@@ -159,7 +163,7 @@ export default function InterviewPanel({
   const [filterActiveIndex, setFilterActiveIndex] = useState(0);
   const hScroll = useHorizontalScroll();
   const dateInputRef = useRef(null);
-  const criteria = ["Subject Knowledge", "Communication Skills", "Demo Class / Task", "Classroom Management"];
+  const criteria = ["Communication Skills", "Subject Knowledge", "Confidence", "Problem Solving", "Cultural Fit"];
 
   // Filter out candidates from Applications where status === "Shortlisted"
   const shortlistedCandidates = [
@@ -518,56 +522,60 @@ export default function InterviewPanel({
   };
 
   const submitEvaluation = () => {
+    if (!selectedPanelistId) {
+      alert("Please select a panelist.");
+      return;
+    }
     if (!recommendation) {
       alert("Please select a recommendation.");
       return;
     }
     if (!setInterviews || !evalInterview) return;
 
-    const scoreValues = Object.values(scores);
-    const avgScore = scoreValues.length > 0 ? Math.round((scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) * 20) : null;
+    const missingCore = criteria.filter(c => scores[c] === undefined);
+    if (missingCore.length > 0) {
+      alert(`Please rate all core criteria. Missing: ${missingCore.join(", ")}`);
+      return;
+    }
 
     setInterviews((prev) => {
-      const exists = prev.some(
-        (i) =>
-          i.candidate === evalInterview.candidate &&
-          i.role === evalInterview.role &&
-          i.round === evalInterview.round
-      );
-      if (exists) {
-        return prev.map((i) =>
-          i.candidate === evalInterview.candidate &&
-            i.role === evalInterview.role &&
-            i.round === evalInterview.round
-            ? { ...i, score: avgScore, rec: recommendation, status: "Completed", remarks }
-            : i
-        );
-      } else {
-        return [
-          ...prev,
-          {
-            id: evalInterview.id || `INT-${Date.now()}`,
-            candidate: evalInterview.candidate,
-            role: evalInterview.role,
-            date: evalInterview.date || "",
-            time: evalInterview.time || "",
-            panel: evalInterview.panel || [],
-            score: avgScore,
-            rec: recommendation,
-            status: "Completed",
-            mode: evalInterview.mode || "In-Person",
-            meetingLink: evalInterview.meetingLink || "",
-            round: evalInterview.round,
-            remarks,
-          },
-        ];
-      }
+      return prev.map((i) => {
+        if (i.db_id !== evalInterview.db_id) return i;
+
+        const pDetail = evalInterview.panel_details?.find(p => p.id === Number(selectedPanelistId));
+        const pName = pDetail ? pDetail.name : `Panelist ${selectedPanelistId}`;
+
+        const newEval = {
+          panelist: pName,
+          panelist_id: Number(selectedPanelistId),
+          scores: scores,
+          recommendation: recommendation,
+          notes: remarks,
+          submittedAt: new Date().toISOString()
+        };
+
+        let updatedEvals = [...(i.evaluations || [])];
+        const existingIdx = updatedEvals.findIndex(e => e.panelist_id === Number(selectedPanelistId));
+        if (existingIdx >= 0) {
+          updatedEvals[existingIdx] = { ...updatedEvals[existingIdx], ...newEval };
+        } else {
+          updatedEvals.push(newEval);
+        }
+
+        return {
+          ...i,
+          evaluations: updatedEvals
+        };
+      });
     });
 
     setEvalInterview(null);
     setScores({});
     setRecommendation("");
     setRemarks("");
+    setSelectedPanelistId("");
+    setCustomFields([]);
+    setNewField("");
   };
 
   const scrollCarousel = (dir) => {
@@ -2257,46 +2265,130 @@ export default function InterviewPanel({
                         <div><strong>Date &amp; Time:</strong> {roundInv.date ? `${roundInv.date} at ${roundInv.time}` : "Not Scheduled"}</div>
                         <div><strong>Mode:</strong> {roundInv.mode || "In-Person"}</div>
                         <div><strong>Panel:</strong> {roundInv.panel?.join(", ") || "None"}</div>
-                        <div>
-                          <strong>Score / Rec:</strong>{" "}
-                          {roundInv.score !== null ? (
-                            <>
-                              {roundInv.score}/100 ({roundInv.rec}) [Average]
-                              {roundInv.evaluations && roundInv.evaluations.length > 0 && (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 4 }}>
-                                  {roundInv.evaluations.map((ev, idx) => {
-                                    const vals = ev.scores ? Object.values(ev.scores) : [];
-                                    const evScore = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / (vals.length * 5)) * 100) : null;
-                                    return (
-                                      <div key={idx} style={{ fontSize: 10, color: T.inkLight, paddingLeft: 8 }}>
-                                        • {ev.panelist}: {evScore !== null ? `${evScore}/100` : "No Score"} ({ev.recommendation || "—"})
-                                      </div>
-                                    );
-                                  })}
+                        {roundInv.meetingLink && (
+                          <div style={{ wordBreak: "break-all" }}>
+                            <strong>Link:</strong>{" "}
+                            <a
+                              href={roundInv.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: T.primary, textDecoration: "none", fontWeight: 600 }}
+                            >
+                              Join Meeting
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Evaluation Summary section */}
+                      <div style={{ marginTop: 10, background: "#fff", borderRadius: 8, padding: 12, border: `1px solid ${T.border}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`, paddingBottom: 8, marginBottom: 8 }}>
+                          <div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Avg Score</div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: roundInv.evaluation_summary?.average_score ? T.green : T.inkLight }}>
+                              {roundInv.evaluation_summary?.average_score ? `${roundInv.evaluation_summary.average_score}/100` : "—"}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: T.inkFaint, textTransform: "uppercase", letterSpacing: "0.05em" }}>Submitted</div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>
+                              {roundInv.evaluation_summary?.submitted_count || 0} / {roundInv.evaluation_summary?.assigned_count || 0}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Panelist scorecards list */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {(() => {
+                            const list = [...(roundInv.panel_details || [])];
+                            const adminPanelist = (panelists || []).find(p => p.name === "admin");
+                            if (adminPanelist && !list.some(p => p.id === adminPanelist.id)) {
+                              const hasAdminEval = roundInv.evaluations?.some(e => e.panelist_id === adminPanelist.id || e.panelist === "admin");
+                              if (hasAdminEval) {
+                                list.push(adminPanelist);
+                              }
+                            }
+                            (roundInv.evaluations || []).forEach(ev => {
+                              if (!list.some(p => p.id === ev.panelist_id || p.name === ev.panelist)) {
+                                list.push({ id: ev.panelist_id, name: ev.panelist });
+                              }
+                            });
+
+                            return list.map((panelist) => {
+                              const ev = roundInv.evaluations?.find(e => e.panelist_id === panelist.id || e.panelist === panelist.name);
+                              return (
+                                <div key={panelist.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: T.ink }}>{panelist.name === "admin" ? "admin (Admin User)" : panelist.name}</div>
+                                    <div style={{ fontSize: 11, color: ev ? T.inkMid : T.amber }}>
+                                      {ev ? `${ev.overall_score}/100 • ${ev.recommendation || "No Recommendation"}` : "Awaiting Evaluation"}
+                                    </div>
+                                  </div>
+                                  {ev && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setViewingEvaluation(ev);
+                                      }}
+                                      style={{
+                                        background: T.primaryLight,
+                                        color: T.primary,
+                                        border: "none",
+                                        borderRadius: 4,
+                                        padding: "4px 8px",
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      View
+                                    </button>
+                                  )}
                                 </div>
-                              )}
-                            </>
-                          ) : "Not Evaluated"}
+                              );
+                            });
+                          })()}
+                        </div>
+
+                        {/* Record Evaluation Delegation Button */}
+                        <div style={{ marginTop: 12, borderTop: `1px solid ${T.border}`, paddingTop: 10, textAlign: "right" }}>
+                          <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const adminPanelist = (panelists || []).find(p => p.name === "admin");
+                                const assigned = roundInv.panel_details || [];
+                                const defaultPanelist = adminPanelist ? adminPanelist.id : (assigned[0]?.id || "");
+                                setSelectedPanelistId(defaultPanelist);
+                                const existing = roundInv.evaluations?.find(ev => ev.panelist_id === defaultPanelist);
+                                if (existing) {
+                                  setScores(existing.scores || {});
+                                  setRecommendation(existing.recommendation || "");
+                                  setRemarks(existing.notes || "");
+                                  setCustomFields(existing.customFields || []);
+                                } else {
+                                  setScores({});
+                                  setRecommendation("");
+                                  setRemarks("");
+                                  setCustomFields([]);
+                                }
+                                setNewField("");
+                                setEvalInterview(roundInv);
+                            }}
+                            style={{
+                              background: T.primary,
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px 12px",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Record Evaluation
+                          </button>
                         </div>
                       </div>
-                      {roundInv.remarks && (
-                        <div style={{ fontSize: 11, color: T.inkLight, background: "#fff", padding: 6, borderRadius: 4, border: `1px solid ${T.border}` }}>
-                          <strong>Remarks:</strong> {roundInv.remarks}
-                        </div>
-                      )}
-                      {roundInv.meetingLink && (
-                        <div style={{ fontSize: 11, marginTop: 2 }}>
-                          <strong>Link:</strong>{" "}
-                          <a
-                            href={roundInv.meetingLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: T.primary, textDecoration: "none", fontWeight: 600 }}
-                          >
-                            {roundInv.meetingLink}
-                          </a>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -2323,96 +2415,237 @@ export default function InterviewPanel({
         {evalInterview && (
           <>
             <ModalHeader title={`Evaluate — ${evalInterview.candidate}`} onClose={() => setEvalInterview(null)} />
-            <div style={{ background: T.canvas, borderRadius: 10, padding: "12px 14px", marginBottom: 16, border: `1px solid ${T.border}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
-                <div>
-                  <div style={{ fontSize: 13, color: T.inkMid }}>
-                    <strong>{evalInterview.role}</strong> · {getRoundOrdinal(evalInterview.round)} · {evalInterview.date} at {evalInterview.time}
-                  </div>
-                  <div style={{ fontSize: 12, color: T.inkFaint, marginTop: 2 }}>Panel: {evalInterview.panel?.join(", ") || "None"}</div>
-                </div>
-                {modeCell(evalInterview.mode || "In-Person")}
-              </div>
-              {evalInterview.mode === "Online" && evalInterview.meetingLink && (
-                <div style={{ marginTop: 10 }}>
-                  <a
-                    href={evalInterview.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: 12, color: T.primary, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
-                  >
-                    🔗 Join Meeting
-                  </a>
-                </div>
-              )}
-            </div>
+            
+            {/* Record Evaluation For */}
+            <div style={{ padding: 12, background: T.canvas, borderRadius: 10, border: `1px solid ${T.border}`, marginBottom: 16 }}>
+              <label style={{ display: "block", fontWeight: 700, marginBottom: 6, fontSize: 10, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                Record Evaluation For
+              </label>
+              {(() => {
+                const adminPanelist = (panelists || []).find(p => p.name === "admin");
+                const otherPanelists = evalInterview.panel_details || [];
+                const allAvailable = [];
+                if (adminPanelist) {
+                  allAvailable.push(adminPanelist);
+                }
+                otherPanelists.forEach(p => {
+                  if (!allAvailable.some(x => x.id === p.id)) {
+                    allAvailable.push(p);
+                  }
+                });
 
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              {criteria.map((c) => (
-                <div key={c} style={{ background: T.canvas, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 10 }}>{c}</div>
-                  <div style={{ display: "flex", gap: isMobile ? 4 : 6, justifyContent: "space-between" }}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                      <div
-                        key={n}
-                        onClick={() => setScores((prev) => ({ ...prev, [c]: n }))}
-                        style={{
-                          width: isMobile ? 26 : 36,
-                          height: isMobile ? 26 : 36,
-                          borderRadius: isMobile ? 6 : 8,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: isMobile ? 11 : 13,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          background: scores[c] >= n ? T.primary : T.primaryLight,
-                          color: scores[c] >= n ? "#fff" : T.primary,
-                          border: `1.5px solid ${scores[c] >= n ? T.primary : T.border}`,
-                          transition: "all 0.1s",
-                        }}
-                      >
-                        {n}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                if (allAvailable.length === 0) {
+                  return (
+                    <div style={{ fontSize: 13, color: T.red, fontWeight: 700, marginTop: 4 }}>
+                      ⚠️ No panelists assigned to this interview. Please assign panelists first.
+                    </div>
+                  );
+                }
 
-            <FormField label="Overall Recommendation">
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4, marginBottom: 12 }}>
-                {["Strong Hire", "Hire", "Hold", "Reject"].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRecommendation(r)}
+                return (
+                  <select
+                    value={selectedPanelistId}
+                    onChange={(e) => {
+                      const pId = Number(e.target.value);
+                      setSelectedPanelistId(pId);
+                      const existing = evalInterview.evaluations?.find(ev => ev.panelist_id === pId);
+                      if (existing) {
+                        setScores(existing.scores || {});
+                        setRecommendation(existing.recommendation || "");
+                        setRemarks(existing.notes || "");
+                        setCustomFields(existing.customFields || []);
+                      } else {
+                        setScores({});
+                        setRecommendation("");
+                        setRemarks("");
+                        setCustomFields([]);
+                      }
+                      setNewField("");
+                    }}
                     style={{
-                      border: `1.5px solid ${recommendation === r ? T.primary : T.border}`,
-                      borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 700,
-                      background: recommendation === r ? T.primaryLight : T.canvas,
-                      color: recommendation === r ? T.primary : T.inkMid,
-                      cursor: "pointer",
+                      width: "100%", padding: "8px 12px", borderRadius: 8, border: `1.5px solid ${T.border}`,
+                      fontSize: 13, fontWeight: 600, color: T.ink, background: T.white, cursor: "pointer", outline: "none"
                     }}
                   >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </FormField>
-
-            <FormField label="Remarks">
-              <textarea
-                placeholder="Any additional remarks…"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: 10, fontSize: 13, width: "100%", minHeight: 64, resize: "vertical", boxSizing: "border-box", outline: "none", color: T.ink }}
-              />
-            </FormField>
-
-            <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-              <Btn label="Submit Evaluation" onClick={submitEvaluation} />
-              <Btn label="Cancel" variant="ghost" onClick={() => setEvalInterview(null)} />
+                    <option value="">Select a panelist...</option>
+                    {allAvailable.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name === "admin" ? "admin (Admin User)" : p.name}</option>
+                    ))}
+                  </select>
+                );
+              })()}
             </div>
+
+            {selectedPanelistId ? (
+              <>
+                {/* Overall Score Preview */}
+                {Object.keys(scores).length > 0 && (
+                  <div style={{ padding: "12px 16px", background: T.greenLight, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${T.green}33`, marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: T.green }}>Overall Score (Preview)</div>
+                      <div style={{ fontSize: 11, color: T.inkMid, marginTop: 2 }}>Calculated from all rated core and additional criteria</div>
+                    </div>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: T.green }}>
+                      {(() => {
+                        const keys = Object.keys(scores);
+                        const total = keys.reduce((sum, key) => sum + (scores[key] || 0), 0);
+                        return Math.round((total / (keys.length * 5)) * 100);
+                      })()} / 100
+                    </div>
+                  </div>
+                )}
+
+                {/* Scorecard Grid */}
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  {/* Core Criteria */}
+                  {criteria.map((c) => (
+                    <div key={c} style={{ background: T.canvas, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.border}` }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMid, marginBottom: 10 }}>{c}</div>
+                      <div style={{ display: "flex", gap: isMobile ? 4 : 6, justifyContent: "space-between" }}>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <div
+                            key={n}
+                            onClick={() => setScores((prev) => ({ ...prev, [c]: n }))}
+                            style={{
+                              width: isMobile ? 36 : 46,
+                              height: isMobile ? 36 : 46,
+                              borderRadius: isMobile ? 6 : 8,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: isMobile ? 12 : 14,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              background: scores[c] === n ? T.primary : scores[c] >= n ? `${T.primary}33` : T.primaryLight,
+                              color: scores[c] >= n ? T.primary : T.inkMid,
+                              border: `1.5px solid ${scores[c] >= n ? T.primary : T.border}`,
+                              transition: "all 0.1s",
+                            }}
+                          >
+                            {n}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Custom Criteria */}
+                  {customFields.map((c) => (
+                    <div key={c} style={{ background: T.canvas, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.border}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.inkMid }}>{c}</span>
+                          <button
+                            onClick={() => {
+                              setCustomFields(prev => prev.filter(f => f !== c));
+                              setScores(prev => {
+                                const copy = { ...prev };
+                                delete copy[c];
+                                return copy;
+                              });
+                            }}
+                            style={{
+                              background: "none", border: "none", color: T.red, cursor: "pointer",
+                              fontSize: 10, fontWeight: 700, padding: 0
+                            }}
+                          >
+                            ✕ Remove
+                          </button>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: isMobile ? 4 : 6, justifyContent: "space-between" }}>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <div
+                            key={n}
+                            onClick={() => setScores((prev) => ({ ...prev, [c]: n }))}
+                            style={{
+                              width: isMobile ? 36 : 46,
+                              height: isMobile ? 36 : 46,
+                              borderRadius: isMobile ? 6 : 8,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: isMobile ? 12 : 14,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              background: scores[c] === n ? T.primary : scores[c] >= n ? `${T.primary}33` : T.primaryLight,
+                              color: scores[c] >= n ? T.primary : T.inkMid,
+                              border: `1.5px solid ${scores[c] >= n ? T.primary : T.border}`,
+                              transition: "all 0.1s",
+                            }}
+                          >
+                            {n}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Custom Criterion */}
+                <div style={{ padding: 12, background: T.white, borderRadius: 8, border: `1px solid ${T.border}`, marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+                    Add Custom Criterion
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      value={newField}
+                      onChange={(e) => setNewField(e.target.value)}
+                      placeholder="e.g. Coding, System Design..."
+                      style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 12.5, color: T.ink, background: T.white, outline: "none" }}
+                    />
+                    <button
+                      onClick={() => {
+                        if (!newField.trim()) return;
+                        setCustomFields(prev => [...prev, newField.trim()]);
+                        setNewField("");
+                      }}
+                      style={{ background: T.inkMid, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12 }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                <FormField label="Overall Recommendation">
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4, marginBottom: 12 }}>
+                    {["Strong Hire", "Hire", "Hold", "Reject"].map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setRecommendation(r)}
+                        style={{
+                          border: `1.5px solid ${recommendation === r ? T.primary : T.border}`,
+                          borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 700,
+                          background: recommendation === r ? T.primaryLight : T.canvas,
+                          color: recommendation === r ? T.primary : T.inkMid,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+
+                <FormField label="Remarks">
+                  <textarea
+                    placeholder="Any additional remarks…"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    style={{ border: `1.5px solid ${T.border}`, borderRadius: 8, padding: 10, fontSize: 13, width: "100%", minHeight: 64, resize: "vertical", boxSizing: "border-box", outline: "none", color: T.ink }}
+                  />
+                </FormField>
+
+                <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                  <Btn label="Submit Evaluation" onClick={submitEvaluation} />
+                  <Btn label="Cancel" variant="ghost" onClick={() => setEvalInterview(null)} />
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: "center", padding: "40px 20px", color: T.inkFaint, fontSize: 13 }}>
+                Please select a panelist above to start recording their evaluation.
+              </div>
+            )}
           </>
         )}
       </Modal>
@@ -2715,6 +2948,70 @@ export default function InterviewPanel({
             🔔 Send Reminder
           </button>
         </div>
+      </Modal>
+
+      {/* Viewing Scorecard Modal */}
+      <Modal open={!!viewingEvaluation} onClose={() => setViewingEvaluation(null)} maxWidth={500}>
+        {viewingEvaluation && (
+          <>
+            <ModalHeader title={`${viewingEvaluation.panelist}'s Scorecard`} onClose={() => setViewingEvaluation(null)} />
+            <div style={{ padding: "16px 20px" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: T.inkLight, marginBottom: 12 }}>
+                Core Scorecard
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                {Object.entries(viewingEvaluation.criteria || {}).map(([name, score]) => (
+                  <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.border}`, paddingBottom: 6 }}>
+                    <span style={{ fontSize: 13, color: T.ink }}>{name}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: T.primary }}>{score} / 5</span>
+                  </div>
+                ))}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: T.green }}>Overall Score</span>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: T.green }}>{viewingEvaluation.overall_score} / 100</span>
+                </div>
+              </div>
+
+              {viewingEvaluation.custom_criteria && Object.keys(viewingEvaluation.custom_criteria).length > 0 && (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: T.inkLight, marginBottom: 12 }}>
+                    Additional Criteria
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                    {Object.entries(viewingEvaluation.custom_criteria).map(([name, score]) => (
+                      <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.border}`, paddingBottom: 6 }}>
+                        <span style={{ fontSize: 13, color: T.ink }}>{name}</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: T.primary }}>{score} / 5</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                  Recommendation
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.primary }}>
+                  {viewingEvaluation.recommendation || "—"}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.inkLight, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                  Interview Notes / Remarks
+                </div>
+                <div style={{ fontSize: 13, color: T.ink, whiteSpace: "pre-wrap", background: T.canvas, padding: 12, borderRadius: 8, border: `1px solid ${T.border}` }}>
+                  {viewingEvaluation.notes || "No notes provided."}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <Btn label="Close" onClick={() => setViewingEvaluation(null)} />
+              </div>
+            </div>
+          </>
+        )}
       </Modal>
     </div>
   );

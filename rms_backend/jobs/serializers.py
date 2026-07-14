@@ -5,6 +5,55 @@ from .models import (
     ApprovalRequest, ApprovalHistory, JobPosting
 )
 
+def get_history_from_approvals(obj, is_job_request=False):
+    history_list = []
+    
+    # Try fetching from prefetched relations to avoid N+1 queries
+    has_prefetched = hasattr(obj, "_prefetched_objects_cache") and "approvals" in obj._prefetched_objects_cache
+    if has_prefetched:
+        histories = []
+        for app in obj.approvals.all():
+            histories.extend(list(app.history.all()))
+        histories.sort(key=lambda x: x.id)
+    else:
+        from .models import ApprovalHistory
+        if is_job_request:
+            histories = list(ApprovalHistory.objects.filter(approval__job_request=obj).order_by("id"))
+        else:
+            histories = list(ApprovalHistory.objects.filter(approval__role_request=obj).order_by("id"))
+            
+    if not histories:
+        # Construct fallback submitted history entry
+        submitted_by = obj.submitted_by
+        if not submitted_by and getattr(obj, "created_by", None):
+            submitted_by = obj.created_by.get_full_name()
+        if not submitted_by:
+            submitted_by = "Current User"
+
+        date_val = ""
+        if hasattr(obj, "created_at") and obj.created_at:
+            date_val = obj.created_at.date().isoformat()
+        elif hasattr(obj, "date") and obj.date:
+            date_val = obj.date.isoformat()
+
+        history_list.append({
+            "act": "Submitted",
+            "by": submitted_by,
+            "date": date_val,
+            "note": ""
+        })
+        return history_list
+        
+    for h in histories:
+        history_list.append({
+            "act": h.action,
+            "by": h.acted_by,
+            "date": h.date.isoformat() if h.date else "",
+            "note": h.note or ""
+        })
+    return history_list
+
+
 class JobCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = JobCategory
@@ -65,27 +114,7 @@ class RoleRequestSerializer(serializers.ModelSerializer):
         return obj.created_by.get_full_name() if obj.created_by else obj.submitted_by
 
     def get_history(self, obj):
-        history_list = []
-        from .models import ApprovalHistory
-        histories = ApprovalHistory.objects.filter(approval__role_request=obj).order_by("id")
-        
-        if not histories.exists():
-            history_list.append({
-                "act": "Submitted",
-                "by": obj.submitted_by or (obj.created_by.get_full_name() if obj.created_by else "Current User"),
-                "date": obj.date.isoformat() if obj.date else "",
-                "note": ""
-            })
-            return history_list
-            
-        for h in histories:
-            history_list.append({
-                "act": h.action,
-                "by": h.acted_by,
-                "date": h.date.isoformat() if h.date else "",
-                "note": h.note or ""
-            })
-        return history_list
+        return get_history_from_approvals(obj, is_job_request=False)
 
     def validate(self, attrs):
         role = attrs.get("role")
@@ -141,27 +170,7 @@ class JobRequestSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def get_history(self, obj):
-        history_list = []
-        from .models import ApprovalHistory
-        histories = ApprovalHistory.objects.filter(approval__job_request=obj).order_by("id")
-        
-        if not histories.exists():
-            history_list.append({
-                "act": "Submitted",
-                "by": obj.submitted_by or (obj.created_by.get_full_name() if obj.created_by else "Current User"),
-                "date": obj.created_at.date().isoformat() if obj.created_at else "",
-                "note": ""
-            })
-            return history_list
-            
-        for h in histories:
-            history_list.append({
-                "act": h.action,
-                "by": h.acted_by,
-                "date": h.date.isoformat() if h.date else "",
-                "note": h.note or ""
-            })
-        return history_list
+        return get_history_from_approvals(obj, is_job_request=True)
 
 
 class ApprovalHistorySerializer(serializers.ModelSerializer):
@@ -193,13 +202,18 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ["date"]
 
     def get_history(self, obj):
-        from .models import ApprovalHistory
-        if obj.job_request:
-            histories = ApprovalHistory.objects.filter(approval__job_request=obj.job_request).order_by("id")
-        elif obj.role_request:
-            histories = ApprovalHistory.objects.filter(approval__role_request=obj.role_request).order_by("id")
+        has_prefetched = hasattr(obj, "_prefetched_objects_cache") and "history" in obj._prefetched_objects_cache
+        if has_prefetched:
+            histories = list(obj.history.all())
+            histories.sort(key=lambda x: x.id)
         else:
-            histories = obj.history.all().order_by("id")
+            from .models import ApprovalHistory
+            if obj.job_request:
+                histories = list(ApprovalHistory.objects.filter(approval__job_request=obj.job_request).order_by("id"))
+            elif obj.role_request:
+                histories = list(ApprovalHistory.objects.filter(approval__role_request=obj.role_request).order_by("id"))
+            else:
+                histories = list(obj.history.all().order_by("id"))
         return ApprovalHistorySerializer(histories, many=True).data
 
     def get_department(self, obj):

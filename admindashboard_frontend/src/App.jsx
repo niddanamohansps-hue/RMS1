@@ -69,6 +69,7 @@ function AppContent() {
     setOffers,
     interviews,
     setInterviews,
+    loadInterviews,
     panelists,
     setPanelists,
     handleGiveOffer,
@@ -356,6 +357,7 @@ function AppContent() {
                 jobPostings={jobPostings}
                 interviews={interviews}
                 setInterviews={setInterviews}
+                loadInterviews={loadInterviews}
                 panelists={panelists}
                 setPanelists={setPanelists}
                 onGiveOffer={handleGiveOffer}
