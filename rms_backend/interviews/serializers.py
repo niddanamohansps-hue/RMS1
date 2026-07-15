@@ -79,7 +79,7 @@ class InterviewSerializer(serializers.ModelSerializer):
         fields = [
             "id", "interview_id", "application", "candidate_name", "role", "date", "time",
             "panel", "panel_details", "score", "recommendation", "feedback", "status",
-            "mode", "meeting_link", "round", "reminder_sent_at", "created_at", "updated_at",
+            "candidate_present", "mode", "meeting_link", "round", "reminder_sent_at", "created_at", "updated_at",
             "evaluations", "panelist_evaluation", "evaluation_summary"
         ]
         read_only_fields = ["interview_id", "created_at", "updated_at"]
@@ -125,6 +125,18 @@ class InterviewSerializer(serializers.ModelSerializer):
         evaluation_data = validated_data.pop("panelist_evaluation", None)
         panel_data = validated_data.pop("panel", None)
         
+        # Reject evaluation if interview is cancelled or candidate marked absent
+        if evaluation_data is not None:
+            current_present = validated_data.get("candidate_present", instance.candidate_present)
+            if instance.status == "Cancelled" and validated_data.get("candidate_present") != True:
+                raise serializers.ValidationError(
+                    {"panelist_evaluation": ["This interview was cancelled (candidate absent) and cannot be evaluated."]}
+                )
+            if current_present is False:
+                raise serializers.ValidationError(
+                    {"panelist_evaluation": ["This interview was cancelled (candidate absent) and cannot be evaluated."]}
+                )
+
         # Track if scheduling fields are changing
         scheduling_fields = ["date", "time", "mode", "meeting_link", "round"]
         scheduling_changed = False
@@ -193,6 +205,26 @@ class InterviewSerializer(serializers.ModelSerializer):
                     "overall_score": overall_score,
                 },
             )
+
+        # Recalculate status based on candidate attendance and evaluations
+        if instance.candidate_present is False:
+            instance.status = "Cancelled"
+            instance.save()
+        else:
+            assigned_count = instance.panel.count()
+            submitted_count = InterviewEvaluation.objects.filter(interview=instance).count()
+            is_complete = (assigned_count == submitted_count and assigned_count > 0)
+            
+            if is_complete:
+                if instance.status != "Completed":
+                    instance.status = "Completed"
+                    instance.save()
+            else:
+                if "status" not in validated_data:
+                    if instance.status in ["Completed", "Cancelled"]:
+                        has_date_time = bool(instance.date and instance.time)
+                        instance.status = "Scheduled" if has_date_time else "Pending"
+                        instance.save()
 
         from django.db import transaction
 

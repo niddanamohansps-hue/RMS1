@@ -56,6 +56,7 @@ class Interview(models.Model):
     )
     feedback       = models.TextField(blank=True)
     status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
+    candidate_present = models.BooleanField(null=True, blank=True)
     mode           = models.CharField(max_length=20, choices=MODE_CHOICES, default="Online")
     meeting_link   = models.URLField(blank=True)
     round          = models.PositiveIntegerField(default=1)

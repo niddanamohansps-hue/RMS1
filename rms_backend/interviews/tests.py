@@ -387,3 +387,148 @@ class PerPanelistEvaluationTestCase(APITransactionTestCase):
         from interviews.models import InterviewEvaluation
         self.assertEqual(InterviewEvaluation.objects.filter(interview=self.interview).count(), 1)
 
+
+class InterviewStatusLogicTestCase(APITransactionTestCase):
+    def setUp(self):
+        self.User = get_user_model()
+        self.admin_user = self.User.objects.create_user(
+            username="admin@school.edu",
+            email="admin@school.edu",
+            password="adminpassword",
+            role="admin",
+            is_staff=True
+        )
+        self.client.force_authenticate(user=self.admin_user)
+        
+        self.panelist1 = Panelist.objects.create(name="Panelist One", email="p1@school.edu")
+        self.panelist2 = Panelist.objects.create(name="Panelist Two", email="p2@school.edu")
+        
+        self.interview = Interview.objects.create(
+            interview_id="INT-STATUS-01",
+            candidate_name="Jane Doe",
+            role="Math Teacher",
+            date="2026-07-20",
+            time="10:00:00",
+            mode="Online",
+            status="Scheduled",
+            round=1
+        )
+        self.interview.panel.set([self.panelist1, self.panelist2])
+
+    def test_candidate_absent_sets_status_cancelled(self):
+        url = reverse("interviews-detail", args=[self.interview.id])
+        response = self.client.patch(url, {"candidate_present": False}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "Cancelled")
+        self.assertFalse(response.data["candidate_present"])
+
+    def test_candidate_present_does_not_change_status(self):
+        url = reverse("interviews-detail", args=[self.interview.id])
+        response = self.client.patch(url, {"candidate_present": True}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "Scheduled")
+        self.assertTrue(response.data["candidate_present"])
+
+    def test_all_panelists_evaluated_sets_status_completed(self):
+        url = reverse("interviews-detail", args=[self.interview.id])
+        
+        # Submit evaluation for panelist1
+        data1 = {
+            "panelist_evaluation": {
+                "panelist": self.panelist1.id,
+                "criteria": {
+                    "Communication Skills": 4,
+                    "Subject Knowledge": 4,
+                    "Confidence": 4,
+                    "Problem Solving": 4,
+                    "Cultural Fit": 4
+                },
+                "recommendation": "Hire"
+            }
+        }
+        response1 = self.client.patch(url, data1, format="json")
+        self.assertEqual(response1.status_code, status.HTTP_200_OK)
+        self.assertEqual(response1.data["status"], "Scheduled")  # Still not complete
+        
+        # Submit evaluation for panelist2 (now all 2 submitted)
+        data2 = {
+            "panelist_evaluation": {
+                "panelist": self.panelist2.id,
+                "criteria": {
+                    "Communication Skills": 5,
+                    "Subject Knowledge": 5,
+                    "Confidence": 5,
+                    "Problem Solving": 5,
+                    "Cultural Fit": 5
+                },
+                "recommendation": "Strong Hire"
+            }
+        }
+        response2 = self.client.patch(url, data2, format="json")
+        self.assertEqual(response2.status_code, status.HTTP_200_OK)
+        self.assertEqual(response2.data["status"], "Completed")  # Completed!
+
+    def test_evaluation_on_cancelled_interview_is_rejected(self):
+        # 1. Mark absent -> Cancelled
+        self.interview.candidate_present = False
+        self.interview.status = "Cancelled"
+        self.interview.save()
+        
+        url = reverse("interviews-detail", args=[self.interview.id])
+        data = {
+            "panelist_evaluation": {
+                "panelist": self.panelist1.id,
+                "criteria": {
+                    "Communication Skills": 4,
+                    "Subject Knowledge": 4,
+                    "Confidence": 4,
+                    "Problem Solving": 4,
+                    "Cultural Fit": 4
+                },
+                "recommendation": "Hire"
+            }
+        }
+        response = self.client.patch(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("panelist_evaluation", response.data)
+
+    def test_changing_panel_reverts_completed_status(self):
+        # 1. Set up completed evaluations
+        from interviews.models import InterviewEvaluation
+        InterviewEvaluation.objects.create(
+            interview=self.interview, panelist=self.panelist1,
+            criteria={"Communication Skills": 4, "Subject Knowledge": 4, "Confidence": 4, "Problem Solving": 4, "Cultural Fit": 4},
+            overall_score=80, recommendation="Hire"
+        )
+        InterviewEvaluation.objects.create(
+            interview=self.interview, panelist=self.panelist2,
+            criteria={"Communication Skills": 4, "Subject Knowledge": 4, "Confidence": 4, "Problem Solving": 4, "Cultural Fit": 4},
+            overall_score=80, recommendation="Hire"
+        )
+        self.interview.status = "Completed"
+        self.interview.save()
+        
+        # 2. Add new panelist
+        panelist3 = Panelist.objects.create(name="Panelist Three", email="p3@school.edu")
+        url = reverse("interviews-detail", args=[self.interview.id])
+        data = {
+            "panel": [self.panelist1.id, self.panelist2.id, panelist3.id]
+        }
+        response = self.client.patch(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "Scheduled")  # Reverts to Scheduled since panelist3 hasn't submitted yet
+
+    def test_re_marking_attendance_reverts_cancelled_status(self):
+        # 1. Mark absent -> Cancelled
+        self.interview.candidate_present = False
+        self.interview.status = "Cancelled"
+        self.interview.save()
+        
+        # 2. Correct back to present -> True
+        url = reverse("interviews-detail", args=[self.interview.id])
+        response = self.client.patch(url, {"candidate_present": True}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "Scheduled")  # Reverted to Scheduled
+        self.assertTrue(response.data["candidate_present"])
+
+
