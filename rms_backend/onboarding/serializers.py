@@ -26,14 +26,17 @@ class OfferSerializer(serializers.ModelSerializer):
         read_only_fields = ["offer_id", "created_at", "updated_at"]
 
     def get_department(self, obj):
-        from jobs.models import ExistingRole, JobPosting
-        roleDef = ExistingRole.objects.filter(role__iexact=obj.role).first()
-        if roleDef:
-            return roleDef.department
-        postingDef = JobPosting.objects.filter(role__iexact=obj.role).first()
-        if postingDef:
-            return postingDef.department
-        return "General"
+        if not obj.role:
+            return "General"
+        if "role_departments" not in self.context:
+            from jobs.models import ExistingRole, JobPosting
+            role_depts = {r.role.lower(): r.department for r in ExistingRole.objects.all() if r.role}
+            for p in JobPosting.objects.all():
+                if p.role and p.role.lower() not in role_depts:
+                    role_depts[p.role.lower()] = p.department
+            self.context["role_departments"] = role_depts
+        
+        return self.context["role_departments"].get(obj.role.lower(), "General")
 
     def validate(self, attrs):
         candidate = attrs.get("candidate")

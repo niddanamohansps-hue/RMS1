@@ -14,8 +14,8 @@ class OfferViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == "candidate":
-            return Offer.objects.filter(candidate=user).select_related("candidate")
-        return Offer.objects.all().select_related("candidate")
+            return Offer.objects.filter(candidate=user).select_related("candidate", "onboarding")
+        return Offer.objects.all().select_related("candidate", "onboarding")
 
     def get_permissions(self):
         if self.action in ["list", "retrieve", "accept", "decline"]:
