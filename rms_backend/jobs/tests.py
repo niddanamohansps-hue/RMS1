@@ -239,4 +239,69 @@ class CacheAndTaskTestCase(TestCase):
         existing.refresh_from_db()
         self.assertEqual(existing.headcount, 2)
 
+    def test_resubmit_creates_resubmitted_history_action(self):
+        """
+        Verify that resubmitting (updating status to Pending after it was sent back)
+        creates an ApprovalHistory with action="Resubmitted" instead of "Submitted".
+        """
+        from jobs.models import ApprovalHistory
+        
+        # 1. Test for RoleRequest
+        role_req = RoleRequest.objects.create(
+            request_id="RR-TEST-99",
+            role="Math Teacher",
+            department="Science",
+            salary_range="30000-40000",
+            experience="1-3",
+            status="Pending",
+            created_by=self.admin_user
+        )
+        
+        # Initial submission should have action="Submitted"
+        first_apr = ApprovalRequest.objects.get(role_request=role_req, status="Pending")
+        self.assertTrue(ApprovalHistory.objects.filter(approval=first_apr, action="Submitted").exists())
+        
+        # Change status to Sent Back
+        first_apr.status = "Sent Back"
+        first_apr.save()
+        role_req.status = "Sent Back"
+        role_req.save()
+        
+        # Resubmit (update to Pending again)
+        role_req.status = "Pending"
+        role_req.save()
+        
+        # A new ApprovalRequest with status="Pending" should be created, and the history action should be "Resubmitted"
+        new_apr = ApprovalRequest.objects.get(role_request=role_req, status="Pending")
+        self.assertNotEqual(first_apr.id, new_apr.id)
+        self.assertTrue(ApprovalHistory.objects.filter(approval=new_apr, action="Resubmitted").exists())
+        self.assertFalse(ApprovalHistory.objects.filter(approval=new_apr, action="Submitted").exists())
+        
+        # 2. Test for JobRequest
+        job_req = JobRequest.objects.create(
+            request_id="JR-TEST-99",
+            role="Science Teacher",
+            department="Science",
+            status="Pending",
+            created_by=self.admin_user
+        )
+        
+        first_job_apr = ApprovalRequest.objects.get(job_request=job_req, status="Pending")
+        self.assertTrue(ApprovalHistory.objects.filter(approval=first_job_apr, action="Submitted").exists())
+        
+        first_job_apr.status = "Sent Back"
+        first_job_apr.save()
+        job_req.status = "Sent Back"
+        job_req.save()
+        
+        # Resubmit
+        job_req.status = "Pending"
+        job_req.save()
+        
+        new_job_apr = ApprovalRequest.objects.get(job_request=job_req, status="Pending")
+        self.assertNotEqual(first_job_apr.id, new_job_apr.id)
+        self.assertTrue(ApprovalHistory.objects.filter(approval=new_job_apr, action="Resubmitted").exists())
+        self.assertFalse(ApprovalHistory.objects.filter(approval=new_job_apr, action="Submitted").exists())
+
+
 

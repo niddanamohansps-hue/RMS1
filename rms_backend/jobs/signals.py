@@ -92,7 +92,7 @@ def create_approval_for_role_request(sender, instance, created, **kwargs):
                 )
                 ApprovalHistory.objects.create(
                     approval=apr,
-                    action="Submitted",
+                    action="Resubmitted",
                     acted_by=apr.submitted_by or "Requester",
                     note=instance.justification or ""
                 )
@@ -177,7 +177,7 @@ def create_approval_for_job_request(sender, instance, created, **kwargs):
                 )
                 ApprovalHistory.objects.create(
                     approval=apr,
-                    action="Submitted",
+                    action="Resubmitted",
                     acted_by=apr.submitted_by or "Requester",
                     note=instance.justification or instance.description or ""
                 )
